@@ -52,7 +52,7 @@ postgres=*# commit;
 COMMIT
 ```
 
-Смотрим текуцщий уровень изоляции:
+Смотрим текущий уровень изоляции:
 ```
 postgres=# show transaction isolation level;
  transaction_isolation
