@@ -12,9 +12,6 @@
 
 **1.** Запускаем _psql_ из-под пользователя _postgres_ и выключаем _auto commit_ в кадой ssh-сессии:
 ```
-root@test:~# su - postgres
-root@test:~# psql
-
 postgres=# \set AUTOCOMMIT off
 ```
 Проверяем:
