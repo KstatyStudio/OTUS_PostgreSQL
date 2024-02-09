@@ -112,13 +112,111 @@ Password for user postgres:
 
 psql (15.5 (Debian 15.5-1.pgdg120+1))
 Type "help" for help.
+```
+
+**5. ВМ** - создаём базу данных otus:
+```
+postgres=# create database otus;
+CREATE DATABASE
+```
+
+Проверяем (смотрим список баз данных):
+```
+postgres=# \l
+                                                List of databases
+   Name    |  Owner   | Encoding |  Collate   |   Ctype    | ICU Locale | Locale Provider |   Access privileges
+-----------+----------+----------+------------+------------+------------+-----------------+-----------------------
+ otus      | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            |
+ postgres  | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            |
+ template0 | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            | =c/postgres          +
+           |          |          |            |            |            |                 | postgres=CTc/postgres
+ template1 | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            | =c/postgres          +
+           |          |          |            |            |            |                 | postgres=CTc/postgres
+(4 rows)
 
 ```
 
-**5. ВМ** - 
+Подключаемся к базе данных _otus_ и создаём таблицу _test_:
+```
+postgres=# \c otus
+You are now connected to database "otus" as user "postgres".
+
+otus=# create table test (id int, str text);
+CREATE TABLE
+```
+
+Заполняем таблицу _test_ данными:
+```
+otus=# insert into test(id, str) values(1, 'first');
+INSERT 0 1
+
+otus=# insert into test(id, str) values(2, 'second');
+INSERT 0 1
+```
+
+Выходим из _psql_:
+```
+postgres=# \q
+```
+
+**6. ВМ** - проверяем, что подключились через отдельный контейнер:
+```
+devops@vmotus:~$ sudo docker ps -a
+CONTAINER ID   IMAGE         COMMAND                  CREATED          STATUS          PORTS                                       NAMES
+2a86e9433ee0   postgres:15   "docker-entrypoint.s…"   5 minutes ago   Up 4 minutes   0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   pg-server
+```
+
+**7. ЛМ** - проверяем подключние к контейнеру pg-server из внешней сети:
+```
+root@test:~# psql -p 5432 -U postgres -h 158.160.104.92 -d otus -W
+Пароль:
+psql (15.3 (Debian 15.3-0+deb12u1), сервер 15.5 (Debian 15.5-1.pgdg120+1))
+Введите "help", чтобы получить справку.
+```
+
+Выводим список таблиц базы данных _otus_ и отключаемся:
+```
+otus=# \d
+          Список отношений
+ Схема  | Имя  |   Тип   | Владелец
+--------+------+---------+----------
+ public | test | таблица | postgres
+(1 строка)
+
+otus=# \q
+```
+
+**8. ВМ** - останавливаем контейнер pg-server:
+```
+devops@vmotus:~$ sudo docker stop 2a86e9433ee0
+2a86e9433ee0
+```
+
+Удаляем контейнер pg-server:
+```
+devops@vmotus:~$ sudo docker rm 2a86e9433ee0
+2a86e9433ee0
+```
+
+Создаём контейнер pg-server заново (Сервер2):
 
 
 
+
+
+
+
+**9. ЛМ** - подключаемся к контейнеру pg-server:
+```
+
+```
+
+
+
+Пробуем подключиться к базе данных:
+```
+
+```
 
 
 
