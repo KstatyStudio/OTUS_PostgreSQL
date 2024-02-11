@@ -81,7 +81,7 @@ devops@vmotus:~$ sudo docker network create pg-net
 ebb7bc1e85f003722202244e38052afdfeb14746296eedbe56793e28ecb24e72
 ```
 
-**3. ВМ** - создаём и запускаем контейнер pg-server (Сервер) с подключением к созданной на предыдущем шаге сети. В контейнере разворачиваем сервер PostgreSQL 15, с указанием пароля и стандартного порта. Каталог данных монтируем в каталог ВМ /var/lib/postgresql:
+**3. ВМ** - создаём и запускаем контейнер pg-server (Сервер) с подключением к созданной на предыдущем шаге сети. В контейнере разворачиваем сервер PostgreSQL 15 с указанием пароля и стандартного порта. Каталог данных монтируем в каталог ВМ /var/lib/postgresql:
 ```
 devops@vmotus:~$ sudo docker run --name pg-server --network pg-net -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 -v /var/lib/postgres:/var/lib/postgresql/data postgres:15
 
