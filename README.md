@@ -241,8 +241,8 @@ otus=# select* from test;
 (2 rows)
 ```
 Данные на месте. Есть счастье в жизни, товарищи, т.е. коллеги!
-
-Яндекс.Облако -15 руб. :)
 Finishing, closing, and going home.
+
+Яндекс.Облако -17 руб. с приостановкой ВМ на 1 день :)
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
