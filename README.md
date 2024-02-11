@@ -74,14 +74,14 @@ WARNING: Access to the remote API on a privileged Docker daemon is equivalent
 ================================================================================
 ```
 
-**2. ВМ** - создаём Docker-сеть pg-net:
+**2. ВМ** - создаём Docker-сеть _pg-net_:
 ```
 devops@vmotus:~$ sudo docker network create pg-net
 
 ebb7bc1e85f003722202244e38052afdfeb14746296eedbe56793e28ecb24e72
 ```
 
-**3. ВМ** - создаём и запускаем контейнер pg-server (Сервер) с подключением к созданной на предыдущем шаге сети. В контейнере разворачиваем сервер PostgreSQL 15 с указанием пароля и стандартного порта. Каталог данных монтируем в каталог ВМ /var/lib/postgresql:
+**3. ВМ** - создаём и запускаем контейнер _pg-server_ (Сервер) с подключением к созданной на предыдущем шаге сети. В контейнере разворачиваем сервер PostgreSQL 15 с указанием пароля и стандартного порта. Стандартные каталоги PostgreSQL монтируем в каталоги **_ВМ_** _/var/lib/postgresql, /var/lib/postgresql/data_:
 ```
 devops@vmotus:~$ sudo docker run --name pg-server --network pg-net -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 -v /var/lib/postgres:/var/lib/postgresql/data postgres:15
 
@@ -106,7 +106,7 @@ Status: Downloaded newer image for postgres:15
 d72eb3adadfa46cfa54f787c62d76ff37da3d375a2fefcc918320e0c16b8ec6e
 ```
 
-**4. ВМ** - создаем и запускаем контейнер pg-client (Клиент) с подключением к созданной на шаге 2 сети, с возможностью работы с терминалом, с удалением контейнера после выхода. Запускаем _psql_ с подключением к хосту _pg-server_ под пользователем _postgres_. Вводим пароль, указанный на шаге 3:
+**4. ВМ** - создаем и запускаем контейнер _pg-client_ (Клиент) с подключением к созданной на шаге 2 сети, с возможностью работы с терминалом, с удалением контейнера после выхода. Запускаем _psql_ с подключением к хосту _pg-server_ под пользователем _postgres_. Вводим пароль, указанный на шаге 3:
 ```
 devops@vmotus:~$ sudo docker run -it --rm --network pg-net --name pg-client postgres:15 psql -h pg-server -U postgres
 Password for user postgres:
@@ -115,7 +115,7 @@ psql (15.5 (Debian 15.5-1.pgdg120+1))
 Type "help" for help.
 ```
 
-**5. ВМ** - создаём базу данных otus:
+**5. ВМ** - создаём базу данных _otus_:
 ```
 postgres=# create database otus;
 CREATE DATABASE
@@ -151,7 +151,7 @@ CONTAINER ID   IMAGE         COMMAND                  CREATED          STATUS   
 2a86e9433ee0   postgres:15   "docker-entrypoint.s…"   5 minutes ago   Up 4 minutes   0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   pg-server
 ```
 
-**7. ЛМ** - проверяем подключние к контейнеру pg-server из внешней сети:
+**7. ЛМ** - проверяем подключние к контейнеру _pg-server_ из внешней сети:
 ```
 root@test:~# psql -p 5432 -U postgres -h 158.160.104.92 -d otus -W
 Пароль:
@@ -171,13 +171,13 @@ otus=# \d
 otus=# \q
 ```
 
-**8. ВМ** - останавливаем контейнер pg-server:
+**8. ВМ** - останавливаем контейнер _pg-server_:
 ```
 devops@vmotus:~$ sudo docker stop 2a86e9433ee0
 2a86e9433ee0
 ```
 
-Удаляем контейнер pg-server:
+Удаляем контейнер _pg-server_:
 ```
 devops@vmotus:~$ sudo docker rm 2a86e9433ee0
 2a86e9433ee0
@@ -190,7 +190,7 @@ devops@vmotus:~$ sudo docker run --name pg-server --network pg-net -e POSTGRES_P
 90fe28a84e9fa95923860ac9783c393ad6ed8ecad959c732561c9c58d1595e50
 ```
 
-**9. ВМ** - подключаемся к контейнеру pg-server из контенера с клиентом (дублируем шаг 4):
+**9. ВМ** - подключаемся к контейнеру _pg-server_ из контенера с клиентом (дублируем шаг 4):
 ```
 devops@vmotus:~$ sudo docker run -it --rm --network pg-net --name pg-client postgres:15 psql -h pg-server -U postgres
 Password for user postgres:
@@ -216,10 +216,12 @@ postgres=# \l
 
 База данных _otus_ присутствует в списке (не удалена вместе с предыдущим контейнером с сервером PostgreSQL).
 
-Выводим список отношений:
+Переходим в базу данных _otus_ и выводим список таблиц:
 ```
+postgres=# \c otus
+You are now connected to database "otus" as user "postgres".
 
-postgres=# \d
+otus=# \d
         List of relations
  Schema | Name | Type  |  Owner
 --------+------+-------+----------
@@ -229,11 +231,8 @@ postgres=# \d
 
 Таблица _test_ на месте.
 
-Переходим в базу данных _otus_ и выводим содержимое таблицы _test_:
+Выводим содержимое таблицы _test_:
 ```
-
-postgres=# \c otus
-You are now connected to database "otus" as user "postgres".
 otus=# select* from test;
  id |  str
 ----+--------
