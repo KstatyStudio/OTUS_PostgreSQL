@@ -106,7 +106,7 @@ Status: Downloaded newer image for postgres:15
 d72eb3adadfa46cfa54f787c62d76ff37da3d375a2fefcc918320e0c16b8ec6e
 ```
 
-**4. ВМ** - создаем и запускаем контейнер pg-client (Клиент) с подключением к созданной на шаге 2 сети. Запускаем _psql_ с подключением к хосту _pg-server_ под пользователем _postgres_. Вводим пароль, указанный на шаге 3:
+**4. ВМ** - создаем и запускаем контейнер pg-client (Клиент) с подключением к созданной на шаге 2 сети, с возможностью работы с терминалом, с удалением контейнера после выхода. Запускаем _psql_ с подключением к хосту _pg-server_ под пользователем _postgres_. Вводим пароль, указанный на шаге 3:
 ```
 devops@vmotus:~$ sudo docker run -it --rm --network pg-net --name pg-client postgres:15 psql -h pg-server -U postgres
 Password for user postgres:
