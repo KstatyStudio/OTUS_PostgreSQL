@@ -80,7 +80,7 @@ devops@vmotus:~$ sudo docker network create pg-net
 ebb7bc1e85f003722202244e38052afdfeb14746296eedbe56793e28ecb24e72
 ```
 
-**3. ВМ** - создаём и запускаем контейнер pg-server (Сервер1) с подключением к созданной на предыдущем шаге сети. В контейнере разворачиваем сервер PostgreSQL 15, с указанием пароля и стандартного порта. Каталог данных монтируем в каталог ВМ /var/lib/postgresql:
+**3. ВМ** - создаём и запускаем контейнер pg-server (Сервер) с подключением к созданной на предыдущем шаге сети. В контейнере разворачиваем сервер PostgreSQL 15, с указанием пароля и стандартного порта. Каталог данных монтируем в каталог ВМ /var/lib/postgresql:
 ```
 devops@vmotus:~$ sudo docker run --name pg-server --network pg-net -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 -v /var/lib/postgres:/var/lib/postgresql/data postgres:15
 
@@ -118,22 +118,6 @@ Type "help" for help.
 ```
 postgres=# create database otus;
 CREATE DATABASE
-```
-
-Проверяем (смотрим список баз данных):
-```
-postgres=# \l
-                                                List of databases
-   Name    |  Owner   | Encoding |  Collate   |   Ctype    | ICU Locale | Locale Provider |   Access privileges
------------+----------+----------+------------+------------+------------+-----------------+-----------------------
- otus      | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            |
- postgres  | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            |
- template0 | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            | =c/postgres          +
-           |          |          |            |            |            |                 | postgres=CTc/postgres
- template1 | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            | =c/postgres          +
-           |          |          |            |            |            |                 | postgres=CTc/postgres
-(4 rows)
-
 ```
 
 Подключаемся к базе данных _otus_ и создаём таблицу _test_:
@@ -198,26 +182,67 @@ devops@vmotus:~$ sudo docker rm 2a86e9433ee0
 2a86e9433ee0
 ```
 
-Создаём контейнер pg-server заново (Сервер2):
+Создаём контейнер с сервером заново (дублируем шаг 3):
+```
+devops@vmotus:~$ sudo docker run --name pg-server --network pg-net -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 -v /var/lib/postgres:/var/lib/postgresql/data postgres:15
 
-
-
-
-
-
-
-**9. ЛМ** - подключаемся к контейнеру pg-server:
+90fe28a84e9fa95923860ac9783c393ad6ed8ecad959c732561c9c58d1595e50
 ```
 
+**9. ВМ** - подключаемся к контейнеру pg-server из контенера с клиентом (дублируем шаг 4):
+```
+devops@vmotus:~$ sudo docker run -it --rm --network pg-net --name pg-client postgres:15 psql -h pg-server -U postgres
+Password for user postgres:
+
+psql (15.5 (Debian 15.5-1.pgdg120+1))
+Type "help" for help.
 ```
 
-
-
-Пробуем подключиться к базе данных:
+Выводим список баз данных:
+```
+postgres=# \l
+                                                List of databases
+   Name    |  Owner   | Encoding |  Collate   |   Ctype    | ICU Locale | Locale Provider |   Access privileges
+-----------+----------+----------+------------+------------+------------+-----------------+-----------------------
+ otus      | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            |
+ postgres  | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            |
+ template0 | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            | =c/postgres          +
+           |          |          |            |            |            |                 | postgres=CTc/postgres
+ template1 | postgres | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            | =c/postgres          +
+           |          |          |            |            |            |                 | postgres=CTc/postgres
+(4 rows)
 ```
 
+База данных _otus_ присутствует в списке (не удалена вместе с предыдущим контейнером с сервером PostgreSQL).
+
+Выводим список отношений:
 ```
 
+postgres=# \d
+        List of relations
+ Schema | Name | Type  |  Owner
+--------+------+-------+----------
+ public | test | table | postgres
+(1 row)
+```
 
+Таблица _test_ на месте.
+
+Переходим в базу данных _otus_ и выводим содержимое таблицы _test_:
+```
+
+postgres=# \c otus
+You are now connected to database "otus" as user "postgres".
+otus=# select* from test;
+ id |  str
+----+--------
+  1 | first
+  2 | second
+(2 rows)
+```
+Данные на месте. Есть счастье в жизни, товарищи, т.е. коллеги!
+
+Яндекс.Облако -15 руб. :)
+Finishing, closing, and going home.
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
