@@ -190,7 +190,7 @@ devops@vmotus:~$ sudo docker run --name pg-server --network pg-net -e POSTGRES_P
 90fe28a84e9fa95923860ac9783c393ad6ed8ecad959c732561c9c58d1595e50
 ```
 
-**9. ВМ** - подключаемся к контейнеру _pg-server_ из контенера с клиентом (дублируем шаг 4):
+**9. ВМ** - подключаемся к контейнеру _pg-server_ из контейнера с клиентом (дублируем шаг 4):
 ```
 devops@vmotus:~$ sudo docker run -it --rm --network pg-net --name pg-client postgres:15 psql -h pg-server -U postgres
 Password for user postgres:
