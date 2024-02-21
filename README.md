@@ -20,7 +20,7 @@
 
 ВМ №2 - vmsecond
 
-![screenshot-yc-vm](https://raw.githubusercontent.com/KstatyStudio/OTUS_PostgreSQL/be2963fe0968e0e493fc82eadfc41fba6575a43d/yc-vm2.png)
+![yc-vm2.png](https://raw.githubusercontent.com/KstatyStudio/OTUS_PostgreSQL/be2963fe0968e0e493fc82eadfc41fba6575a43d/yc-vm2.png)
 
 
 **2. ВМ №1** - устанавливаем PostgreSQL:
@@ -83,11 +83,14 @@ Ver Cluster Port Status Owner    Data directory              Log file
 14  main    5432 down   postgres /var/lib/postgresql/14/main /var/log/postgresql/postgresql-14-main.log
 ```
 
-**3. Яндекс.Облако** - создаём новый диск HDD 10 Gb, подключаем его к ВМ №1 (vmotus):
+**3. Яндекс.Облако** - создаём новый диск HDD 10 Gb:
+![yc-hdd.png](https://raw.githubusercontent.com/KstatyStudio/OTUS_PostgreSQL/268b8bbc03ce84bc19458d5cd27d7b68b7c5118f/yc-hdd.png)
 
+Останавливаем ВМ №1 (_vmotus_) и подключаем новый диск:
 
+![yc-hdd-vm.png](https://raw.githubusercontent.com/KstatyStudio/OTUS_PostgreSQL/268b8bbc03ce84bc19458d5cd27d7b68b7c5118f/yc-hdd-vm.png)
 
-
+Запускаем ВМ №1 (_vmotus_).
 
 
 
