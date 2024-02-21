@@ -83,11 +83,17 @@ Ver Cluster Port Status Owner    Data directory              Log file
 14  main    5432 down   postgres /var/lib/postgresql/14/main /var/log/postgresql/postgresql-14-main.log
 ```
 
+**3. Яндекс.Облако** - создаём новый диск HDD 10 Gb:
 
-**3. ВМ №1** - устанавливаем PostgreSQL:
-```
 
-```
+
+
+
+
+
+
+
+
 
 
 
