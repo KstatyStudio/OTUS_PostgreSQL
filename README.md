@@ -20,7 +20,7 @@
 
 ВМ №2 - vmsecond
 
-![screenshot-yc-vm](https://raw.githubusercontent.com/KstatyStudio/OTUS_PostgreSQL/9bde87031d662d6465cd60cbe50d698229e89914/yc-vm.png)
+![screenshot-yc-vm](https://raw.githubusercontent.com/KstatyStudio/OTUS_PostgreSQL/be2963fe0968e0e493fc82eadfc41fba6575a43d/yc-vm2.png)
 
 
 **2. ВМ №1** - устанавливаем PostgreSQL:
