@@ -357,6 +357,11 @@ Ver Cluster Port Status Owner    Data directory              Log file
 devops@vmsecond:~$ sudo systemctl stop postgresql
 ```
 
+Удаляем данные нового кластера PostgreSQL:
+```
+devops@vmsecond:~$ sudo rm -r /var/lib/postgresql
+```
+
 Изменяем путь к каталогу данных в конфигурации PostgreSQL. Открываем файл _/etc/postgresql/14/main/postgresql.conf_:
 ```
 devops@vmsecond:~$ sudo nano /etc/postgresql/14/main/postgresql.conf
