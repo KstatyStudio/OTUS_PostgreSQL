@@ -69,10 +69,6 @@ exit
 
 Останавливаем PostgreSQL:
 ```
-devops@vmotus:~$ sudo -u postgres pg_ctlcluster 14 main stop
-Warning: stopping the cluster using pg_ctlcluster will mark the systemd unit as failed. Consider using systemctl:
-  sudo systemctl stop postgresql@14-main
-
 devops@vmotus:~$ sudo systemctl stop postgresql@14-main
 ```
 
@@ -92,9 +88,97 @@ Ver Cluster Port Status Owner    Data directory              Log file
 
 Запускаем ВМ №1 (_vmotus_).
 
+![yc-hdd-vm.png](https://raw.githubusercontent.com/KstatyStudio/OTUS_PostgreSQL/b04935f6a9e44419f03f63cdeef8661437396b3b/yc-vm3.png)
 
+**4. ВМ №1** - проверяем, что новый диск виден в системе:
+```
+devops@vmotus:~$ sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL
+NAME   FSTYPE    SIZE MOUNTPOINT        LABEL
+loop0  squashfs 63.9M /snap/core20/2105
+loop1  squashfs 63.9M /snap/core20/2182
+loop2  squashfs   87M /snap/lxd/26975
+loop3  squashfs   87M /snap/lxd/27037
+loop4           49.8M /snap/snapd/18357
+loop5           40.4M /snap/snapd/20671
+vda               18G
+├─vda1             1M
+└─vda2 ext4       18G /
+vdb                5G
+```
 
+Новый диск определился как _vdb_.
 
+Создаём раздел на новом диске:
+```
+devops@vmotus:~$ sudo fdisk /dev/vdb
+
+Welcome to fdisk (util-linux 2.37.2).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+Device does not contain a recognized partition table.
+Created a new DOS disklabel with disk identifier 0x96f9667a.
+
+Command (m for help): n
+Partition type
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended (container for logical partitions)
+Select (default p): p
+Partition number (1-4, default 1):
+First sector (2048-10485759, default 2048):
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-10485759, default 10485759):
+
+Created a new partition 1 of type 'Linux' and of size 5 GiB.
+
+Command (m for help): w
+The partition table has been altered.
+Calling ioctl() to re-read partition table.
+Syncing disks.
+```
+
+Форматируем новый раздел в EXT4:
+```
+devops@vmotus:~$ sudo mkfs.ext4 /dev/vdb1
+mke2fs 1.46.5 (30-Dec-2021)
+Creating filesystem with 1310464 4k blocks and 327680 inodes
+Filesystem UUID: 9f2795fc-5b02-4f23-b930-917848b1b26b
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+```
+
+Создаём папку _/mnt/pgsql_ и монтируем в неё новый раздел:
+```
+devops@vmotus:~$ sudo mkdir /mnt/pgsql
+
+devops@vmotus:~$ sudo mount /dev/vdb1 /mnt/pgsql
+```
+
+Проверяем:
+```
+devops@vmotus:~$ sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL
+NAME   FSTYPE    SIZE MOUNTPOINT        LABEL
+loop0  squashfs 63.9M /snap/core20/2105
+loop1  squashfs 63.9M /snap/core20/2182
+loop2  squashfs   87M /snap/lxd/26975
+loop3  squashfs   87M /snap/lxd/27037
+loop4           49.8M /snap/snapd/18357
+loop5           40.4M /snap/snapd/20671
+vda               18G
+├─vda1             1M
+└─vda2 ext4       18G /
+vdb                5G
+└─vdb1 ext4        5G /mnt/pgsql
+```
+
+Разрешаем запись на диск всем пользоваетлям системы:
+```
+devops@vmotus:~$ sudo chmod a+w /mnt/pgsql
+```
 
 
 
