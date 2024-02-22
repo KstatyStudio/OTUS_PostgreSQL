@@ -385,6 +385,13 @@ data_directory = '/mnt/pgsql/14/main'           # use data in another directory
 devops@vmsecond:~$ sudo systemctl start postgresql
 ```
 
+Проверяем:
+```
+devops@vmsecond:~$ sudo pg_lsclusters
+Ver Cluster Port Status Owner    Data directory     Log file
+14  main    5432 online postgres /mnt/pgsql/14/main /var/log/postgresql/postgresql-14-main.log
+```
+
 Запускаем _psql_ под пользователем _postgres_, подключаемся к базе данных _app_ и проверяем наличие ранее созданной таблицы _test_ и её содержание:
 ```
 devops@vmsecond:~$ sudo su postgres
