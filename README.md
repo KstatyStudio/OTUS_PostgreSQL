@@ -219,7 +219,7 @@ data_directory = '/mnt/pgsql/14/main'           # use data in another directory
 devops@vmotus:~$ sudo systemctl restart postgresql
 ```
 
-Запускаем _psql_ под пользователем _postgres_, подключаемся к базе данных _app_ и проверяем наличие ранее созданной таблицы _test_:
+Запускаем _psql_ под пользователем _postgres_, подключаемся к базе данных _app_ и проверяем содержание ранее созданной таблицы _test_:
 ```
 devops@vmotus:~$ sudo su postgres
 postgres@vmotus:/home/devops$ psql
