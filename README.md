@@ -175,10 +175,51 @@ vdb                5G
 └─vdb1 ext4        5G /mnt/pgsql
 ```
 
-Разрешаем запись на диск всем пользоваетлям системы:
+Разрешаем запись на диск всем пользователям системы:
 ```
 devops@vmotus:~$ sudo chmod a+w /mnt/pgsql
 ```
+
+Назаначаем владельцем диска пользователя _postgres_:
+```
+devops@vmotus:~$ sudo chown -R postgres:postgres /mnt/pgsql/
+```
+
+**5. ВМ №1** - переносим папку _/var/lib/postgresql/14_ на новый диск:
+```
+devops@vmotus:~$ sudo mv /var/lib/postgresql/14 /mnt/pgsql
+```
+
+Запускаем кластер PostgreSQL:
+```
+devops@vmotus:~$ sudo -u postgres pg_ctlcluster 14 main start
+Error: /var/lib/postgresql/14/main is not accessible or does not exist
+```
+
+В результате получаем ошибку, т.к. PostgreSQL не в курсе того, что служебные каталоги были перемещены, он ищет их по стандартному пути.
+Открываеми в текстовом редакторе конфигурационный файл PostgreSQL:
+```
+devops@vmotus:~$ sudo nano /etc/postgresql/14/main/postgresql.conf
+```
+В разделе _FILE LOCATIONS_ изменяем путь к каталогу данных:
+```
+#------------------------------------------------------------------------------
+# FILE LOCATIONS
+#------------------------------------------------------------------------------
+
+# The default values of these variables are driven from the -D command-line
+# option or PGDATA environment variable, represented here as ConfigDir.
+
+data_directory = '/mnt/pgsql/14/main'          # use data in another directory
+                                        # (change requires restart)
+```
+
+Сохраняем изменения и перезапускаем PostgreSQL:
+```
+devops@vmotus:~$ sudo systemctl restart postgresql
+```
+
+
 
 
 
