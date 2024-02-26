@@ -278,9 +278,4 @@ INSERT 0 1
 ```
 Вставка выполнена. Таблица _t2_ не является новым объектом в схеме _public_, а права на существующие таблицы не ограничивались.
 
-
-
-
-
-
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
