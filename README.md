@@ -227,6 +227,57 @@ testdb=> select * from testnm.t1;
   1
 (1 row)
 ```
+Цель достигнута, мы видим данные из таблицы _t1_.
+
+**4.** - Ппродолжаем работать под пользователем _testread_. Создаём таблицу _t2_ и заполняем её данными:
+```
+testdb=> create table t2(c1 integer);
+CREATE TABLE
+testdb=> insert into t2 values (2);
+INSERT 0 1
+```
+Таблица создана, данные вставлены. Проверяем права:
+```
+testdb=> \z t2
+                            Access privileges
+ Schema | Name | Type  | Access privileges | Column privileges | Policies
+--------+------+-------+-------------------+-------------------+----------
+ public | t2   | table |                   |                   |
+(1 row)
+```
+Явно заданных прав у пользователя _testread_ нет. Но действия выполнены, т.н. он наследует права роли _public_, которая добавляется всем новым пользователям и имеет все права на схему _public_ по умолчанию.
+
+Устраняем потенциальные проблемы - переподключаемся к базе данных _testdb_ пользователем _postgres_ и отзываем права роли _public_ на создание объектов в схеме _public_ и все права на базу данных _testdb_:
+```
+testdb=> \c testdb postgres
+You are now connected to database "testdb" as user "postgres".
+
+testdb=# revoke create on schema public from public;
+REVOKE
+
+testdb=# revoke all on database testdb from public;
+REVOKE
+```
+
+Проверяем. Переподключаемся к базе данных _testdb_ пользователем _testread_ и создаём таблицу _t3_:
+```
+testdb=# \c testdb testread
+Password for user testread:
+You are now connected to database "testdb" as user "testread".
+
+testdb=> create table t3(c1 integer);
+ERROR:  permission denied for schema public
+LINE 1: create table t3(c1 integer);
+```
+При попытке создать таблицу _t3_ выдаётся ошибка - отработали ограничения прав на создание новых объектов в схеме _public_.
+
+Вставляем новые данные в таблицу _t2_:
+```
+testdb=> insert into t2 values (2);
+INSERT 0 1
+```
+Вставка выполнена. Таблица _t2_ не является новым объектом в схеме _public_, а права на существующие таблицы не ограничивались.
+
 
 
 
