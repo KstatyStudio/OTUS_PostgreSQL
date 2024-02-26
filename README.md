@@ -150,11 +150,83 @@ testdb=> \c testdb postgres
 You are now connected to database "testdb" as user "postgres".
 ```
 
-Удаляем таблицу _t1_ и пересоздаём её с явным указанием схемы:
+Удаляем таблицу _t1_, пересоздаём её с явным указанием схемы и заполняем данными:
+```
+testdb=# drop table t1;
+DROP TABLE
+
+testdb=# create table testnm.t1(c1 integer);
+CREATE TABLE
+
+testdb=# insert into testnm.t1 values(1);
+INSERT 0 1
 ```
 
+Переподключаемся к базе данных _testdb_ пользователем _testread_ и выполняем выборку всех данных из таблицы _t1_:
+```
+testdb=# \c testdb testread
+Password for user testread:
+You are now connected to database "testdb" as user "testread".
+
+testdb=> select * from testnm.t1;
+ERROR:  permission denied for table t1
+```
+И опять получаем ошибку доступа.
+
+Проверяем права: 
+```
+testdb=> \z testnm.t1
+                            Access privileges
+ Schema | Name | Type  | Access privileges | Column privileges | Policies
+--------+------+-------+-------------------+-------------------+----------
+ testnm | t1   | table |                   |                   |
+(1 row)
+```
+Прав у пользователя _testread_ на таблицу _t1_ по-прежнему нет. А всё потому что права назначили на существующие объекты и на новые они не распространяются.
+
+Исправляемся. Переподключаемся к базе данных _testdb_ пользователем _postgres_ и изменяем права по умолчанию на таблицы в схеме _testnm_ для роли _readonly_:
+```
+testdb=> \c testdb postgres
+You are now connected to database "testdb" as user "postgres".
+testdb=# alter default privileges in schema testnm grant select on tables to readonly;
+ALTER DEFAULT PRIVILEGES
 ```
 
+Проверяем права на таблицу _t1_:
+```
+testdb=# \z testnm.t1
+                            Access privileges
+ Schema | Name | Type  | Access privileges | Column privileges | Policies
+--------+------+-------+-------------------+-------------------+----------
+ testnm | t1   | table |                   |                   |
+(1 row)
+```
+Прав нет. _default_ распространяется на новые объекты. Повторяем _grand select_ и проверяем права на таблицу _t1_ в очередной раз:
+```
+testdb=# grant select on all tables in schema testnm to readonly;
+GRANT
+
+testdb=# \z testnm.t1
+                                Access privileges
+ Schema | Name | Type  |     Access privileges     | Column privileges | Policies
+--------+------+-------+---------------------------+-------------------+----------
+ testnm | t1   | table | postgres=arwdDxt/postgres+|                   |
+        |      |       | readonly=r/postgres       |                   |
+(1 row)
+```
+
+Переподключаемся к базе данных _testdb_ пользователем _testread_ и выполняем выборку всех данных из таблицы _t1_:
+```
+testdb=# \c testdb testread
+Password for user testread:
+You are now connected to database "testdb" as user "testread".
+
+testdb=> select * from testnm.t1;
+ c1
+----
+  1
+(1 row)
+```
 
 
 
