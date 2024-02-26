@@ -133,6 +133,31 @@ ERROR:  permission denied for table t1
 ```
 И получаем ошибку. 
 
+Проверяем права доступа на таблицу _t1_:
+```
+testdb=> \z t1
+                            Access privileges
+ Schema | Name | Type  | Access privileges | Column privileges | Policies
+--------+------+-------+-------------------+-------------------+----------
+ public | t1   | table |                   |                   |
+(1 row)
+```
+И узнаём, что прав доступа на таблицу _t1_ у пользователя _testread_ нет. А заодно видим и причину данного казуса - таблица была создана в схеме _public_.
+
+Исправляемся. Переподключаемся к базе данных _testdb_ пользователем _postgres_:
+```
+testdb=> \c testdb postgres
+You are now connected to database "testdb" as user "postgres".
+```
+
+Удаляем таблицу _t1_ и пересоздаём её с явным указанием схемы:
+```
+
+```
+
+
+
+
 
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
