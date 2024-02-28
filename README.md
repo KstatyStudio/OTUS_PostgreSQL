@@ -259,8 +259,54 @@ otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+
 
 Обновляем все строки таблицы _test_ 5 раз - добавляем 1 символ к текствовому полю:
 ```
+otus=# do $$declare ii integer;
+begin
+ii=0;
+loop
+exit when ii>=5;
+update test set str1=str1||ii;
+ii=ii+1;
+end loop;
+end$$;
+DO
+```
+
+Проверяем:
+```
+otus=# select count(id1) from test;
+  count
+---------
+ 1000000
+(1 row)
+
+otus=# select * from test order by id1 limit 5;
+ id1 |                   str1
+-----+-------------------------------------------
+   1 | 3d89fe12-1239-4d9d-9b30-770f89bc783f01234
+   2 | 73ada861-599a-49a0-9530-1868a4bc3a0f01234
+   3 | 7e906057-343a-4cf3-82f2-023bd0b7e43701234
+   4 | 76fa0412-68ee-48a6-a0c5-bbe48a2c62af01234
+   5 | 7f8d71fb-abdb-489e-b1d0-69b174d7bf9c01234
+(5 rows)
+
+otus=# select pg_size_pretty(pg_total_relation_size('test'));
+ pg_size_pretty
+----------------
+ 438 MB
+(1 row)
+
+otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+1))::float "ratio%", last_autovacuum from pg_stat_user_tables where relname='test';
+ relname | n_live_tup | n_dead_tup | ratio% |        last_autovacuum
+---------+------------+------------+--------+-------------------------------
+ test    |    1000000 |          0 |      0 | 2024-02-28 08:07:38.609484+00
+(1 row)
+```
+
+Повторяем обновление строк ещё 5 раз:
+```
 
 ```
+
 
 
 
