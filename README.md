@@ -344,11 +344,66 @@ otus=# alter table test set (autovacuum_enabled = off);
 ALTER TABLE
 ```
 
+Обновляем все строки таблицы _test_ 10 раз:
+```
+otus=# do $$declare ii integer;
+begin
+ii=0;
+loop
+exit when ii>=10;
+update test set str1=str1||ii;
+ii=ii+1;
+end loop;
+end$$;
+DO
+```
 
+Смотрим размер файла:
+```
+ pg_size_pretty
+----------------
+ 927 MB
+(1 row)
+```
+Размер файла ожидаемо вырос. Операция _update_ подразумевает выполнение двух операций - _insert_ новой строки с новым значением изменяемого атрибута (новая версия строки) и _delete_ текущей версии изменяемой строки. При этом фактическое удаление не производится, выполняется только изменение служебных атрибутов - строка отмечается как мёртвая.
 
+Смотрим данные по живым и мёртвым строкам:
+```
+otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+1))::float "ratio%", last_autovacuum from pg_stat_user_tables where relname='test';
+ relname | n_live_tup | n_dead_tup | ratio% |        last_autovacuum
+---------+------------+------------+--------+-------------------------------
+ test    |    1000000 |   10000000 |    999 | 2024-02-28 08:12:38.469629+00
+(1 row)
+```
+В очередной раз мы получили количество мёртвых строк пропорциональное количеству операций обновления.
 
+Включаем автовакуум для таблицы _test_:
+```
+otus=# alter table test set (autovacuum_enabled = on);
+ALTER TABLE
+```
 
+Смотрим данные по живым и мёртвым строкам:
+```
+otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+1))::float "ratio%", last_autovacuum from pg_stat_user_tables where relname='test';
+ relname | n_live_tup | n_dead_tup | ratio% |        last_autovacuum
+---------+------------+------------+--------+-------------------------------
+ test    |    1000000 |          0 |      0 | 2024-02-28 08:51:02.339003+00
+(1 row)
+```
+Автовакуум очистил мётвые строки.
 
-
+**3.** - Задание со * - автономная процедура, в которой в цикле 10 раз обновляются все строки в искомой таблице и выводится номер шага
+```
+do $$declare ii integer := 0;
+begin
+loop
+exit when ii>=10;
+update test set str1=str1||ii;
+raise notice 'step: %',ii;
+ii=ii+1;
+end loop;
+end$$;
+```
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
