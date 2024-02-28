@@ -248,7 +248,7 @@ otus=# select pg_size_pretty(pg_total_relation_size('test'));
 (1 row)
 ```
 
-Проверяем статистику:
+Проверяем количество живых и мёртвых строк:
 ```
 otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+1))::float "ratio%" from pg_stat_user_tables where relname='test';
  relname | n_live_tup | n_dead_tup | ratio%
@@ -301,11 +301,56 @@ otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+
  test    |    1000000 |          0 |      0 | 2024-02-28 08:07:38.609484+00
 (1 row)
 ```
+Автовакуум успел очистить мёртвые строки.
 
 Повторяем обновление строк ещё 5 раз:
 ```
-
+otus=# do $$declare ii integer;
+begin
+ii=0;
+loop
+exit when ii>=5;
+update test set str1=str1||ii;
+ii=ii+1;
+end loop;
+end$$;
+DO
 ```
+
+Смотрим данные по строкам таблицы _test_:
+```
+otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+1))::float "ratio%", last_autovacuum from pg_stat_user_tables where relname='test';
+ relname | n_live_tup | n_dead_tup | ratio% |        last_autovacuum
+---------+------------+------------+--------+-------------------------------
+ test    |    1000000 |    5000000 |    499 | 2024-02-28 08:07:38.609484+00
+(1 row)
+```
+Пятикратное обновление 1 млн. строк привело к появлению 5 млн. мёртвых строк.
+
+Смотрим данные ещё раз:
+```
+otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+1))::float "ratio%", last_autovacuum from pg_stat_user_tables where relname='test';
+ relname | n_live_tup | n_dead_tup | ratio% |        last_autovacuum
+---------+------------+------------+--------+-------------------------------
+ test    |    1000000 |          0 |      0 | 2024-02-28 08:12:38.469629+00
+(1 row)
+```
+Автовакуум отработал.
+
+Смотрим размер файла:
+```
+otus=# select pg_size_pretty(pg_total_relation_size('test'));
+ pg_size_pretty
+----------------
+ 461 MB
+(1 row)
+```
+Размер файла только увеличивается.
+
+
+
+
+
 
 
 
