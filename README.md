@@ -248,15 +248,6 @@ otus=# select pg_size_pretty(pg_total_relation_size('test'));
 (1 row)
 ```
 
-Проверяем количество живых и мёртвых строк:
-```
-otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+1))::float "ratio%" from pg_stat_user_tables where relname='test';
- relname | n_live_tup | n_dead_tup | ratio%
----------+------------+------------+--------
- test    |    1000000 |          0 |      0
-(1 row)
-```
-
 Обновляем все строки таблицы _test_ 5 раз - добавляем 1 символ к текствовому полю:
 ```
 otus=# do $$declare ii integer;
@@ -345,8 +336,13 @@ otus=# select pg_size_pretty(pg_total_relation_size('test'));
  461 MB
 (1 row)
 ```
-Размер файла только увеличивается.
+Размер файла только увеличивается. Автовакуум удаляет мёртвые строки, но место на диске остаётся зарезервированным под новые строки.
 
+Отключаем автовакуум для таблицы _test_;
+```
+otus=# alter table test set (autovacuum_enabled = off);
+ALTER TABLE
+```
 
 
 
