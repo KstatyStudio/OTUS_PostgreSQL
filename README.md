@@ -65,7 +65,7 @@ initial connection time = 14.789 ms
 tps = 721.342332 (without initial connection time)
 ```
 
-Редактируем конфигурацию PostgreSQL - применяем рекомендованные параметры:
+Редактируем конфигурацию PostgreSQL - применяем рекомендованные по условиям домашнего задания параметры:
 
 <table class='table-1 table-striped-1'>
 	<thead>
@@ -191,13 +191,8 @@ tps = 738.186520 (without initial connection time)
 
 За счет ограничения max_connections и effective_cache_size при увеличении значений остальных рекомендованных параметров мы получили небольшой прирост количества транзакций - во втором тесте за 1 минуту было обработано 44294 транзакции с пропускной способностью примерно 738 транзакций в секунду.
 
-
-
-
-
-
-
-
+**2.** - Создаём таблицу _test_ и заполняем её тестовыми данными:
+```
 postgres@vmotus08:/home/devops$ psql
 could not change directory to "/home/devops": Permission denied
 psql (15.6 (Ubuntu 15.6-1.pgdg22.04+1))
@@ -206,7 +201,66 @@ Type "help" for help.
 postgres=# create database otus;
 CREATE DATABASE
 
-postgres=# \q
+postgres=# \c otus
+You are now connected to database "otus" as user "postgres".
+otus=#
+
+otus=# create table test (id1 serial, str1 text);
+CREATE TABLE
+
+otus=# do $$declare ii integer;
+begin
+ii=0;
+loop
+exit when ii>=1000000;
+insert into test(str1) values(gen_random_uuid());
+ii=ii+1;
+end loop;
+end$$;
+DO
+```
+
+Проверяем:
+```
+otus=# select count(id1) from test;
+  count
+---------
+ 1000000
+(1 row)
+
+otus=# select * from test order by id1 limit 5;
+ id1 |                 str1
+-----+--------------------------------------
+   1 | 3d89fe12-1239-4d9d-9b30-770f89bc783f
+   2 | 73ada861-599a-49a0-9530-1868a4bc3a0f
+   3 | 7e906057-343a-4cf3-82f2-023bd0b7e437
+   4 | 76fa0412-68ee-48a6-a0c5-bbe48a2c62af
+   5 | 7f8d71fb-abdb-489e-b1d0-69b174d7bf9c
+(5 rows)
+```
+
+Смотрим размер файла:
+```
+otus=# select pg_size_pretty(pg_total_relation_size('test'));
+ pg_size_pretty
+----------------
+ 73 MB
+(1 row)
+```
+
+Проверяем статистику:
+```
+otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+1))::float "ratio%" from pg_stat_user_tables where relname='test';
+ relname | n_live_tup | n_dead_tup | ratio%
+---------+------------+------------+--------
+ test    |    1000000 |          0 |      0
+(1 row)
+```
+
+Обновляем все строки таблицы _test_ 5 раз - добавляем 1 символ к текствовому полю:
+```
+
+```
 
 
 
