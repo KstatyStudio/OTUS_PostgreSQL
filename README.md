@@ -386,6 +386,24 @@ otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+
 ```
 Автовакуум очистил мётвые строки.
 
+Для возвращения освобожденного объёма памяти/дискового пространства в операционную систему необходимо выполнить vacuum full:
+```
+otus=# vacuum full test;
+VACUUM
+
+otus=# select pg_size_pretty(pg_total_relation_size('test'));
+ pg_size_pretty
+----------------
+ 96 MB
+(1 row)
+```
+
+Для оптимизации работы так же нужно пересчитать статистику:
+```
+otus=# analyze test;
+ANALYZE
+```
+
 **3.** - Задание со * - автономная процедура, в которой в цикле 10 раз обновляются все строки в искомой таблице и выводится номер шага
 ```
 do $$declare ii integer =0;
