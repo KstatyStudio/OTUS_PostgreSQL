@@ -205,9 +205,8 @@ otus=#
 otus=# create table test (id1 serial, str1 text);
 CREATE TABLE
 
-otus=# do $$declare ii integer;
+otus=# do $$declare ii integer =0;
 begin
-ii=0;
 loop
 exit when ii>=1000000;
 insert into test(str1) values(gen_random_uuid());
@@ -247,9 +246,8 @@ otus=# select pg_size_pretty(pg_total_relation_size('test'));
 
 Обновляем все строки таблицы _test_ 5 раз - добавляем 1 символ к текствовому полю:
 ```
-otus=# do $$declare ii integer;
+otus=# do $$declare ii integer =0;
 begin
-ii=0;
 loop
 exit when ii>=5;
 update test set str1=str1||ii;
@@ -293,9 +291,8 @@ otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+
 
 Повторяем обновление строк ещё 5 раз:
 ```
-otus=# do $$declare ii integer;
+otus=# do $$declare ii integer =0;
 begin
-ii=0;
 loop
 exit when ii>=5;
 update test set str1=str1||ii;
@@ -343,9 +340,8 @@ ALTER TABLE
 
 Обновляем все строки таблицы _test_ 10 раз:
 ```
-otus=# do $$declare ii integer;
+otus=# do $$declare ii integer =0;
 begin
-ii=0;
 loop
 exit when ii>=10;
 update test set str1=str1||ii;
@@ -392,7 +388,7 @@ otus=# select relname, n_live_tup, n_dead_tup, trunc(100*n_dead_tup/(n_live_tup+
 
 **3.** - Задание со * - автономная процедура, в которой в цикле 10 раз обновляются все строки в искомой таблице и выводится номер шага
 ```
-do $$declare ii integer := 0;
+do $$declare ii integer =0;
 begin
 loop
 exit when ii>=10;
