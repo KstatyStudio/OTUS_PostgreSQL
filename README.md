@@ -193,11 +193,6 @@ tps = 738.186520 (without initial connection time)
 
 **2.** - Создаём таблицу _test_ и заполняем её тестовыми данными:
 ```
-postgres@vmotus08:/home/devops$ psql
-could not change directory to "/home/devops": Permission denied
-psql (15.6 (Ubuntu 15.6-1.pgdg22.04+1))
-Type "help" for help.
-
 postgres=# create database otus;
 CREATE DATABASE
 
