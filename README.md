@@ -193,6 +193,8 @@ tps = 738.186520 (without initial connection time)
 
 **2.** - Создаём таблицу _test_ и заполняем её тестовыми данными:
 ```
+postgres@vmotus08:/home/devops$ psql
+
 postgres=# create database otus;
 CREATE DATABASE
 
