@@ -248,13 +248,9 @@ otus=#
 otus=# create table test (id1 serial, str1 text);
 CREATE TABLE
 
-otus=# do $$declare ii integer =0;
+otus=# do $$
 begin
-loop
-exit when ii>=1000000;
-insert into test(str1) values(gen_random_uuid());
-ii=ii+1;
-end loop;
+insert into test(str1) select gen_random_uuid() from generate_series(1,1000000);
 end$$;
 DO
 ```
