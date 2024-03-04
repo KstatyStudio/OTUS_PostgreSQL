@@ -168,7 +168,7 @@ initial connection time = 15.197 ms
 tps = 738.186520 (without initial connection time)
 ```
 
-Перепроверим параметры в конфигурационном файле и перезапустим сервис PistgreSQL:
+Проверим и при необходимости изменим рекомендованные параметры в конфигурационном файле, перезапустим сервис PistgreSQL:
 ```
 postgres@vmotus08:/home/devops$ nano /etc/postgresql/15/main/postgresql.conf
 
