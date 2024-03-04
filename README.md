@@ -168,28 +168,71 @@ initial connection time = 15.197 ms
 tps = 738.186520 (without initial connection time)
 ```
 
-Сравниваем результаты двух тестов:
+Перепроверим параметры в конфигурационном файле и перезапустим сервис PistgreSQL:
+```
+postgres@vmotus08:/home/devops$ nano /etc/postgresql/15/main/postgresql.conf
+
+postgres@vmotus08:/home/devops$ exit
+
+devops@vmotus08:~$ sudo systemctl restart postgresql
+```
+
+Запускаем тест:
+```
+devops@vmotus08:~$ sudo su postgres
+
+postgres@vmotus08:/home/devops$ pgbench -c8 -P 6 -T 60 -U postgres postgres
+pgbench (15.6 (Ubuntu 15.6-1.pgdg22.04+1))
+starting vacuum...end.
+progress: 6.0 s, 754.8 tps, lat 10.548 ms stddev 6.889, 0 failed
+progress: 12.0 s, 797.7 tps, lat 10.039 ms stddev 5.601, 0 failed
+progress: 18.0 s, 771.7 tps, lat 10.368 ms stddev 6.209, 0 failed
+progress: 24.0 s, 560.2 tps, lat 14.281 ms stddev 13.754, 0 failed
+progress: 30.0 s, 854.5 tps, lat 9.360 ms stddev 5.840, 0 failed
+progress: 36.0 s, 764.3 tps, lat 10.463 ms stddev 7.056, 0 failed
+progress: 42.0 s, 721.8 tps, lat 11.071 ms stddev 6.778, 0 failed
+progress: 48.0 s, 693.3 tps, lat 11.552 ms stddev 8.234, 0 failed
+progress: 54.0 s, 536.5 tps, lat 14.915 ms stddev 14.991, 0 failed
+progress: 60.0 s, 866.5 tps, lat 9.230 ms stddev 5.487, 0 failed
+transaction type: <builtin: TPC-B (sort of)>
+scaling factor: 1
+query mode: simple
+number of clients: 8
+number of threads: 1
+maximum number of tries: 1
+duration: 60 s
+number of transactions actually processed: 43936
+number of failed transactions: 0 (0.000%)
+latency average = 10.923 ms
+latency stddev = 8.358 ms
+initial connection time = 15.585 ms
+tps = 732.214936 (without initial connection time)
+```
+
+Сравниваем результаты трёх тестов:
+
 <table class='table-1 table-striped-1'>
 	<thead>
-		<tr><th>Параметры по умолчанию</th><th>Рекомендованные параметры</th></tr>
+		<tr><th>Параметры по умолчанию</th><th>Рекомендованные параметры</th><th>Рекомендованные параметры
+(после перезагрузки сервиса PostgreSQL)</th></tr>
 	</thead>
 	<tbody>
-		<tr><td>scaling factor: 1</td><td>scaling factor: 1</td></tr>
-		<tr><td>query mode: simple</td><td>query mode: simple</td></tr>
-		<tr><td>number of clients: 8</td><td>number of clients: 8</td></tr>
-		<tr><td>number of threads: 1</td><td>number of threads: 1</td></tr>
-		<tr><td>maximum number of tries: 1</td><td>maximum number of tries: 1</td></tr>
-		<tr><td>duration: 60 s</td><td>duration: 60 s</td></tr>
-		<tr><td>number of transactions actually processed: 43285</td><td>number of transactions actually processed: 44294</td></tr>
-		<tr><td>number of failed transactions: 0 (0.000%)</td><td>number of failed transactions: 0 (0.000%)</td></tr>
-		<tr><td>latency average = 11.088 ms</td><td>latency average = 10.835 ms</td></tr>
-		<tr><td>latency stddev = 13.979 ms</td><td>latency stddev = 8.563 ms</td></tr>
-		<tr><td>initial connection time = 14.789 ms</td><td>initial connection time = 15.197 ms</td></tr>
-		<tr><td>tps = 721.342332 (without initial connection time)</td><td>tps = 738.186520 (without initial connection time)</td></tr>
+		<tr><td>scaling factor: 1</td><td>scaling factor: 1</td><td>scaling factor: 1</td></tr>
+		<tr><td>query mode: simple</td><td>query mode: simple</td><td>query mode: simple</td></tr>
+		<tr><td>number of clients: 8</td><td>number of clients: 8</td><td>number of clients: 8</td></tr>
+		<tr><td>number of threads: 1</td><td>number of threads: 1</td><td>number of threads: 1</td></tr>
+		<tr><td>maximum number of tries: 1</td><td>maximum number of tries: 1</td><td>maximum number of tries: 1</td></tr>
+		<tr><td>duration: 60 s</td><td>duration: 60 s</td><td>duration: 60 s</td></tr>
+		<tr><td>number of transactions actually processed: 43285</td><td>number of transactions actually processed: 44294</td><td>number of transactions actually processed: 43936</td></tr>
+		<tr><td>number of failed transactions: 0 (0.000%)</td><td>number of failed transactions: 0 (0.000%)</td><td>number of failed transactions: 0 (0.000%)</td></tr>
+		<tr><td>latency average = 11.088 ms</td><td>latency average = 10.835 ms</td><td>latency average = 10.923 ms</td></tr>
+		<tr><td>latency stddev = 13.979 ms</td><td>latency stddev = 8.563 ms</td><td>latency stddev = 8.358 ms</td></tr>
+		<tr><td>initial connection time = 14.789 ms</td><td>initial connection time = 15.197 ms</td><td>initial connection time = 15.585 ms</td></tr>
+		<tr><td>tps = 721.342332 (without initial connection time)</td><td>tps = 738.186520 (without initial connection time)</td><td>tps = 732.214936  (without initial connection time)</td></tr>
 	</tbody>
 </table>
 
-За счет ограничения max_connections и effective_cache_size при увеличении значений остальных рекомендованных параметров мы получили небольшой прирост количества транзакций - во втором тесте за 1 минуту было обработано 44294 транзакции с пропускной способностью примерно 738 транзакций в секунду.
+За счет ограничения max_connections и effective_cache_size при увеличении значений остальных рекомендованных параметров мы получили небольшой прирост количества транзакций - во втором (и третьем) тесте за 1 минуту было обработано 44294 (43936) транзакции с пропускной способностью примерно 738 (732) транзакций в секунду.
 
 **2.** - Создаём таблицу _test_ и заполняем её тестовыми данными:
 ```
