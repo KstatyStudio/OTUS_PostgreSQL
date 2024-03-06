@@ -65,10 +65,10 @@ locks=# create extension pgrowlocks;
 CREATE EXTENSION
 ```
 
-Создаём представление _accounts_v_
+Создаём представление _accounts_v_ для просмотра информации о блокировках таблицы _accounts_:
+```
 
-
-
+```
 
 
 
