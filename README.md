@@ -96,9 +96,50 @@ WHERE locktype in ('relation','transactionid','tuple')
 AND (locktype != 'relation' OR relation = 'accounts'::regclass);
 ```
 
-**2. Сессия #1** - Смоделируем длительные блокировки:
+**2.** - Смоделируем длительные блокировки:
 
+**Сессия #1** - Определяем номер процесса:
+```
+locks=*# select pg_backend_pid();
+ pg_backend_pid
+----------------
+          89117
+(1 row)
+```
 
+Начнём транзакцию и заблокируем таблицу _accounts_:
+```
+locks=# begin;
+BEGIN
+
+locks=*# select* from accounts limit 3;
+ acc_no | amount
+--------+--------
+      1 |   1000
+      2 |   1001
+      3 |   1002
+(3 rows)
+```
+
+Посмотрим информацию о действующих на данный момент блокировках:
+```
+locks=*# select locktype, relation::regclass, virtualxid as vxid, transactionid as xid, mode, granted from pg_locks where pid=89117;
+  locktype  |   relation    | vxid  | xid |      mode       | granted
+------------+---------------+-------+-----+-----------------+---------
+ relation   | pg_locks      |       |     | AccessShareLock | t
+ relation   | accounts_pkey |       |     | AccessShareLock | t
+ relation   | accounts      |       |     | AccessShareLock | t
+ virtualxid |               | 4/227 |     | ExclusiveLock   | t
+(4 rows)
+```
+
+**Сессия #2** - Проверим журнал сообщений:
+```diff
+!devops@vmotus07:~$ sudo tail -n 10 /var/log/postgresql/postgresql-13-main.log | grep duration
+!2024-03-06 09:49:34.006 UTC [89117] postgres@locks LOG:  duration: 678.218 ms  statement: create table accounts (acc_no serial primary key, amount numeric);
+!2024-03-06 09:49:45.833 UTC [89117] postgres@locks LOG:  duration: 488.683 ms  statement: insert into accounts (amount) select generate_series (1000, 100999);
+```
+В журнал стали записываться данные о блокировках и их длительности, например видно, что создание таблицы _accounts_ вызвало блокировку длительностью 678,218 миллисекунд.
 
 
 
@@ -113,6 +154,7 @@ AND (locktype != 'relation' OR relation = 'accounts'::regclass);
 ```diff
 +devops@vmotus08:~$
 ```
+
 
 
 
