@@ -8,7 +8,7 @@
 ### Исходные данные
 ВМ (облако): Ubuntu 22.04, PostgreSQL 13
 
-SSH-сессии: 4 подключения
+SSH-сессии: 3 подключения
 
 ### Решение
 
@@ -286,15 +286,32 @@ locks=*# update accounts set amount=amount+10 where acc_no=2;
 Выполнение операции обновления вызвало появление deadlock, система выдала ошибку:
 ```diff
 +ERROR:  deadlock detected
-DETAIL:  Process 178563 waits for ShareLock on transaction 657; blocked by process 178469.
-Process 178469 waits for ShareLock on transaction 658; blocked by process 178516.
-Process 178516 waits for ShareLock on transaction 659; blocked by process 178563.
-HINT:  See server log for query details.
-CONTEXT:  while updating tuple (540,102) in relation "accounts"
++DETAIL:  Process 178563 waits for ShareLock on transaction 657; blocked by process 178469.
++Process 178469 waits for ShareLock on transaction 658; blocked by process 178516.
++Process 178516 waits for ShareLock on transaction 659; blocked by process 178563.
++HINT:  See server log for query details.
++CONTEXT:  while updating tuple (540,102) in relation "accounts"
 ```
 
 ![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/a2d98c44-4c5d-4f21-b905-10236679de6b)
 
+Завершаем транзакции во всех сессиях. Смотрим логи.
+```
+devops@vmotus07:~$ sudo tail -n 20 /var/log/postgresql/postgresql-13-main.log
+2024-03-06 14:02:34.196 UTC [178563] postgres@locks ERROR:  deadlock detected
+2024-03-06 14:02:34.196 UTC [178563] postgres@locks DETAIL:  Process 178563 waits for ShareLock on transaction 657; blocked by process 178469.
+        Process 178469 waits for ShareLock on transaction 658; blocked by process 178516.
+        Process 178516 waits for ShareLock on transaction 659; blocked by process 178563.
+        Process 178563: update accounts set amount=amount+10 where acc_no=1;
+        Process 178469: update accounts set amount=amount+10 where acc_no=2;
+        Process 178516: update accounts set amount=amount+10 where acc_no=3;
+2024-03-06 14:02:34.196 UTC [178563] postgres@locks HINT:  See server log for query details.
+2024-03-06 14:02:34.196 UTC [178563] postgres@locks CONTEXT:  while updating tuple (540,102) in relation "accounts"
+2024-03-06 14:02:34.196 UTC [178563] postgres@locks STATEMENT:  update accounts set amount=amount+10 where acc_no=1;
+2024-03-06 14:02:34.197 UTC [178516] postgres@locks LOG:  duration: 36590.025 ms  statement: update accounts set amount=amount+10 where acc_no=3;
+2024-03-06 14:08:52.279 UTC [178469] postgres@locks LOG:  duration: 538617.624 ms  statement: update accounts set amount=amount+10 where acc_no=2;
+```
+В журнале сообщений записана информация о появлении deadlock. Видно какие процессы участвовали в его формировании - 178469, 178516, 178563, а так же содержание операций (update).
 
 
 
