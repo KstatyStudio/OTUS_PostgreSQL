@@ -65,45 +65,6 @@ locks=# create extension pgrowlocks;
 CREATE EXTENSION
 ```
 
-# ПРОВЕРИТЬ
-# ПРЕДСТАВЛЕНИЯ
-#
-#
-#
-#
-
-
-Создаём представление _accounts_v_ для просмотра информации о блокировках таблицы _accounts_:
-```
-locks=# create view accounts_v as
-select '(0,'||lp||')' as ctid,
-       t_xmax as xmax,
-       case when (t_infomask & 128) > 0 then 't' end as lock_only,
-       case when (t_infomask & 4096) > 0 then 't' end as is_multi,
-       case when (t_infomask2 & 8192) > 0 then 't' end as keys_upd,
-       case when (t_infomask & 16) > 0 then 't' end as keyshr_lock,
-       case when (t_infomask & 16+64) = 16+64 then 't' end as shr_lock
-from heap_page_items(get_raw_page('accounts',0))
-order by lp;
-```
-
-Создаём представление _locks_v_ для просмотра информации о блокировках строк:
-```
-locks=# create view locks_v AS
-select pid,
-       locktype,
-       case locktype
-         when 'relation' then relation::regclass::text
-         when 'transactionid' then transactionid::text
-         when 'tuple' then relation::regclass::text||':'||tuple::text
-       end as lockid,
-       mode,
-       granted
-from pg_locks
-where locktype in ('relation','transactionid','tuple')
-and (locktype != 'relation' or relation = 'accounts'::regclass);
-```
-
 **2. - Смоделируем длительные блокировки**:
 
 **Сессия #1** - Определяем номер процесса:
@@ -313,22 +274,33 @@ devops@vmotus07:~$ sudo tail -n 20 /var/log/postgresql/postgresql-13-main.log
 ```
 В журнале сообщений записана информация о появлении deadlock. Видно какие процессы участвовали в его формировании - 178469, 178516, 178563, а так же содержание операций (update).
 
+**4. - Смоделируем взаимоблокировку двух транзакций, выполняющих update всей таблицы**:
 
-
-
-**2. Сессия #2** - Создаём базу данных _locks_, таблицу _test_, заполняем тестовыми данными:
-```diff
-!devops@vmotus08:~$
+**Сессия #1** - Начнём новую транзакцию и выполним обновление всех строк - увеличим сумму на 10,00:
+```
+locks=# begin;
+BEGIN
+locks=*# update accounts set amount=amount+10;
+UPDATE 100000
 ```
 
-**3. Сессия #3** - Создаём базу данных _locks_, таблицу _test_, заполняем тестовыми данными:
-```diff
-+devops@vmotus08:~$
+**Сессия #2** - Начнём новую транзакцию и тоже выполним обновление всех строк - увеличим сумму на 10,00:
 ```
+locks=# begin;
+BEGIN
+locks=*# update accounts set amount=amount+10;
+```
+Транзакция зависла.
 
-
-
-
-
+**Сессия #1** - Смотрим логи:
+```
+locks=*# select locktype, mode, granted, pid, pg_blocking_pids(pid) as wait_for from pg_locks where relation='accounts'::regclass;
+ locktype |       mode       | granted |  pid   | wait_for
+----------+------------------+---------+--------+----------
+ relation | RowExclusiveLock | t       | 190525 | {}
+ relation | RowExclusiveLock | t       | 190686 | {190525}
+ tuple    | ExclusiveLock    | t       | 190686 | {190525}
+(3 rows)
+```
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
