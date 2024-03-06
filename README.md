@@ -67,36 +67,36 @@ CREATE EXTENSION
 
 Создаём представление _accounts_v_ для просмотра информации о блокировках таблицы _accounts_:
 ```
-locks=# CREATE VIEW accounts_v AS
-SELECT '(0,'||lp||')' AS ctid,
+locks=# create view accounts_v as
+select '(0,'||lp||')' as ctid,
        t_xmax as xmax,
-       CASE WHEN (t_infomask & 128) > 0   THEN 't' END AS lock_only,
-       CASE WHEN (t_infomask & 4096) > 0  THEN 't' END AS is_multi,
-       CASE WHEN (t_infomask2 & 8192) > 0 THEN 't' END AS keys_upd,
-       CASE WHEN (t_infomask & 16) > 0 THEN 't' END AS keyshr_lock,
-       CASE WHEN (t_infomask & 16+64) = 16+64 THEN 't' END AS shr_lock
-FROM heap_page_items(get_raw_page('accounts',0))
-ORDER BY lp;
+       case when (t_infomask & 128) > 0 then 't' end as lock_only,
+       case when (t_infomask & 4096) > 0 then 't' end as is_multi,
+       case when (t_infomask2 & 8192) > 0 then 't' end as keys_upd,
+       case when (t_infomask & 16) > 0 then 't' end as keyshr_lock,
+       case when (t_infomask & 16+64) = 16+64 then 't' end as shr_lock
+from heap_page_items(get_raw_page('accounts',0))
+order by lp;
 ```
 
-Создаём представление __ для просмотра информации о блокировках строк:
+Создаём представление _locks_v_ для просмотра информации о блокировках строк:
 ```
-locks=# CREATE VIEW locks_v AS
-SELECT pid,
+locks=# create view locks_v AS
+select pid,
        locktype,
-       CASE locktype
-         WHEN 'relation' THEN relation::regclass::text
-         WHEN 'transactionid' THEN transactionid::text
-         WHEN 'tuple' THEN relation::regclass::text||':'||tuple::text
-       END AS lockid,
+       case locktype
+         when 'relation' then relation::regclass::text
+         when 'transactionid' then transactionid::text
+         when 'tuple' then relation::regclass::text||':'||tuple::text
+       end as lockid,
        mode,
        granted
-FROM pg_locks
-WHERE locktype in ('relation','transactionid','tuple')
-AND (locktype != 'relation' OR relation = 'accounts'::regclass);
+from pg_locks
+where locktype in ('relation','transactionid','tuple')
+and (locktype != 'relation' or relation = 'accounts'::regclass);
 ```
 
-**2.** - Смоделируем длительные блокировки:
+**2. - Смоделируем длительные блокировки**:
 
 **Сессия #1** - Определяем номер процесса:
 ```
@@ -139,7 +139,35 @@ locks=*# select locktype, relation::regclass, virtualxid as vxid, transactionid 
 !2024-03-06 09:49:34.006 UTC [89117] postgres@locks LOG:  duration: 678.218 ms  statement: create table accounts (acc_no serial primary key, amount numeric);
 !2024-03-06 09:49:45.833 UTC [89117] postgres@locks LOG:  duration: 488.683 ms  statement: insert into accounts (amount) select generate_series (1000, 100999);
 ```
-В журнал стали записываться данные о блокировках и их длительности, например видно, что создание таблицы _accounts_ вызвало блокировку длительностью 678,218 миллисекунд.
+В журнал стали записываться данные о блокировках и их длительности, например видно, что создание таблицы _accounts_ вызвало блокировку длительностью 678,218 миллисекунд, а выборка 3 строк в незавершённой транзакции не вызвала блокировок, превышающих 200 миллисекунд.
+
+**3. - Смоделируем ситуацию обновления одной и той же строки тремя командами UPDATE в разных сеансах:**
+
+**Сессия #1** - в ранее начатой транзакции выполним обновление строки - увеличим сумму на 10,00 на первом счёте (acc_no = 1):
+```
+locks=*# update accounts set amount=amount+10 where acc_no=1;
+UPDATE 1
+```
+
+**Сессия #2** - начнём новую транзакцию и выполним обновление той же строки - увеличим сумму на 20,00 на первом счёте (acc_no = 1):
+```diff
+!devops@vmotus07:~$ sudo -u postgres psql
+!psql (13.14 (Ubuntu 13.14-1.pgdg22.04+1))
+!Type "help" for help.
+
+!postgres=# \c locks
+!You are now connected to database "locks" as user "postgres".
+
+!locks=# begin;
+!BEGIN
+
+!locks=*# update accounts set amount=amount+20 where acc_no=1;
+```
+
+
+
+
+
 
 
 
