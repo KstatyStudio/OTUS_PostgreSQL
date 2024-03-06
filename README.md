@@ -65,6 +65,14 @@ locks=# create extension pgrowlocks;
 CREATE EXTENSION
 ```
 
+# ПРОВЕРИТЬ
+# ПРЕДСТАВЛЕНИЯ
+#
+#
+#
+#
+
+
 Создаём представление _accounts_v_ для просмотра информации о блокировках таблицы _accounts_:
 ```
 locks=# create view accounts_v as
@@ -103,11 +111,11 @@ and (locktype != 'relation' or relation = 'accounts'::regclass);
 locks=*# select pg_backend_pid();
  pg_backend_pid
 ----------------
-          89117
+          135902
 (1 row)
 ```
 
-Начнём транзакцию и заблокируем таблицу _accounts_:
+Начнём транзакцию и выполним запрос к таблице _accounts_, а так же обновим все строки:
 ```
 locks=# begin;
 BEGIN
@@ -119,27 +127,19 @@ locks=*# select* from accounts limit 3;
       2 |   1001
       3 |   1002
 (3 rows)
-```
 
-Посмотрим информацию о действующих на данный момент блокировках:
-```
-locks=*# select locktype, relation::regclass, virtualxid as vxid, transactionid as xid, mode, granted from pg_locks where pid=89117;
-  locktype  |   relation    | vxid  | xid |      mode       | granted
-------------+---------------+-------+-----+-----------------+---------
- relation   | pg_locks      |       |     | AccessShareLock | t
- relation   | accounts_pkey |       |     | AccessShareLock | t
- relation   | accounts      |       |     | AccessShareLock | t
- virtualxid |               | 4/227 |     | ExclusiveLock   | t
-(4 rows)
+locks=*# update accounts set amount=amount+10;
+UPDATE 100000
 ```
 
 **Сессия #2** - Проверим журнал сообщений:
 ```diff
 !devops@vmotus07:~$ sudo tail -n 10 /var/log/postgresql/postgresql-13-main.log | grep duration
-!2024-03-06 09:49:34.006 UTC [89117] postgres@locks LOG:  duration: 678.218 ms  statement: create table accounts (acc_no serial primary key, amount numeric);
-!2024-03-06 09:49:45.833 UTC [89117] postgres@locks LOG:  duration: 488.683 ms  statement: insert into accounts (amount) select generate_series (1000, 100999);
+!2024-03-06 11:57:34.965 UTC [135902] postgres@locks LOG:  duration: 372.286 ms  statement: insert into accounts (amount) select generate_series (1000, 100999);
+!2024-03-06 11:57:42.626 UTC [135902] postgres@locks LOG:  duration: 257.364 ms  statement: create extension pageinspect;
+!2024-03-06 12:16:01.976 UTC [135902] postgres@locks LOG:  duration: 596.174 ms  statement: update accounts set amount=amount+10;
 ```
-В журнал стали записываться данные о блокировках и их длительности, например видно, что создание таблицы _accounts_ вызвало блокировку длительностью 678,218 миллисекунд, а выборка 3 строк в незавершённой транзакции не вызвала блокировок, превышающих 200 миллисекунд.
+В журнал стали записываться данные о блокировках и их длительности, например видно, что заполнение данными таблицы _accounts_ вызвало блокировку длительностью 372 миллисекунды, а выборка 3 строк в незавершённой транзакции не вызвала блокировок, превышающих 200 миллисекунд. Подключение расширения "подвисло" на 257 миллисекунд. Обновление всех строк таблицы _account_ вызвало блокировку на 596 миллисекунд.
 
 **3. - Смоделируем ситуацию обновления одной и той же строки тремя командами UPDATE в разных сеансах:**
 
