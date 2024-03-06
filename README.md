@@ -67,13 +67,7 @@ CREATE EXTENSION
 
 Создаём представление _accounts_v_ для просмотра информации о блокировках таблицы _accounts_:
 ```
-
-```
-
-
-
-
-postgres=# CREATE VIEW accounts_v AS
+locks=# CREATE VIEW accounts_v AS
 SELECT '(0,'||lp||')' AS ctid,
        t_xmax as xmax,
        CASE WHEN (t_infomask & 128) > 0   THEN 't' END AS lock_only,
@@ -83,9 +77,11 @@ SELECT '(0,'||lp||')' AS ctid,
        CASE WHEN (t_infomask & 16+64) = 16+64 THEN 't' END AS shr_lock
 FROM heap_page_items(get_raw_page('accounts',0))
 ORDER BY lp;
+```
 
-
-postgres=# CREATE VIEW locks_v AS
+Создаём представление __ для просмотра информации о блокировках строк:
+```
+locks=# CREATE VIEW locks_v AS
 SELECT pid,
        locktype,
        CASE locktype
@@ -98,6 +94,10 @@ SELECT pid,
 FROM pg_locks
 WHERE locktype in ('relation','transactionid','tuple')
 AND (locktype != 'relation' OR relation = 'accounts'::regclass);
+```
+
+**2. Сессия #1** - Смоделируем длительные блокировки:
+
 
 
 
