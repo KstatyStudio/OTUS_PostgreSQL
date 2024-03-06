@@ -137,6 +137,7 @@ ROLLBACK
 
 **Сессия #2** - Проверим журнал сообщений:
 ```diff
+!locks=# \q
 !devops@vmotus07:~$ sudo tail -n 10 /var/log/postgresql/postgresql-13-main.log | grep duration
 !2024-03-06 11:57:34.965 UTC [135902] postgres@locks LOG:  duration: 372.286 ms  statement: insert into accounts (amount) select generate_series (1000, 100999);
 !2024-03-06 11:57:42.626 UTC [135902] postgres@locks LOG:  duration: 257.364 ms  statement: create extension pageinspect;
