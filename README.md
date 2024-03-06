@@ -8,7 +8,7 @@
 ### Исходные данные
 ВМ (облако): Ubuntu 22.04, PostgreSQL 13
 
-SSH-сессии: 3 подключения
+SSH-сессии: 4 подключения
 
 ### Решение
 
@@ -220,25 +220,80 @@ locks=*# select locktype, mode, granted, pid, pg_blocking_pids(pid) as wait_for 
 
 **3. - Смоделируем взаимоблокировку трех транзакций**:
 
-![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/fbc8e9e8-e083-45e5-bbcb-c90fa737f1a7)
+![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/b5e47004-5f38-4014-b173-c50f5aa7fa0c)
 
+**Сессия #1** - Начнём новую транзакцию и выполним обновление строки - уменьшим сумму на 10,00 на первом счёте (**acc_no = 1**):
+```
+locks=# select pg_backend_pid();
+ pg_backend_pid
+----------------
+         178469
+(1 row)
 
+locks=# begin;
+BEGIN
 
-
-
-**Сессия #1** - Начнём новую транзакцию и выполним обновление строки - уменьшим сумму на 10,00 на первом счёте (acc_no = 1):
+locks=*# update accounts set amount=amount-10 where acc_no=1;
+UPDATE 1
 ```
 
+**Сессия #2** - Начнём новую транзакцию и выполним обновление строки - уменьшим сумму на 10,00 на втором счёте (**acc_no = 2**):
+```diff
+!locks=# select pg_backend_pid();
+! pg_backend_pid
+!----------------
+!         178516
+!(1 row)
+
+!locks=# begin;
+!BEGIN
+
+!locks=*# update accounts set amount=amount-10 where acc_no=2;
+!UPDATE 1
 ```
 
+**Сессия #3** - Начнём новую транзакцию и выполним обновление строки - уменьшим сумму на 10,00 на третьем счёте (**acc_no = 3**):
+```diff
++locks=# select pg_backend_pid();
++ pg_backend_pid
++----------------
++         178563
++(1 row)
 
++locks=# begin;
++BEGIN
 
++locks=*# update accounts set amount=amount-10 where acc_no=3;
++UPDATE 1
+```
 
+**Сессия #1** - Выполним обновление строки - увеличим сумму на 10,00 на втором счёте (**acc_no = 2**):
+```
+locks=*# update accounts set amount=amount+10 where acc_no=2;
+```
+Выполнение операции обновления зависло.
 
+**Сессия #2** - Выполним обновление строки - увеличим сумму на 10,00 на третьем счёте (**acc_no = 3**):
+```diff
+!locks=*# update accounts set amount=amount+10 where acc_no=3;
+```
+Выполнение операции обновления зависло.
 
-![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/92ca550f-9e5f-4d25-8aef-65497cb23b59)
+**Сессия #3** - Выполним обновление строки - увеличим сумму на 10,00 на первом счёте (**acc_no = 1**):
+```diff
++locks=*# update accounts set amount=amount+10 where acc_no=1;
+```
+Выполнение операции обновления вызвало появление deadlock, система выдала ошибку:
+```diff
++ERROR:  deadlock detected
+DETAIL:  Process 178563 waits for ShareLock on transaction 657; blocked by process 178469.
+Process 178469 waits for ShareLock on transaction 658; blocked by process 178516.
+Process 178516 waits for ShareLock on transaction 659; blocked by process 178563.
+HINT:  See server log for query details.
+CONTEXT:  while updating tuple (540,102) in relation "accounts"
+```
 
-
+![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/a2d98c44-4c5d-4f21-b905-10236679de6b)
 
 
 
