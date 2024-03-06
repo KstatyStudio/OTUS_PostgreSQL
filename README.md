@@ -130,6 +130,9 @@ locks=*# select* from accounts limit 3;
 
 locks=*# update accounts set amount=amount+10;
 UPDATE 100000
+
+locks=*# rollback;
+ROLLBACK
 ```
 
 **Сессия #2** - Проверим журнал сообщений:
@@ -143,7 +146,7 @@ UPDATE 100000
 
 **3. - Смоделируем ситуацию обновления одной и той же строки тремя командами UPDATE в разных сеансах:**
 
-**Сессия #1** - в ранее начатой транзакции выполним обновление строки - увеличим сумму на 10,00 на первом счёте (acc_no = 1):
+**Сессия #1** - Начнём новую транзакцию и выполним обновление строки - увеличим сумму на 10,00 на первом счёте (acc_no = 1):
 ```
 locks=*# update accounts set amount=amount+10 where acc_no=1;
 UPDATE 1
@@ -157,6 +160,12 @@ UPDATE 1
 
 !postgres=# \c locks
 !You are now connected to database "locks" as user "postgres".
+
+!locks=# select pg_backend_pid();
+! pg_backend_pid
+!----------------
+!         147821
+!(1 row)
 
 !locks=# begin;
 !BEGIN
@@ -174,6 +183,12 @@ UPDATE 1
 +postgres=# \c locks
 +You are now connected to database "locks" as user "postgres".
 
++locks=# select pg_backend_pid();
++ pg_backend_pid
++----------------
++         147916
++(1 row)
+
 +locks=# begin;
 +BEGIN
 
@@ -186,19 +201,21 @@ UPDATE 1
 locks=*# select locktype, mode, granted, pid, pg_blocking_pids(pid) as wait_for from pg_locks where relation='accounts'::regclass;
  locktype |       mode       | granted |  pid   | wait_for
 ----------+------------------+---------+--------+----------
- relation | RowExclusiveLock | t       | 115932 | {110821}
- relation | AccessShareLock  | t       |  89117 | {}
- relation | RowExclusiveLock | t       |  89117 | {}
- relation | RowExclusiveLock | t       | 110821 | {89117}
- tuple    | ExclusiveLock    | t       | 110821 | {89117}
- tuple    | ExclusiveLock    | f       | 115932 | {110821}
-(6 rows)
+ relation | RowExclusiveLock | t       | 147821 | {135902}
+ relation | RowExclusiveLock | t       | 147916 | {147821}
+ relation | RowExclusiveLock | t       | 135902 | {}
+ tuple    | ExclusiveLock    | t       | 147821 | {135902}
+ tuple    | ExclusiveLock    | f       | 147916 | {147821}
+(5 rows)
 ```
-Транзакция в сессии #1 (pid = 89117) выполняется, таблица заблокирована в разделяемом режиме, строка - в исключительном.
-Транзакция в сессии #2 (pid = ) ожидает снятия блокировок таблицы и строки, наложенных процессом в сессии #1 (pid = ).
-Транзакция в сессии #3 (pid = ) ожидает снятия блокировок, наложенных процессом в сессии #2 (pid = ).
+Транзакция в сессии #1 (pid = 135902) выполняется, строка заблокирована в исключительном режиме.
+Транзакция в сессии #2 (pid = 147821) ожидает снятия блокировок таблицы и строки, наложенных процессом в сессии #1 (pid = 135902).
+Транзакция в сессии #3 (pid = 147916) ожидает снятия блокировок, наложенных процессом в сессии #2 (pid = 147821).
 
-![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/45f49b19-96a6-4ed0-961e-9024381c71a3)
+
+![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/36e76dcc-72f3-4038-9b29-a0fb949f5e9f)
+
+
 
 **2. Сессия #2** - Создаём базу данных _locks_, таблицу _test_, заполняем тестовыми данными:
 ```diff
