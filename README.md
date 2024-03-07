@@ -278,6 +278,12 @@ devops@vmotus07:~$ sudo tail -n 20 /var/log/postgresql/postgresql-13-main.log
 
 **Сессия #1** - Начнём новую транзакцию и выполним обновление всех строк - увеличим сумму на 10,00:
 ```
+locks=# select pg_backend_pid();
+ pg_backend_pid
+----------------
+         190525
+(1 row)
+
 locks=# begin;
 BEGIN
 locks=*# update accounts set amount=amount+10;
@@ -285,10 +291,16 @@ UPDATE 100000
 ```
 
 **Сессия #2** - Начнём новую транзакцию и тоже выполним обновление всех строк - увеличим сумму на 10,00:
-```
-locks=# begin;
-BEGIN
-locks=*# update accounts set amount=amount+10;
+```diff
+!locks=# select pg_backend_pid();
+! pg_backend_pid
+!----------------
+!         190686
+!(1 row)
+!
+!locks=# begin;
+!BEGIN
+!locks=*# update accounts set amount=amount+10;
 ```
 Транзакция зависла.
 
@@ -302,5 +314,8 @@ locks=*# select locktype, mode, granted, pid, pg_blocking_pids(pid) as wait_for 
  tuple    | ExclusiveLock    | t       | 190686 | {190525}
 (3 rows)
 ```
+Транзакция в сессии #1 (pid = 190525) выполняется, эксклюзивная блокировка устанавливается на строки, данный режим позволяет выполнять другие RowExclusiveLock.
+Транзакция в сессии #2 (pid = 190686) попыталась обновить уже заблокированную транзакцией #1 строку и ожидает снятия блокировки.
+Взаимоблокировка в данном случае не произошла. Но если бы транзакция #2 начала обновлять строки в другом порядке, то произошла бы взаимоблокировка. 
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
