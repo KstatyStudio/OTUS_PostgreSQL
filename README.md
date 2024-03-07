@@ -171,8 +171,11 @@ locks=*# select locktype, mode, granted, pid, pg_blocking_pids(pid) as wait_for 
 (5 rows)
 ```
 Транзакция в сессии #1 (pid = 135902) выполняется, строка заблокирована в эксклюзивном (исключительном) режиме.
+
 Транзакция в сессии #2 (pid = 147821) ожидает снятия блокировки строки, наложенной процессом в сессии #1 (pid = 135902).
+
 Транзакция в сессии #3 (pid = 147916) ожидает снятия блокировок, наложенных процессом в сессии #2 (pid = 147821).
+
 Обе ожидающие транзакции создали свои версии строк (tuple), при этом блокировка tuple ExclusiveLock в сессии #3 (pid = 147916) не получила разрешения (granted false).
 
 ![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/36e76dcc-72f3-4038-9b29-a0fb949f5e9f)
@@ -304,7 +307,7 @@ UPDATE 100000
 ```
 Транзакция зависла.
 
-**Сессия #1** - Смотрим логи:
+**Сессия #1** - Смотрим блокировки:
 ```
 locks=*# select locktype, mode, granted, pid, pg_blocking_pids(pid) as wait_for from pg_locks where relation='accounts'::regclass;
  locktype |       mode       | granted |  pid   | wait_for
@@ -315,7 +318,9 @@ locks=*# select locktype, mode, granted, pid, pg_blocking_pids(pid) as wait_for 
 (3 rows)
 ```
 Транзакция в сессии #1 (pid = 190525) выполняется, эксклюзивная блокировка устанавливается на строки, данный режим позволяет выполнять другие RowExclusiveLock.
+
 Транзакция в сессии #2 (pid = 190686) попыталась обновить уже заблокированную транзакцией #1 строку и ожидает снятия блокировки.
+
 Взаимоблокировка в данном случае не произошла. Но если бы транзакция #2 начала обновлять строки в другом порядке, то произошла бы взаимоблокировка. 
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
