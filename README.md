@@ -110,6 +110,9 @@ ROLLBACK
 
 **Сессия #1** - Начнём новую транзакцию и выполним обновление строки - увеличим сумму на 10,00 на первом счёте (acc_no = 1):
 ```
+locks=# begin;
+BEGIN
+
 locks=*# update accounts set amount=amount+10 where acc_no=1;
 UPDATE 1
 ```
