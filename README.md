@@ -37,7 +37,7 @@ postgres=# select pg_reload_conf();
 postgres=# select setting, unit from pg_settings where name='checkpoint_timeout';
  setting | unit
 ---------+------
- 30      | s
+ 30      | s\q
 (1 row)
 ```
 
@@ -257,6 +257,26 @@ postgres=# select setting, unit from pg_settings where name='synchronous_commit'
 (1 row)
 ```
 По умолчнию включён синхронный режим. Изменим режим на асинхронный и проведём повторное нагрузочное тестирование:
+```
+postgres=# alter system set synchronous_commit=off;
+ALTER SYSTEM
+
+postgres=# select pg_reload_conf();
+ pg_reload_conf
+----------------
+ t
+(1 row)
+
+postgres=# select setting, unit from pg_settings where name='synchronous_commit';
+ setting | unit
+---------+------
+ off     |
+(1 row)
+
+postgres=# \q
+
+
+```
 
 
 
