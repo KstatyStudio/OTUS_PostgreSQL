@@ -43,10 +43,10 @@ postgres=# select setting, unit from pg_settings where name='checkpoint_timeout'
 
 Смотрим значение LSN:
 ```
-postgres=# SELECT pg_current_wal_lsn(), pg_current_wal_insert_lsn();
+postgres=# select pg_current_wal_lsn(), pg_current_wal_insert_lsn();
  pg_current_wal_lsn | pg_current_wal_insert_lsn
 --------------------+---------------------------
- 0/66DBB808         | 0/66DBB808
+ 0/84636398         | 0/84636398
 (1 row)
 
 postgres=# \q
@@ -76,117 +76,117 @@ done in 0.78 s (drop tables 0.00 s, create tables 0.01 s, client-side generate 0
 ```
 postgres@vmotus07:/home/devops$ pgbench -c8 -P 6 -T 600 -U postgres postgres
 starting vacuum...end.
-progress: 6.0 s, 314.5 tps, lat 25.274 ms stddev 30.549
-progress: 12.0 s, 416.8 tps, lat 19.215 ms stddev 19.944
-progress: 18.0 s, 283.3 tps, lat 28.256 ms stddev 24.444
-progress: 24.0 s, 391.0 tps, lat 20.448 ms stddev 22.382
-progress: 30.0 s, 361.3 tps, lat 22.133 ms stddev 35.871
-progress: 36.0 s, 276.0 tps, lat 28.788 ms stddev 34.490
-progress: 42.0 s, 250.7 tps, lat 32.025 ms stddev 27.364
-progress: 48.0 s, 286.3 tps, lat 28.073 ms stddev 25.037
-progress: 54.0 s, 327.8 tps, lat 24.315 ms stddev 34.411
-progress: 60.0 s, 391.0 tps, lat 20.525 ms stddev 21.057
-progress: 66.0 s, 283.3 tps, lat 28.237 ms stddev 40.113
-progress: 72.0 s, 399.5 tps, lat 20.020 ms stddev 20.625
-progress: 78.0 s, 388.2 tps, lat 20.501 ms stddev 21.276
-progress: 84.0 s, 378.7 tps, lat 21.252 ms stddev 22.212
-progress: 90.0 s, 398.3 tps, lat 20.079 ms stddev 33.207
-progress: 96.0 s, 288.3 tps, lat 27.703 ms stddev 36.854
-progress: 102.0 s, 366.3 tps, lat 21.880 ms stddev 21.147
-progress: 108.0 s, 433.5 tps, lat 18.309 ms stddev 19.881
-progress: 114.0 s, 439.2 tps, lat 18.336 ms stddev 20.709
-progress: 120.0 s, 369.0 tps, lat 21.676 ms stddev 33.636
-progress: 126.0 s, 330.5 tps, lat 24.220 ms stddev 32.855
-progress: 132.0 s, 387.3 tps, lat 20.631 ms stddev 20.826
-progress: 138.0 s, 369.8 tps, lat 21.671 ms stddev 20.978
-progress: 144.0 s, 360.7 tps, lat 21.434 ms stddev 23.517
-progress: 150.0 s, 423.0 tps, lat 19.550 ms stddev 26.602
-progress: 156.0 s, 288.5 tps, lat 27.097 ms stddev 37.531
-progress: 162.0 s, 430.8 tps, lat 18.950 ms stddev 27.114
-progress: 168.0 s, 380.7 tps, lat 21.060 ms stddev 21.710
-progress: 174.0 s, 372.8 tps, lat 21.387 ms stddev 22.318
-progress: 180.0 s, 297.7 tps, lat 26.851 ms stddev 39.473
-progress: 186.0 s, 329.0 tps, lat 24.397 ms stddev 32.235
-progress: 192.0 s, 276.5 tps, lat 28.922 ms stddev 34.886
-progress: 198.0 s, 391.3 tps, lat 20.415 ms stddev 21.511
-progress: 204.0 s, 364.5 tps, lat 21.971 ms stddev 23.331
-progress: 210.0 s, 317.8 tps, lat 25.025 ms stddev 35.488
-progress: 216.0 s, 308.7 tps, lat 26.034 ms stddev 29.571
-progress: 222.0 s, 333.7 tps, lat 23.843 ms stddev 30.171
-progress: 228.0 s, 421.7 tps, lat 19.097 ms stddev 21.604
-progress: 234.0 s, 453.2 tps, lat 17.678 ms stddev 19.687
-progress: 240.0 s, 431.5 tps, lat 18.393 ms stddev 30.326
-progress: 246.0 s, 354.5 tps, lat 22.711 ms stddev 27.434
-progress: 252.0 s, 376.0 tps, lat 21.303 ms stddev 32.062
-progress: 258.0 s, 386.3 tps, lat 20.693 ms stddev 21.398
-progress: 264.0 s, 287.7 tps, lat 27.792 ms stddev 31.721
-progress: 270.0 s, 385.3 tps, lat 20.740 ms stddev 20.722
-progress: 276.0 s, 282.8 tps, lat 28.272 ms stddev 27.634
-progress: 282.0 s, 359.2 tps, lat 22.248 ms stddev 29.702
-progress: 288.0 s, 409.0 tps, lat 19.627 ms stddev 20.837
-progress: 294.0 s, 396.2 tps, lat 20.206 ms stddev 21.275
-progress: 300.0 s, 404.0 tps, lat 19.716 ms stddev 31.930
-progress: 306.0 s, 334.2 tps, lat 24.048 ms stddev 26.227
-progress: 312.0 s, 376.3 tps, lat 21.253 ms stddev 30.812
-progress: 318.0 s, 392.5 tps, lat 20.371 ms stddev 20.265
-progress: 324.0 s, 372.2 tps, lat 21.510 ms stddev 22.570
-progress: 330.0 s, 399.3 tps, lat 20.032 ms stddev 29.830
-progress: 336.0 s, 316.0 tps, lat 25.262 ms stddev 31.524
-progress: 342.0 s, 444.3 tps, lat 18.026 ms stddev 18.627
-progress: 348.0 s, 417.3 tps, lat 19.161 ms stddev 30.969
-progress: 354.0 s, 381.3 tps, lat 20.952 ms stddev 22.895
-progress: 360.0 s, 326.0 tps, lat 24.394 ms stddev 34.663
-progress: 366.0 s, 197.7 tps, lat 40.666 ms stddev 32.252
-progress: 372.0 s, 315.5 tps, lat 25.426 ms stddev 23.708
-progress: 378.0 s, 394.2 tps, lat 20.308 ms stddev 29.817
-progress: 384.0 s, 389.5 tps, lat 20.386 ms stddev 20.442
-progress: 390.0 s, 298.5 tps, lat 26.992 ms stddev 39.289
-progress: 396.0 s, 332.8 tps, lat 24.032 ms stddev 28.562
-progress: 402.0 s, 421.2 tps, lat 19.000 ms stddev 19.919
-progress: 408.0 s, 373.3 tps, lat 21.238 ms stddev 34.636
-progress: 414.0 s, 391.3 tps, lat 20.627 ms stddev 22.131
-progress: 420.0 s, 379.5 tps, lat 21.068 ms stddev 33.913
-progress: 426.0 s, 302.3 tps, lat 26.442 ms stddev 26.458
-progress: 432.0 s, 383.8 tps, lat 20.843 ms stddev 20.012
-progress: 438.0 s, 323.7 tps, lat 24.544 ms stddev 34.777
-progress: 444.0 s, 322.8 tps, lat 24.897 ms stddev 25.211
-progress: 450.0 s, 416.3 tps, lat 19.272 ms stddev 28.121
-progress: 456.0 s, 320.3 tps, lat 24.976 ms stddev 26.244
-progress: 462.0 s, 422.2 tps, lat 18.924 ms stddev 20.130
-progress: 468.0 s, 384.2 tps, lat 20.845 ms stddev 30.538
-progress: 474.0 s, 393.7 tps, lat 20.331 ms stddev 22.388
-progress: 480.0 s, 429.3 tps, lat 18.634 ms stddev 29.531
-progress: 486.0 s, 354.8 tps, lat 22.335 ms stddev 28.943
-progress: 492.0 s, 430.5 tps, lat 18.740 ms stddev 19.160
-progress: 498.0 s, 436.7 tps, lat 18.329 ms stddev 19.214
-progress: 504.0 s, 374.8 tps, lat 21.255 ms stddev 32.156
-progress: 510.0 s, 295.7 tps, lat 27.140 ms stddev 36.240
-progress: 516.0 s, 312.8 tps, lat 25.459 ms stddev 34.391
-progress: 522.0 s, 270.7 tps, lat 29.652 ms stddev 33.184
-progress: 528.0 s, 402.0 tps, lat 19.727 ms stddev 20.315
-progress: 534.0 s, 314.7 tps, lat 25.637 ms stddev 34.859
-progress: 540.0 s, 364.8 tps, lat 21.897 ms stddev 29.305
-progress: 546.0 s, 231.5 tps, lat 34.588 ms stddev 40.036
-progress: 552.0 s, 336.7 tps, lat 23.832 ms stddev 23.582
-progress: 558.0 s, 401.2 tps, lat 19.939 ms stddev 20.987
-progress: 564.0 s, 336.5 tps, lat 23.778 ms stddev 35.131
-progress: 570.0 s, 351.8 tps, lat 22.732 ms stddev 35.279
-progress: 576.0 s, 325.2 tps, lat 24.569 ms stddev 35.740
-progress: 582.0 s, 317.0 tps, lat 25.167 ms stddev 23.949
-progress: 588.0 s, 397.3 tps, lat 20.120 ms stddev 21.138
-progress: 594.0 s, 305.0 tps, lat 25.852 ms stddev 37.002
-progress: 600.0 s, 443.7 tps, lat 18.271 ms stddev 21.063
+progress: 6.0 s, 407.0 tps, lat 19.549 ms stddev 21.671
+progress: 12.0 s, 379.0 tps, lat 21.096 ms stddev 21.838
+progress: 18.0 s, 441.0 tps, lat 18.052 ms stddev 19.820
+progress: 24.0 s, 301.3 tps, lat 26.722 ms stddev 32.156
+progress: 30.0 s, 403.2 tps, lat 19.859 ms stddev 20.751
+progress: 36.0 s, 361.0 tps, lat 21.953 ms stddev 33.505
+progress: 42.0 s, 378.7 tps, lat 21.270 ms stddev 32.432
+progress: 48.0 s, 323.5 tps, lat 24.790 ms stddev 23.420
+progress: 54.0 s, 373.7 tps, lat 21.406 ms stddev 27.703
+progress: 60.0 s, 465.8 tps, lat 17.172 ms stddev 18.507
+progress: 66.0 s, 385.3 tps, lat 20.645 ms stddev 27.539
+progress: 72.0 s, 386.2 tps, lat 20.839 ms stddev 26.914
+progress: 78.0 s, 512.5 tps, lat 15.604 ms stddev 17.544
+progress: 84.0 s, 348.8 tps, lat 22.772 ms stddev 29.314
+progress: 90.0 s, 414.2 tps, lat 19.447 ms stddev 20.343
+progress: 96.0 s, 349.5 tps, lat 22.755 ms stddev 33.305
+progress: 102.0 s, 385.8 tps, lat 20.844 ms stddev 23.686
+progress: 108.0 s, 393.2 tps, lat 20.328 ms stddev 21.885
+progress: 114.0 s, 355.8 tps, lat 22.520 ms stddev 27.132
+progress: 120.0 s, 459.8 tps, lat 17.261 ms stddev 18.244
+progress: 126.0 s, 423.8 tps, lat 18.967 ms stddev 19.576
+progress: 132.0 s, 389.5 tps, lat 20.538 ms stddev 28.433
+progress: 138.0 s, 442.7 tps, lat 18.128 ms stddev 19.758
+progress: 144.0 s, 260.8 tps, lat 30.528 ms stddev 27.070
+progress: 150.0 s, 430.0 tps, lat 18.617 ms stddev 19.198
+progress: 156.0 s, 452.0 tps, lat 17.741 ms stddev 19.546
+progress: 162.0 s, 416.3 tps, lat 19.240 ms stddev 31.933
+progress: 168.0 s, 392.7 tps, lat 20.235 ms stddev 20.554
+progress: 174.0 s, 197.8 tps, lat 40.680 ms stddev 31.026
+progress: 180.0 s, 362.2 tps, lat 22.111 ms stddev 23.258
+progress: 186.0 s, 429.5 tps, lat 18.414 ms stddev 20.040
+progress: 192.0 s, 342.5 tps, lat 23.458 ms stddev 38.739
+progress: 198.0 s, 372.0 tps, lat 21.656 ms stddev 21.667
+progress: 204.0 s, 295.0 tps, lat 26.923 ms stddev 29.282
+progress: 210.0 s, 436.5 tps, lat 18.458 ms stddev 19.486
+progress: 216.0 s, 405.2 tps, lat 19.588 ms stddev 21.222
+progress: 222.0 s, 375.0 tps, lat 21.441 ms stddev 35.986
+progress: 228.0 s, 453.3 tps, lat 17.552 ms stddev 19.426
+progress: 234.0 s, 353.2 tps, lat 22.831 ms stddev 26.641
+progress: 240.0 s, 453.0 tps, lat 17.650 ms stddev 19.179
+progress: 246.0 s, 420.0 tps, lat 19.040 ms stddev 20.847
+progress: 252.0 s, 354.8 tps, lat 22.529 ms stddev 38.615
+progress: 258.0 s, 393.0 tps, lat 20.380 ms stddev 20.636
+progress: 264.0 s, 304.0 tps, lat 26.333 ms stddev 30.380
+progress: 270.0 s, 439.3 tps, lat 18.068 ms stddev 20.928
+progress: 276.0 s, 412.5 tps, lat 19.469 ms stddev 21.128
+progress: 282.0 s, 388.0 tps, lat 20.694 ms stddev 31.330
+progress: 288.0 s, 407.5 tps, lat 19.632 ms stddev 26.216
+progress: 294.0 s, 364.7 tps, lat 21.942 ms stddev 29.452
+progress: 300.0 s, 381.2 tps, lat 20.978 ms stddev 21.266
+progress: 306.0 s, 453.5 tps, lat 17.599 ms stddev 19.210
+progress: 312.0 s, 338.7 tps, lat 23.513 ms stddev 38.207
+progress: 318.0 s, 428.0 tps, lat 18.829 ms stddev 27.097
+progress: 324.0 s, 295.0 tps, lat 27.115 ms stddev 27.181
+progress: 330.0 s, 455.5 tps, lat 17.489 ms stddev 18.917
+progress: 336.0 s, 432.3 tps, lat 18.539 ms stddev 20.192
+progress: 342.0 s, 378.2 tps, lat 21.208 ms stddev 33.687
+progress: 348.0 s, 435.3 tps, lat 18.355 ms stddev 27.761
+progress: 354.0 s, 363.2 tps, lat 21.895 ms stddev 24.403
+progress: 360.0 s, 414.3 tps, lat 19.425 ms stddev 19.798
+progress: 366.0 s, 401.5 tps, lat 19.842 ms stddev 21.979
+progress: 372.0 s, 376.3 tps, lat 21.353 ms stddev 35.317
+progress: 378.0 s, 429.3 tps, lat 18.639 ms stddev 30.859
+progress: 384.0 s, 274.8 tps, lat 28.960 ms stddev 37.445
+progress: 390.0 s, 306.3 tps, lat 26.245 ms stddev 23.798
+progress: 396.0 s, 406.8 tps, lat 19.595 ms stddev 20.675
+progress: 402.0 s, 366.3 tps, lat 21.906 ms stddev 33.333
+progress: 408.0 s, 350.2 tps, lat 22.863 ms stddev 32.088
+progress: 414.0 s, 336.2 tps, lat 23.771 ms stddev 27.951
+progress: 420.0 s, 390.0 tps, lat 20.526 ms stddev 21.697
+progress: 426.0 s, 381.3 tps, lat 20.877 ms stddev 21.770
+progress: 432.0 s, 366.3 tps, lat 21.847 ms stddev 33.907
+progress: 438.0 s, 440.5 tps, lat 18.214 ms stddev 19.280
+progress: 444.0 s, 271.0 tps, lat 29.353 ms stddev 43.022
+progress: 450.0 s, 452.3 tps, lat 17.813 ms stddev 19.302
+progress: 456.0 s, 408.7 tps, lat 19.512 ms stddev 20.728
+progress: 462.0 s, 368.5 tps, lat 21.772 ms stddev 33.171
+progress: 468.0 s, 435.7 tps, lat 18.346 ms stddev 19.197
+progress: 474.0 s, 310.7 tps, lat 25.734 ms stddev 38.660
+progress: 480.0 s, 416.7 tps, lat 19.225 ms stddev 20.551
+progress: 486.0 s, 397.2 tps, lat 20.064 ms stddev 21.786
+progress: 492.0 s, 371.2 tps, lat 21.647 ms stddev 32.130
+progress: 498.0 s, 479.7 tps, lat 16.562 ms stddev 18.320
+progress: 504.0 s, 290.2 tps, lat 27.768 ms stddev 43.781
+progress: 510.0 s, 334.0 tps, lat 23.943 ms stddev 23.067
+progress: 516.0 s, 426.7 tps, lat 18.613 ms stddev 20.594
+progress: 522.0 s, 387.7 tps, lat 20.795 ms stddev 31.022
+progress: 528.0 s, 427.2 tps, lat 18.717 ms stddev 19.556
+progress: 534.0 s, 368.0 tps, lat 21.601 ms stddev 32.424
+progress: 540.0 s, 413.2 tps, lat 19.472 ms stddev 20.652
+progress: 546.0 s, 418.5 tps, lat 19.127 ms stddev 20.308
+progress: 552.0 s, 379.0 tps, lat 21.101 ms stddev 32.889
+progress: 558.0 s, 334.7 tps, lat 23.898 ms stddev 22.873
+progress: 564.0 s, 287.3 tps, lat 27.861 ms stddev 45.072
+progress: 570.0 s, 407.5 tps, lat 19.613 ms stddev 21.114
+progress: 576.0 s, 405.2 tps, lat 19.595 ms stddev 21.075
+progress: 582.0 s, 353.5 tps, lat 22.824 ms stddev 33.726
+progress: 588.0 s, 473.5 tps, lat 16.865 ms stddev 17.848
+progress: 594.0 s, 333.8 tps, lat 24.008 ms stddev 28.048
+progress: 600.0 s, 383.8 tps, lat 20.836 ms stddev 30.458
 transaction type: <builtin: TPC-B (sort of)>
 scaling factor: 1
 query mode: simple
 number of clients: 8
 number of threads: 1
 duration: 600 s
-number of transactions actually processed: 215461
-latency average = 22.277 ms
-latency stddev = 27.929 ms
-tps = 359.084651 (including connections establishing)
-tps = 359.085780 (excluding connections establishing)
+number of transactions actually processed: 231179
+latency average = 20.762 ms
+latency stddev = 26.352 ms
+tps = 385.287494 (including connections establishing)
+tps = 385.288567 (excluding connections establishing)
 ```
 
 **3.** - Оценим объем сгенерированных журнальных записей.
@@ -197,23 +197,23 @@ postgres@vmotus07:/home/devops$ psql
 psql (13.14 (Ubuntu 13.14-1.pgdg22.04+1))
 Type "help" for help.
 
-postgres=# SELECT pg_current_wal_lsn(), pg_current_wal_insert_lsn();
+postgres=# select pg_current_wal_lsn(), pg_current_wal_insert_lsn();
  pg_current_wal_lsn | pg_current_wal_insert_lsn
 --------------------+---------------------------
- 0/7E9FC8B8         | 0/7E9FC8B8
+ 0/9C5B11C0         | 0/9C5B11C0
 (1 row)
 ```
 
 Вычисляем объем сгенерированных журнальных записей:
 ```
-postgres=# select '0/7E9FC8B8'::pg_lsn - '0/66DBB808'::pg_lsn as bytes;
+postgres=# select '0/9C5B11C0'::pg_lsn - '0/84636398'::pg_lsn as bytes;
    bytes
 -----------
- 398725296
+ 402107944
 (1 row)
 ```
 
-В процессе нагрузочного теста было сгененрировано 398725296 байт журнальных записей. В течение 10 минут должны были выполниться 20 контрольных точек (600 сек. тест / 30 сек. checkpoint_timeout). Таким образом, на каждую контрольную точку приходится примерно 19936264 байт журнальных записей (~ 19 Мб).
+В процессе нагрузочного теста было сгененрировано 402107944 байт журнальных записей. В течение 10 минут должны были выполниться 20 контрольных точек (600 сек. тест / 30 сек. checkpoint_timeout). Таким образом, на каждую контрольную точку приходится примерно 20105397 байт журнальных записей (~ 20 Мб).
 
 **4.** - Проверяем данные статистики:
 
