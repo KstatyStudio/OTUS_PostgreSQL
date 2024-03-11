@@ -513,14 +513,64 @@ Ver Cluster Port Status Owner    Data directory                Log file
 14  second  5433 down   postgres /var/lib/postgresql/14/second /var/log/postgresql/postgresql-14-second.log
 ```
 
-
 ![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/918f1d91-7213-4e6c-80df-1fb56b7ba883)
 
 
+Включаем кластер _second_:
+```
+devops@vmotus09:~$ sudo pg_ctlcluster 14 second start
+devops@vmotus09:~$ sudo pg_lsclusters
+Ver Cluster Port Status Owner    Data directory                Log file
+14  main    5432 online postgres /var/lib/postgresql/14/main   /var/log/postgresql/postgresql-14-main.log
+14  second  5433 online postgres /var/lib/postgresql/14/second /var/log/postgresql/postgresql-14-second.log
+```
 
+Подключаемся к базе данных _checksum_ и делаем выборку данных из таблицы _test_:
+```
+devops@vmotus09:~$ sudo -u postgres psql -p5433
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
 
+postgres=# \c checksum
+You are now connected to database "checksum" as user "postgres".
 
+checksum=# select* from test limit 10;
+WARNING:  page verification failed, calculated checksum 61808 but expected 54529
+ERROR:  invalid page in block 0 of relation base/16384/16388
+```
 
+В результате получаем ошибку верификации контрольной суммы, т.к. наша вероломно добавленная в начало файла единица не оталась незамеченной.
+Включаем игнорирование контрольной суммы:
+```
+checksum=# alter system set ignore_checksum_failure=on;
+ALTER SYSTEM
+
+checksum=# select pg_reload_conf();
+ pg_reload_conf
+----------------
+ t
+(1 row)
+```
+
+Повторяем попытку выборки данных из таблицы _test_:
+```
+checksum=# select* from test limit 10;
+ id
+----
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 13
+(10 rows)
+```
+
+Повреждения файла позволили прочитать данные, но корректность данных требует проверки. 
 
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
