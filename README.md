@@ -219,18 +219,18 @@ postgres=# select '0/1B9B0F48'::pg_lsn - '0/16FB350'::pg_lsn as bytes;
 **4.** - Проверяем данные статистики:
 ```
 postgres=# select* from pg_stat_bgwriter \gx
--[ RECORD 1 ]---------+----------------------------
-checkpoints_timed     | 11305
-checkpoints_req       | 18
-checkpoint_write_time | 2329081
-checkpoint_sync_time  | 35304
-buffers_checkpoint    | 44220
-buffers_clean         | 439023
-maxwritten_clean      | 159
-buffers_backend       | 483527
+-[ RECORD 1 ]---------+------------------------------
+checkpoints_timed     | 34
+checkpoints_req       | 0
+checkpoint_write_time | 591676
+checkpoint_sync_time  | 421
+buffers_checkpoint    | 42002
+buffers_clean         | 0
+maxwritten_clean      | 0
+buffers_backend       | 3442
 buffers_backend_fsync | 0
-buffers_alloc         | 1186606
-stats_reset           | 2024-02-26 07:16:54.0778+00
+buffers_alloc         | 4028
+stats_reset           | 2024-03-11 07:28:18.556853+00
 ```
 
 
