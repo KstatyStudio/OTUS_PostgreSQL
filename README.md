@@ -494,8 +494,32 @@ INSERT 0 100
 
 Определяем файл, в котором хранится таблица _test_:
 ```
-
+checksum=# select pg_relation_filepath('test');
+ pg_relation_filepath
+----------------------
+ base/16384/16388
+(1 row)
 ```
+
+Отключаем кластер _second_ и вносим злонамеренные изменения в файл таблицы _test_:
+```
+checksum=# \q
+
+devops@vmotus09:~$ sudo pg_ctlcluster 14 second stop
+
+devops@vmotus09:~$ sudo pg_lsclusters
+Ver Cluster Port Status Owner    Data directory                Log file
+14  main    5432 online postgres /var/lib/postgresql/14/main   /var/log/postgresql/postgresql-14-main.log
+14  second  5433 down   postgres /var/lib/postgresql/14/second /var/log/postgresql/postgresql-14-second.log
+```
+
+
+![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/918f1d91-7213-4e6c-80df-1fb56b7ba883)
+
+
+
+
+
 
 
 
