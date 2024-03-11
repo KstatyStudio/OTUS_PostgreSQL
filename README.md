@@ -275,8 +275,145 @@ postgres=# select setting, unit from pg_settings where name='synchronous_commit'
 
 postgres=# \q
 
-
+postgres@vmotus09:/home/devops$ pgbench -c8 -P 6 -T 600 -U postgres postgres
+pgbench (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+starting vacuum...end.
+progress: 6.0 s, 3134.3 tps, lat 2.544 ms stddev 0.801
+progress: 12.0 s, 3151.1 tps, lat 2.538 ms stddev 0.796
+progress: 18.0 s, 3211.4 tps, lat 2.491 ms stddev 0.815
+progress: 24.0 s, 3168.8 tps, lat 2.524 ms stddev 0.783
+progress: 30.0 s, 3156.8 tps, lat 2.534 ms stddev 0.824
+progress: 36.0 s, 3181.0 tps, lat 2.514 ms stddev 0.784
+progress: 42.0 s, 3101.2 tps, lat 2.579 ms stddev 0.910
+progress: 48.0 s, 3065.7 tps, lat 2.609 ms stddev 0.837
+progress: 54.0 s, 3042.5 tps, lat 2.629 ms stddev 1.038
+progress: 60.0 s, 3140.5 tps, lat 2.547 ms stddev 0.794
+progress: 66.0 s, 3019.3 tps, lat 2.649 ms stddev 0.746
+progress: 72.0 s, 3198.3 tps, lat 2.501 ms stddev 0.874
+progress: 78.0 s, 3179.9 tps, lat 2.516 ms stddev 0.817
+progress: 84.0 s, 3165.8 tps, lat 2.526 ms stddev 0.758
+progress: 90.0 s, 3203.0 tps, lat 2.497 ms stddev 0.886
+progress: 96.0 s, 3234.2 tps, lat 2.473 ms stddev 0.762
+progress: 102.0 s, 3219.7 tps, lat 2.484 ms stddev 0.846
+progress: 108.0 s, 3182.3 tps, lat 2.513 ms stddev 0.860
+progress: 114.0 s, 3129.2 tps, lat 2.556 ms stddev 0.807
+progress: 120.0 s, 3180.4 tps, lat 2.515 ms stddev 0.892
+progress: 126.0 s, 3199.1 tps, lat 2.500 ms stddev 0.795
+progress: 132.0 s, 3240.7 tps, lat 2.468 ms stddev 0.788
+progress: 138.0 s, 3192.7 tps, lat 2.505 ms stddev 0.839
+progress: 144.0 s, 3003.8 tps, lat 2.663 ms stddev 0.781
+progress: 150.0 s, 3206.2 tps, lat 2.495 ms stddev 0.814
+progress: 156.0 s, 3245.1 tps, lat 2.465 ms stddev 0.789
+progress: 162.0 s, 3200.7 tps, lat 2.499 ms stddev 0.769
+progress: 168.0 s, 3119.2 tps, lat 2.564 ms stddev 0.800
+progress: 174.0 s, 3146.7 tps, lat 2.542 ms stddev 0.795
+progress: 180.0 s, 3089.3 tps, lat 2.589 ms stddev 0.899
+progress: 186.0 s, 3159.5 tps, lat 2.531 ms stddev 0.759
+progress: 192.0 s, 3145.7 tps, lat 2.543 ms stddev 0.811
+progress: 198.0 s, 3071.0 tps, lat 2.605 ms stddev 0.769
+progress: 204.0 s, 3265.3 tps, lat 2.449 ms stddev 0.812
+progress: 210.0 s, 3161.2 tps, lat 2.530 ms stddev 0.768
+progress: 216.0 s, 3166.7 tps, lat 2.524 ms stddev 0.749
+progress: 222.0 s, 3162.7 tps, lat 2.530 ms stddev 0.808
+progress: 228.0 s, 3113.5 tps, lat 2.569 ms stddev 0.789
+progress: 234.0 s, 3228.2 tps, lat 2.478 ms stddev 0.820
+progress: 240.0 s, 3163.5 tps, lat 2.528 ms stddev 0.921
+progress: 246.0 s, 3154.7 tps, lat 2.535 ms stddev 0.783
+progress: 252.0 s, 3224.0 tps, lat 2.481 ms stddev 0.785
+progress: 258.0 s, 3139.0 tps, lat 2.548 ms stddev 0.773
+progress: 264.0 s, 3238.7 tps, lat 2.470 ms stddev 0.739
+progress: 270.0 s, 3224.2 tps, lat 2.481 ms stddev 0.831
+progress: 276.0 s, 3057.0 tps, lat 2.616 ms stddev 0.823
+progress: 282.0 s, 3176.5 tps, lat 2.518 ms stddev 0.841
+progress: 288.0 s, 3195.7 tps, lat 2.503 ms stddev 0.757
+progress: 294.0 s, 3132.0 tps, lat 2.554 ms stddev 0.881
+progress: 300.0 s, 3173.0 tps, lat 2.521 ms stddev 0.806
+progress: 306.0 s, 3071.7 tps, lat 2.604 ms stddev 0.838
+progress: 312.0 s, 3165.2 tps, lat 2.527 ms stddev 0.823
+progress: 318.0 s, 3125.1 tps, lat 2.559 ms stddev 0.774
+progress: 324.0 s, 3147.0 tps, lat 2.541 ms stddev 0.803
+progress: 330.0 s, 3156.8 tps, lat 2.534 ms stddev 0.781
+progress: 336.0 s, 3077.0 tps, lat 2.599 ms stddev 0.895
+progress: 342.0 s, 3179.3 tps, lat 2.515 ms stddev 0.734
+progress: 348.0 s, 3065.1 tps, lat 2.610 ms stddev 0.789
+progress: 354.0 s, 3189.7 tps, lat 2.508 ms stddev 0.914
+progress: 360.0 s, 3180.8 tps, lat 2.515 ms stddev 0.850
+progress: 366.0 s, 3164.7 tps, lat 2.527 ms stddev 0.860
+progress: 372.0 s, 3249.7 tps, lat 2.461 ms stddev 0.808
+progress: 378.0 s, 3172.0 tps, lat 2.521 ms stddev 0.750
+progress: 384.0 s, 3224.3 tps, lat 2.481 ms stddev 0.780
+progress: 390.0 s, 3175.5 tps, lat 2.519 ms stddev 0.807
+progress: 396.0 s, 3215.7 tps, lat 2.487 ms stddev 0.792
+progress: 402.0 s, 3248.9 tps, lat 2.462 ms stddev 0.787
+progress: 408.0 s, 3195.3 tps, lat 2.503 ms stddev 0.777
+progress: 414.0 s, 3212.8 tps, lat 2.490 ms stddev 0.923
+progress: 420.0 s, 3243.3 tps, lat 2.466 ms stddev 0.767
+progress: 426.0 s, 3084.5 tps, lat 2.593 ms stddev 0.837
+progress: 432.0 s, 3158.5 tps, lat 2.532 ms stddev 0.837
+progress: 438.0 s, 3178.5 tps, lat 2.516 ms stddev 0.849
+progress: 444.0 s, 3185.2 tps, lat 2.511 ms stddev 0.812
+progress: 450.0 s, 3126.7 tps, lat 2.558 ms stddev 0.812
+progress: 456.0 s, 3116.5 tps, lat 2.566 ms stddev 0.780
+progress: 462.0 s, 3242.2 tps, lat 2.467 ms stddev 1.006
+progress: 468.0 s, 3163.0 tps, lat 2.529 ms stddev 0.762
+progress: 474.0 s, 3198.0 tps, lat 2.501 ms stddev 0.941
+progress: 480.0 s, 3011.7 tps, lat 2.656 ms stddev 0.923
+progress: 486.0 s, 3094.3 tps, lat 2.585 ms stddev 0.747
+progress: 492.0 s, 3181.0 tps, lat 2.515 ms stddev 0.786
+progress: 498.0 s, 3047.2 tps, lat 2.625 ms stddev 0.830
+progress: 504.0 s, 3198.0 tps, lat 2.501 ms stddev 0.782
+progress: 510.0 s, 3074.7 tps, lat 2.602 ms stddev 0.805
+progress: 516.0 s, 3055.8 tps, lat 2.617 ms stddev 0.792
+progress: 522.0 s, 3136.3 tps, lat 2.550 ms stddev 0.855
+progress: 528.0 s, 3112.0 tps, lat 2.570 ms stddev 0.748
+progress: 534.0 s, 3113.8 tps, lat 2.569 ms stddev 0.834
+progress: 540.0 s, 3144.0 tps, lat 2.544 ms stddev 2.740
+progress: 546.0 s, 3163.5 tps, lat 2.528 ms stddev 0.996
+progress: 552.0 s, 3202.2 tps, lat 2.498 ms stddev 0.799
+progress: 558.0 s, 3186.0 tps, lat 2.511 ms stddev 0.799
+progress: 564.0 s, 3089.7 tps, lat 2.589 ms stddev 0.777
+progress: 570.0 s, 3174.8 tps, lat 2.519 ms stddev 0.779
+progress: 576.0 s, 3160.3 tps, lat 2.531 ms stddev 0.857
+progress: 582.0 s, 3184.5 tps, lat 2.512 ms stddev 0.798
+progress: 588.0 s, 3133.2 tps, lat 2.553 ms stddev 0.792
+progress: 594.0 s, 3173.7 tps, lat 2.520 ms stddev 0.893
+progress: 600.0 s, 3214.8 tps, lat 2.488 ms stddev 0.811
+transaction type: <builtin: TPC-B (sort of)>
+scaling factor: 1
+query mode: simple
+number of clients: 8
+number of threads: 1
+duration: 600 s
+number of transactions actually processed: 1894959
+latency average = 2.532 ms
+latency stddev = 0.862 ms
+initial connection time = 16.078 ms
+tps = 3158.278223 (without initial connection time)
 ```
+
+Сравниваем результаты нагрузочного тестирования:
+<table class='table-1 table-striped-1'>
+	<thead>
+		<tr><th>Синхронный режим</th><th>Асинхронный режим</th></tr>
+	</thead>
+	<tbody>
+		<tr><td>transaction type: &lt;builtin: TPC-B (sort of)&gt;</td><td>transaction type: &lt;builtin: TPC-B (sort of)&gt;</td></tr>
+		<tr><td>scaling factor: 1</td><td>scaling factor: 1</td></tr>
+		<tr><td>query mode: simple</td><td>query mode: simple</td></tr>
+		<tr><td>number of clients: 8</td><td>number of clients: 8</td></tr>
+		<tr><td>number of threads: 1</td><td>number of threads: 1</td></tr>
+		<tr><td>duration: 600 s</td><td>duration: 600 s</td></tr>
+		<tr><td>number of transactions actually processed: 248971</td><td>number of transactions actually processed: 1894959</td></tr>
+		<tr><td>latency average = 19.279 ms</td><td>latency average = 2.532 ms</td></tr>
+		<tr><td>latency stddev = 17.958 ms</td><td>latency stddev = 0.862 ms</td></tr>
+		<tr><td>initial connection time = 16.021 ms</td><td>initial connection time = 16.078 ms</td></tr>
+		<tr><td>tps = 414.922854 (without initial connection time)</td><td>tps = 3158.278223 (without initial connection time)</td></tr>
+	</tbody>
+</table>
+
+При асинхронном режиме получаем значительный прирост производительности - 3158 транзакций в секунду против 415 транзакций в секунду при синхронном режиме. В асинхронном режиме сервер при фиксации транзакции сообщает об успешном завершении операции не дожидаясь сохранения записей из WAL на диск, что и даёт увеличение производительности, но снижает надёжность.
+
+
 
 
 
