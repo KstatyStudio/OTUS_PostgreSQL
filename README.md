@@ -216,8 +216,21 @@ postgres=# select '0/9C5B11C0'::pg_lsn - '0/84636398'::pg_lsn as bytes;
 В процессе нагрузочного теста было сгененрировано 402107944 байт журнальных записей. В течение 10 минут должны были выполниться 20 контрольных точек (600 сек. тест / 30 сек. checkpoint_timeout). Таким образом, на каждую контрольную точку приходится примерно 20105397 байт журнальных записей (~ 20 Мб).
 
 **4.** - Проверяем данные статистики:
-
-
+```
+postgres=# select* from pg_stat_bgwriter \gx
+-[ RECORD 1 ]---------+----------------------------
+checkpoints_timed     | 11305
+checkpoints_req       | 18
+checkpoint_write_time | 2329081
+checkpoint_sync_time  | 35304
+buffers_checkpoint    | 44220
+buffers_clean         | 439023
+maxwritten_clean      | 159
+buffers_backend       | 483527
+buffers_backend_fsync | 0
+buffers_alloc         | 1186606
+stats_reset           | 2024-02-26 07:16:54.0778+00
+```
 
 
 
