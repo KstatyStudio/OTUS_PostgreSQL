@@ -413,8 +413,89 @@ tps = 3158.278223 (without initial connection time)
 
 При асинхронном режиме получаем значительный прирост производительности - 3158 транзакций в секунду против 415 транзакций в секунду при синхронном режиме. В асинхронном режиме сервер при фиксации транзакции сообщает об успешном завершении операции не дожидаясь сохранения записей из WAL на диск, что и даёт увеличение производительности, но снижает надёжность.
 
+**6.** - Создаём новый кластер _second_ с включённой контрольной суммой страниц:
+```
+postgres@vmotus09:/home/devops$ exit
 
+devops@vmotus09:~$ sudo pg_createcluster 14 second -- --data-checksums
+Creating new PostgreSQL cluster 14/second ...
+/usr/lib/postgresql/14/bin/initdb -D /var/lib/postgresql/14/second --auth-local peer --auth-host scram-sha-256 --no-instructions --data-checksums
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
 
+The database cluster will be initialized with locale "en_US.UTF-8".
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+fixing permissions on existing directory /var/lib/postgresql/14/second ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default max_connections ... 100
+selecting default shared_buffers ... 128MB
+selecting default time zone ... Etc/UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+Ver Cluster Port Status Owner    Data directory                Log file
+14  second  5433 down   postgres /var/lib/postgresql/14/second /var/log/postgresql/postgresql-14-second.log
+```
+
+Кластер создан на 5433 порте. Запускаем калстер _second_. Проверяем:
+```
+devops@vmotus09:~$ sudo pg_lsclusters
+Ver Cluster Port Status Owner    Data directory                Log file
+14  main    5432 online postgres /var/lib/postgresql/14/main   /var/log/postgresql/postgresql-14-main.log
+14  second  5433 down   postgres /var/lib/postgresql/14/second /var/log/postgresql/postgresql-14-second.log
+```
+
+Подключаемся к кластеру _second_, проверяем настройки:
+```
+devops@vmotus09:~$ sudo pg_ctlcluster 14 second start
+
+devops@vmotus09:~$ sudo pg_lsclusters
+Ver Cluster Port Status Owner    Data directory                Log file
+14  main    5432 online postgres /var/lib/postgresql/14/main   /var/log/postgresql/postgresql-14-main.log
+14  second  5433 online postgres /var/lib/postgresql/14/second /var/log/postgresql/postgresql-14-second.log
+
+devops@vmotus09:~$ sudo -u postgres psql -p5433
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
+
+postgres=# select setting from pg_settings where name='port';
+ setting
+---------
+ 5433
+(1 row)
+
+postgres=# select setting from pg_settings where name='data_checksums';
+ setting
+---------
+ on
+(1 row)
+```
+
+Cоздаём базу данных _checksum_, создаём и заполняем таблицу _test_:
+```
+postgres=# create database checksum;
+CREATE DATABASE
+
+postgres=# \c checksum;
+You are now connected to database "checksum" as user "postgres".
+
+checksum=# create table test (id int);
+CREATE TABLE
+
+checksum=# insert into test select* from generate_series(1, 100);
+INSERT 0 100
+```
+
+Определяем файл, в котором хранится таблица _test_:
+```
+
+```
 
 
 
