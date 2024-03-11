@@ -232,10 +232,23 @@ buffers_backend_fsync | 0
 buffers_alloc         | 4028
 stats_reset           | 2024-03-11 07:28:18.556853+00
 ```
+Выполнены 34 контрольные точки. 
 
 
+Смотрим настройки PostgreSQL:
+```
+postgres=# select setting, unit from pg_settings where name='min_wal_size';
+ setting | unit
+---------+------
+ 80      | MB
+(1 row)
 
-
+postgres=# select setting, unit from pg_settings where name='max_wal_size';
+ setting | unit
+---------+------
+ 1024    | MB
+(1 row)
+```
 
 
 
