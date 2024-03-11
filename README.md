@@ -449,17 +449,17 @@ devops@vmotus09:~$ sudo pg_lsclusters
 Ver Cluster Port Status Owner    Data directory                Log file
 14  main    5432 online postgres /var/lib/postgresql/14/main   /var/log/postgresql/postgresql-14-main.log
 14  second  5433 down   postgres /var/lib/postgresql/14/second /var/log/postgresql/postgresql-14-second.log
-```
 
-Подключаемся к кластеру _second_, проверяем настройки:
-```
 devops@vmotus09:~$ sudo pg_ctlcluster 14 second start
 
 devops@vmotus09:~$ sudo pg_lsclusters
 Ver Cluster Port Status Owner    Data directory                Log file
 14  main    5432 online postgres /var/lib/postgresql/14/main   /var/log/postgresql/postgresql-14-main.log
 14  second  5433 online postgres /var/lib/postgresql/14/second /var/log/postgresql/postgresql-14-second.log
+```
 
+Подключаемся к кластеру _second_, проверяем настройки:
+```
 devops@vmotus09:~$ sudo -u postgres psql -p5433
 psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
 Type "help" for help.
