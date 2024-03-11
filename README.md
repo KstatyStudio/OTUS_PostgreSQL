@@ -247,6 +247,18 @@ postgres=# select setting, unit from pg_settings where name='max_wal_size';
 (1 row)
 ```
 
+**5.** - Сравним производительность в синхронном и асинхронном режиме:
+Смотрим текущие настройки записи журнала:
+```
+postgres=# select setting, unit from pg_settings where name='synchronous_commit';
+ setting | unit
+---------+------
+ on      |
+(1 row)
+```
+По умолчнию включён синхронный режим. Изменим режим на асинхронный и проведём повторное нагрузочное тестирование:
+
+
 
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
