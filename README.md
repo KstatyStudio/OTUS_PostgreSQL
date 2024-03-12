@@ -192,4 +192,21 @@ tps = 2553.581965 (without initial connection time)
 
 Максимальную производительность можно достигнуть путём включения асинхронного режима записи журнала предзаписи на диск, при условии, что надежность в случае аварийной перезагрузки виртуальной машины не является приоритетом. При заданных параметрах ВМ изменение настроек памяти, буферов и размеров WAL на производительность влияют незначительно.
 
+В ходе тестирования изменялись следующие настройки сервера PostgreSQL:
+
+<table class='table-1 table-striped-1'>
+	<thead>
+		<tr><th>Настройка</th><th>Значение по умолчанию</th><th>Значение для теста</th></tr>
+	</thead>
+	<tbody>
+		<tr><td>work_mem</td><td>4MB</td><td>64MB</td></tr>
+		<tr><td>maintenance_work_mem</td><td>64MB</td><td>512MB</td></tr>
+		<tr><td>shared_buffers</td><td>128MB</td><td>1GB</td></tr>
+		<tr><td>wal_buffers</td><td>-1</td><td>16MB</td></tr>
+		<tr><td>min_wal_size</td><td>80MB</td><td>512MB</td></tr>
+		<tr><td>max_wal_size</td><td>1GB</td><td>2GB</td></tr>
+		<tr><td>synchronous_commit</td><td>on</td><td>off</td></tr>
+	</tbody>
+</table>
+
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
