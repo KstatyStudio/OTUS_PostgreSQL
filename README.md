@@ -48,16 +48,46 @@ otusdb=# select* from otusch.students order by id limit 10;
 otusdb=# \q
 ```
 
+**2.** - Создаём каталог для бэкапов и делаем логический бэкап таблицы _students_ утилитой _copy_:
+```
+postgres@vmotus:/home/devops$ mkdir /tmp/backups/
+
+postgres@vmotus:/home/devops$ psql
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
+
+postgres=# \c otusdb
+
+otusdb=# \copy otusch.students to '/tmp/backups/sudetnts.sql';
+COPY 100
+```
 
 
+Восстановим данные из бэкапа во вторую таблицу - _students_copy_. Эту таблицу необходимо создать перед восстановлением данных, т.к. логическое резервное копирование предусматривает только копирование данных.
+```
+otusdb=# create table otusch.students_copy (id int, fio char(10));
+CREATE TABLE
 
+otusdb=# \copy otusch.students_copy from '/tmp/backups/sudetnts.sql';
+COPY 100
 
+otusdb=# select* from otusch.students_copy order by id limit 10;
+ id |    fio
+----+------------
+  1 | e7e89cd037
+  2 | f1f6635468
+  3 | aadb53855f
+  4 | 6cca0a15a4
+  5 | 292c839ac9
+  6 | 9c1e1dc951
+  7 | adbee51f86
+  8 | 3edb5634aa
+  9 | dc7a9a09e1
+ 10 | 8c668255a7
+(10 rows)
+```
 
-
-
-
-
-
+**3.** - Делаем бэкап полученных двух таблиц утилитой pg_dump в кастомном сжатом формате:
 
 
 
