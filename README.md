@@ -52,7 +52,9 @@ otusdb=# \q
 ```
 postgres@vmotus:/home/devops$ mkdir /tmp/backups/
 
-postgres@vmotus:/home/devops$ psql
+postgres@vmotus:/tmp/backups$ cd /tmp/backups/
+
+postgres@vmotus:/tmp/backups$ psql
 psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
 Type "help" for help.
 
@@ -61,7 +63,6 @@ postgres=# \c otusdb
 otusdb=# \copy otusch.students to '/tmp/backups/sudetnts.sql';
 COPY 100
 ```
-
 
 Восстановим данные из бэкапа во вторую таблицу - _students_copy_. Эту таблицу необходимо создать перед восстановлением данных, т.к. логическое резервное копирование предусматривает только копирование данных.
 ```
@@ -85,9 +86,41 @@ otusdb=# select* from otusch.students_copy order by id limit 10;
   9 | dc7a9a09e1
  10 | 8c668255a7
 (10 rows)
+
+otusdb=# \q
 ```
 
 **3.** - Делаем бэкап полученных двух таблиц утилитой pg_dump в кастомном сжатом формате:
+```
+postgres@vmotus:/tmp/backups$ pg_dump -d otusdb -t otusch.students -t otusch.students_copy -Fc | gzip > 2tables.gz
+```
+В результате получаем архив _/tmp/backups/2tables.gz_ с бинарным файлом _2tables_, содержащим структуру и данные таблиц.
+
+Востановим в новую базу данных данные из второй таблицы.
+Предварительно потребуется создать новую базу данных _otusdb_copy_ и схему _otusch_, т.к. при создании дампа не была задана опция создания базы данных и для тестирования не использовалась схема по умолчанию (_public_), а была создана собственная схема _otusch_.
+
+Так же следует обратить внимание на то, что полученный архив нужно распаковать, т.к. утилита _pg_restore_ не обработает сжатый файл.
+```
+postgres@vmotus:/tmp/backups$ psql
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
+
+postgres=# create database otusdb_copy;
+CREATE DATABASE
+
+postgres=# \c otusdb_copy
+You are now connected to database "otusdb_copy" as user "postgres".
+
+otusdb_copy=# create schema otusch;
+CREATE SCHEMA
+
+otusdb_copy=# \q
+
+
+
+```
+
+
 
 
 
