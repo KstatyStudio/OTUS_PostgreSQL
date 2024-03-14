@@ -87,8 +87,17 @@ otusdb=# select* from otusch.students_copy order by id limit 10;
  10 | 8c668255a7
 (10 rows)
 
+otusdb=# \dt otusch.*
+             List of relations
+ Schema |     Name      | Type  |  Owner
+--------+---------------+-------+----------
+ otusch | students      | table | postgres
+ otusch | students_copy | table | postgres
+(2 rows)
+
 otusdb=# \q
 ```
+В результате в базе данных _otusdb_ в схеме _otusch_ получаем две таблицы.
 
 **3.** - Делаем бэкап полученных двух таблиц утилитой pg_dump в кастомном сжатом формате:
 ```
@@ -97,6 +106,7 @@ postgres@vmotus:/tmp/backups$ pg_dump -d otusdb -t otusch.students -t otusch.stu
 В результате получаем архив _/tmp/backups/2tables.gz_ с бинарным файлом _2tables_, содержащим структуру и данные таблиц.
 
 Восстановим в новую базу данных вторую таблицу.
+
 Предварительно потребуется создать новую базу данных _otusdb_copy_ и схему _otusch_, т.к. при создании дампа не была задана опция создания базы данных и для тестирования не использовалась схема по умолчанию (_public_), а была создана собственная схема _otusch_.
 
 Так же следует обратить внимание на то, что полученный архив перед восстановлением нужно распаковать, т.к. утилита _pg_restore_ не обработает сжатый файл.
@@ -130,6 +140,7 @@ Type "help" for help.
 
 postgres=# \c otusdb_copy
 You are now connected to database "otusdb_copy" as user "postgres".
+
 otusdb_copy=# select* from otusch.students_copy limit 10;
  id |    fio
 ----+------------
