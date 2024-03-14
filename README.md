@@ -96,10 +96,10 @@ postgres@vmotus:/tmp/backups$ pg_dump -d otusdb -t otusch.students -t otusch.stu
 ```
 В результате получаем архив _/tmp/backups/2tables.gz_ с бинарным файлом _2tables_, содержащим структуру и данные таблиц.
 
-Востановим в новую базу данных данные из второй таблицы.
+Восстановим в новую базу данных вторую таблицу.
 Предварительно потребуется создать новую базу данных _otusdb_copy_ и схему _otusch_, т.к. при создании дампа не была задана опция создания базы данных и для тестирования не использовалась схема по умолчанию (_public_), а была создана собственная схема _otusch_.
 
-Так же следует обратить внимание на то, что полученный архив нужно распаковать, т.к. утилита _pg_restore_ не обработает сжатый файл.
+Так же следует обратить внимание на то, что полученный архив перед восстановлением нужно распаковать, т.к. утилита _pg_restore_ не обработает сжатый файл.
 ```
 postgres@vmotus:/tmp/backups$ psql
 psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
@@ -114,17 +114,44 @@ You are now connected to database "otusdb_copy" as user "postgres".
 otusdb_copy=# create schema otusch;
 CREATE SCHEMA
 
+otusdb_copy=# \dt otusch.*
+Did not find any relation named "otusch.*".
+
 otusdb_copy=# \q
 
-
-
+postgres@vmotus:/tmp/backups$ gzip -d 2tables.gz | pg_restore -d otusdb_copy -n otusch -t students_copy 2tables
 ```
 
+Проверяем:
+```
+postgres@vmotus:/tmp/backups$ psql
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
 
+postgres=# \c otusdb_copy
+You are now connected to database "otusdb_copy" as user "postgres".
+otusdb_copy=# select* from otusch.students_copy limit 10;
+ id |    fio
+----+------------
+  1 | e7e89cd037
+  2 | f1f6635468
+  3 | aadb53855f
+  4 | 6cca0a15a4
+  5 | 292c839ac9
+  6 | 9c1e1dc951
+  7 | adbee51f86
+  8 | 3edb5634aa
+  9 | dc7a9a09e1
+ 10 | 8c668255a7
+(10 rows)
 
-
-
-
-
+otusdb_copy=# \dt otusch.*
+             List of relations
+ Schema |     Name      | Type  |  Owner
+--------+---------------+-------+----------
+ otusch | students_copy | table | postgres
+(1 row)
+```
+В результате восстановлена только таблица _students_copy_.
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
