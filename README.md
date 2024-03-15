@@ -22,8 +22,39 @@ Ver Cluster Port Status Owner    Data directory              Log file
 ```
 Установлен один кластер - _main_ (порт 5432).
 
-Cоздаем базу данных _repldb_, таблицы _test_ для записи, _test2_ для запросов на чтение:
+Проверяем настройки репликации по умолчанию:
 ```
+postgres@vmotus1:/home/devops$ psql
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
+
+postgres=# select name, setting from pg_settings where name in ('wal_level', 'max_wal_senders', 'synchronous_commit');
+        name        | setting
+--------------------+---------
+ max_wal_senders    | 10
+ synchronous_commit | on
+ wal_level          | replica
+(3 rows)
+```
+
+Изменяем параметр _wal_level_ - переключаемся на логическую репликацию:
+```
+postgres=# alter system set wal_level='logical';
+ALTER SYSTEM
+postgres=# select pg_reload_conf();
+ pg_reload_conf
+----------------
+ t
+(1 row)
+postgres=# \q
+postgres@vmotus1:/home/devops$ exit
+
+devops@vmotus1:~$ sudo pg_ctlcluster 14 main restart
+```
+
+Cоздаем базу данных _repldb_, таблицы _test_ для записи, _test2_ для запросов на чтение, создаём публикацию таблицы _test_:
+```
+devops@vmotus1:~$ sudo su postgres
 postgres@vmotus1:/home/devops$ psql
 psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
 Type "help" for help.
@@ -48,6 +79,16 @@ repldb=# select* from test;
 
 repldb=# create table test2 (id int, str char(10));
 CREATE TABLE
+
+repldb=# \dt+
+                                     List of relations
+ Schema | Name  | Type  |  Owner   | Persistence | Access method |    Size    | Description
+--------+-------+-------+----------+-------------+---------------+------------+-------------
+ public | test  | table | postgres | permanent   | heap          | 8192 bytes |
+ public | test2 | table | postgres | permanent   | heap          | 0 bytes    |
+(2 rows)
+
+
 ```
 
 **2. Сессия#2** - Создаём второй кластер PostgreSQL 14 _main2_:
