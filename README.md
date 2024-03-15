@@ -37,10 +37,14 @@ postgres=# select name, setting from pg_settings where name in ('wal_level', 'ma
 (3 rows)
 ```
 
-Изменяем параметр _wal_level_ - переключаемся на логическую репликацию, презагружаем кластер _main_ для применения изменений:
+Изменяем параметр _wal_level_ - переключаемся на логическую репликацию, меняем стандартный пароль пользователя _postgres_, презагружаем кластер _main_ для применения изменений:
 ```
 postgres=# alter system set wal_level='logical';
 ALTER SYSTEM
+
+postgres=# \password
+Enter new password for user "postgres":
+Enter it again:
 postgres=# \q
 postgres@vmotus1:/home/devops$ exit
 
@@ -60,6 +64,68 @@ CREATE DATABASE
 postgres=# \c repldb;
 You are now connected to database "repldb" as user "postgres".
 
+repldb=# create table test (id int, str char(10));
+CREATE TABLE
+
+repldb=# create table test2 (id int, str char(10));
+CREATE TABLE
+
+repldb=# \dt+
+                                     List of relations
+ Schema | Name  | Type  |  Owner   | Persistence | Access method |    Size    | Description
+--------+-------+-------+----------+-------------+---------------+------------+-------------
+ public | test  | table | postgres | permanent   | heap          | 0 bytes    |
+ public | test2 | table | postgres | permanent   | heap          | 0 bytes    |
+(2 rows)
+repldb=# \q
+```
+
+**2. Сессия#2** - Создаём второй кластер PostgreSQL 14 _main2_:
+```
+devops@vmotus1:~$ sudo su postgres
+postgres@vmotus1:/home/devops$ pg_createcluster -d /var/lib/postgresql/14/main2 14 main2
+Creating new PostgreSQL cluster 14/main2 ...
+/usr/lib/postgresql/14/bin/initdb -D /var/lib/postgresql/14/main2 --auth-local peer --auth-host scram-sha-256 --no-instructions
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "en_US.UTF-8".
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+fixing permissions on existing directory /var/lib/postgresql/14/main2 ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default max_connections ... 100
+selecting default shared_buffers ... 128MB
+selecting default time zone ... Etc/UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+Warning: systemd does not know about the new cluster yet. Operations like "service postgresql start" will not handle it. To fix, run:
+  sudo systemctl daemon-reload
+Ver Cluster Port Status Owner    Data directory               Log file
+14  main2   5433 down   postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
+```
+
+Удаляем каталог кластера _main2_:
+```
+postgres@vmotus1:/home/devops$ rm -r /var/lib/postgresql/14/main2
+```
+
+**3. Сессия#1** - Создаём бэкап кластера _main_ в каталоге кластера _main2_:
+```
+postgres@vmotus1:/home/devops$ pg_basebackup -p 5432 -D /var/lib/postgresql/14/main2
+```
+
+
+
+
+
+
 repldb=# create table test as select generate_series(1, 4) as id, md5(random()::text)::char(10) as str;
 SELECT 4
 
@@ -72,19 +138,8 @@ repldb=# select* from test;
   4 | e1f7fd1f6d
 (4 rows)
 
-repldb=# create table test2 (id int, str char(10));
-CREATE TABLE
 
-repldb=# \dt+
-                                     List of relations
- Schema | Name  | Type  |  Owner   | Persistence | Access method |    Size    | Description
---------+-------+-------+----------+-------------+---------------+------------+-------------
- public | test  | table | postgres | permanent   | heap          | 8192 bytes |
- public | test2 | table | postgres | permanent   | heap          | 0 bytes    |
-(2 rows)
-```
-
-Создаём публикацию таблицы _test_ и меняем стандартный пароль пользователя _postgres_:
+Создаём публикацию таблицы _test_:
 ```
 repldb=# create publication test_pub for table test;
 CREATE PUBLICATION
@@ -95,31 +150,7 @@ repldb=# \dRp+
  postgres | f          | t       | t       | t       | t         | f
 Tables:
     "public.test"
-
-repldb=# \password
-Enter new password for user "postgres":
-Enter it again:
 ```
-
-
-
-
-
-
-**2. Сессия#2** - Создаём второй кластер PostgreSQL 14 _main2_:
-```
-
-
-```
-
-
-
-
-
-
-
-
-
 
 
 
