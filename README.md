@@ -6,14 +6,13 @@
 Репликация
 
 ### Исходные данные
-ВМ#1 (облако): Ubuntu 22.04, PostgreSQL 14
-ВМ#2 (облако): Ubuntu 22.04, PostgreSQL 14
-ВМ#3 (облако): Ubuntu 22.04, PostgreSQL 16
-ВМ#4 (облако): Ubuntu 22.04, PostgreSQL 16
+ВМ# (облако): Ubuntu 22.04, PostgreSQL 14, PostgreSQL 16
+
+SSH: 4 сессии
 
 ### Решение
 
-**1. ВМ#1** - Устанавливаем и настраиваем сервер PostgreSQL 14 для запуска репликации:
+**1.** - Устанавливаем сервер PostgreSQL 14:
 ```
 devops@vmotus1:~$ sudo apt update && sudo apt upgrade -y -q && sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && sudo apt-get update && sudo apt -y install postgresql-14
 
@@ -25,7 +24,7 @@ Cоздаем базу данных _repldb_, таблицы _test_ для за�
 
 
 
-**2. ВМ#2** - Устанавливаем и настраиваем сервер PostgreSQL 14 для запуска репликации:
+**2.** - Устанавливаем и настраиваем сервер PostgreSQL 14 для запуска репликации:
 ```
 devops@vmotus2:~$ sudo apt update && sudo apt upgrade -y -q && sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && sudo apt-get update && sudo apt -y install postgresql-14
 
