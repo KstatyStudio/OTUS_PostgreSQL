@@ -37,22 +37,17 @@ postgres=# select name, setting from pg_settings where name in ('wal_level', 'ma
 (3 rows)
 ```
 
-Изменяем параметр _wal_level_ - переключаемся на логическую репликацию:
+Изменяем параметр _wal_level_ - переключаемся на логическую репликацию, презагружаем кластер _main_ для применения изменений:
 ```
 postgres=# alter system set wal_level='logical';
 ALTER SYSTEM
-postgres=# select pg_reload_conf();
- pg_reload_conf
-----------------
- t
-(1 row)
 postgres=# \q
 postgres@vmotus1:/home/devops$ exit
 
 devops@vmotus1:~$ sudo pg_ctlcluster 14 main restart
 ```
 
-Cоздаем базу данных _repldb_, таблицы _test_ для записи, _test2_ для запросов на чтение, создаём публикацию таблицы _test_:
+Cоздаем базу данных _repldb_, таблицы _test_ для записи, _test2_ для запросов на чтение:
 ```
 devops@vmotus1:~$ sudo su postgres
 postgres@vmotus1:/home/devops$ psql
@@ -87,9 +82,29 @@ repldb=# \dt+
  public | test  | table | postgres | permanent   | heap          | 8192 bytes |
  public | test2 | table | postgres | permanent   | heap          | 0 bytes    |
 (2 rows)
-
-
 ```
+
+Создаём публикацию таблицы _test_ и меняем стандартный пароль пользователя _postgres_:
+```
+repldb=# create publication test_pub for table test;
+CREATE PUBLICATION
+repldb=# \dRp+
+                            Publication test_pub
+  Owner   | All tables | Inserts | Updates | Deletes | Truncates | Via root
+----------+------------+---------+---------+---------+-----------+----------
+ postgres | f          | t       | t       | t       | t         | f
+Tables:
+    "public.test"
+
+repldb=# \password
+Enter new password for user "postgres":
+Enter it again:
+```
+
+
+
+
+
 
 **2. Сессия#2** - Создаём второй кластер PostgreSQL 14 _main2_:
 ```
