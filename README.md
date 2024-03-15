@@ -235,7 +235,21 @@ Tables:
     "public.test"
 ```
 
-Создаём подписку 
+Создаём подписку на таблицу _test2_ из кластера _main2_:
+```
+repldb=# create subscription test2_sub connection 'host=localhost port=5433 user=postgres password=repl14 dbname=repldb' publication test2_pub with (copy_data=false);
+NOTICE:  created replication slot "test2_sub" on publisher
+CREATE SUBSCRIPTION
+
+repldb=# \dRs
+            List of subscriptions
+   Name    |  Owner   | Enabled | Publication
+-----------+----------+---------+-------------
+ test2_sub | postgres | t       | {test2_pub}
+(1 row)
+
+
+```
 
 
 
