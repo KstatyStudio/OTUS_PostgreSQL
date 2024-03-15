@@ -113,36 +113,119 @@ Ver Cluster Port Status Owner    Data directory               Log file
 
 Удаляем каталог кластера _main2_:
 ```
-postgres@vmotus1:/home/devops$ rm -r /var/lib/postgresql/14/main2
+postgres@vmotus1:/home/devops$ rm -rf /var/lib/postgresql/14/main2
+
+postgres@vmotus1:/home/devops$ pg_lsclusters
+Ver Cluster Port Status Owner     Data directory               Log file
+14  main    5432 online postgres  /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
+14  main2   5433 down   <unknown> /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
 ```
 
 **3. Сессия#1** - Создаём бэкап кластера _main_ в каталоге кластера _main2_:
 ```
 postgres@vmotus1:/home/devops$ pg_basebackup -p 5432 -D /var/lib/postgresql/14/main2
+
+postgres@vmotus1:/home/devops$ pg_lsclusters
+Ver Cluster Port Status Owner    Data directory               Log file
+14  main    5432 online postgres /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
+14  main2   5433 down   postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
 ```
 
+**4. Сессия#2** - Запускаем кластер _main2_ (порт 5433):
+```
+postgres@vmotus1:/home/devops$ pg_ctlcluster 14 main2 start
+postgres@vmotus1:/home/devops$ pg_lsclusters
+Ver Cluster Port Status Owner    Data directory               Log file
+14  main    5432 online postgres /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
+14  main2   5433 online postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
+```
 
+Подключаемся к базе данных _repldb_ в кластере _main2_ (порт 5433), заполняем данными таблицу _test2_, создаём публикацию таблицы _test2_:
+```
+postgres@vmotus1:/home/devops$ psql -p 5433
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
 
+postgres=# \c repldb
+You are now connected to database "repldb" as user "postgres".
 
+repldb=# \conninfo
+You are connected to database "repldb" as user "postgres" via socket in "/var/run/postgresql" at port "5433".
 
+repldb=# \dt+
+                                    List of relations
+ Schema | Name  | Type  |  Owner   | Persistence | Access method |  Size   | Description
+--------+-------+-------+----------+-------------+---------------+---------+-------------
+ public | test  | table | postgres | permanent   | heap          | 0 bytes |
+ public | test2 | table | postgres | permanent   | heap          | 0 bytes |
+(2 rows)
 
-repldb=# create table test as select generate_series(1, 4) as id, md5(random()::text)::char(10) as str;
-SELECT 4
+repldb=# insert into test2 (id, str) select generate_series(1, 4), md5(random()::text)::char(10);
+INSERT 0 4
+
+repldb=# select* from test2;
+ id |    str
+----+------------
+  1 | f17d283e0f
+  2 | 525f680929
+  3 | bf0ddd856d
+  4 | f55a9e7b41
+(4 rows)
+
+repldb=# \dt+
+                                     List of relations
+ Schema | Name  | Type  |  Owner   | Persistence | Access method |    Size    | Description
+--------+-------+-------+----------+-------------+---------------+------------+-------------
+ public | test  | table | postgres | permanent   | heap          | 0 bytes    |
+ public | test2 | table | postgres | permanent   | heap          | 8192 bytes |
+(2 rows)
+
+repldb=# \dRp+
+                           Publication test2_pub
+  Owner   | All tables | Inserts | Updates | Deletes | Truncates | Via root
+----------+------------+---------+---------+---------+-----------+----------
+ postgres | f          | t       | t       | t       | t         | f
+Tables:
+    "public.test2"
+```
+
+**5. Сессия#2** - Заполняем таблицу _test_ в кластере _main_:
+```
+postgres@vmotus1:/home/devops$ psql
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
+
+postgres=# \c repldb
+You are now connected to database "repldb" as user "postgres".
+
+repldb=# \conninfo
+You are connected to database "repldb" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+
+repldb=# insert into test (id, str) select generate_series(1, 3), md5(random()::text)::char(10);
+INSERT 0 3
 
 repldb=# select* from test;
  id |    str
 ----+------------
-  1 | daaa8dc8ea
-  2 | cd0b446d41
-  3 | de68204d61
-  4 | e1f7fd1f6d
-(4 rows)
+  1 | 938a3da5a4
+  2 | 6d53d88e01
+  3 | a9e8426663
+(3 rows)
 
+repldb=# \dt+
+                                     List of relations
+ Schema | Name  | Type  |  Owner   | Persistence | Access method |    Size    | Description
+--------+-------+-------+----------+-------------+---------------+------------+-------------
+ public | test  | table | postgres | permanent   | heap          | 8192 bytes |
+ public | test2 | table | postgres | permanent   | heap          | 0 bytes    |
+(2 rows)
+```
 
-Создаём публикацию таблицы _test_:
+Cоздаём публикацию таблицы _test_:
 ```
 repldb=# create publication test_pub for table test;
 CREATE PUBLICATION
+
 repldb=# \dRp+
                             Publication test_pub
   Owner   | All tables | Inserts | Updates | Deletes | Truncates | Via root
@@ -152,7 +235,7 @@ Tables:
     "public.test"
 ```
 
-
+Создаём подписку 
 
 
 
