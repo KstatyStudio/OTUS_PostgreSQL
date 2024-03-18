@@ -205,15 +205,15 @@ You are now connected to database "repldb" as user "postgres".
 repldb=# \conninfo
 You are connected to database "repldb" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
 
-repldb=# insert into test (id, str) select generate_series(1, 3), md5(random()::text)::char(10);
+repldb=# insert into test (str) select md5(random()::text)::char(10) from generate_series(1, 3);
 INSERT 0 3
 
 repldb=# select* from test;
  id |    str
 ----+------------
-  1 | 938a3da5a4
-  2 | 6d53d88e01
-  3 | a9e8426663
+  1 | cec8aeabe2
+  2 | 951236d920
+  3 | 09124a3798
 (3 rows)
 
 repldb=# \dt+
@@ -255,10 +255,10 @@ repldb=# \dRs
 repldb=# select* from test2;
  id |    str
 ----+------------
-  1 | f17d283e0f
-  2 | 525f680929
-  3 | bf0ddd856d
-  4 | f55a9e7b41
+  1 | 1e36afe32a
+  2 | 33dfb0bd19
+  3 | bcda117e62
+  4 | 99edca1679
 (4 rows)
 
 repldb=# \dt+
