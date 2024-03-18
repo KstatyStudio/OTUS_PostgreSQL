@@ -422,14 +422,71 @@ repldb=# select* from test2;
 
 Создаём подписки на таблицу _test_ из кластера _main_ и таблицу _test2_ из кластера _main2_ без опции копирования существующих данных:
 ```
+repldb=# create subscription test_sub_3 connection 'host=localhost port=5432 user=postgres password=repl14 dbname=repldb' publication test_pub with (copy_data=false);
+NOTICE:  created replication slot "test_sub_3" on publisher
+CREATE SUBSCRIPTION
 
+repldb=# create subscription test2_sub_3 connection 'host=localhost port=5433 user=postgres password=repl14 dbname=repldb' publication test2_pub with (copy_data=false);
+NOTICE:  created replication slot "test2_sub_3" on publisher
+CREATE SUBSCRIPTION
+
+repldb=# \dRs
+             List of subscriptions
+    Name     |  Owner   | Enabled | Publication
+-------------+----------+---------+-------------
+ test2_sub   | postgres | t       | {test2_pub}
+ test2_sub_3 | postgres | t       | {test2_pub}
+ test_sub_3  | postgres | t       | {test_pub}
+(3 rows)
 ```
 
+**11. Сессия#1** - Вносим изменения в таблицу _test_ на кластере _main_ и проверяем репликацию изменений на кластерах _main2_ и _main3_:
+```
+postgres@vmotus1:/home/devops$ psql
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
 
+postgres=# \c repldb
+You are now connected to database "repldb" as user "postgres".
 
+repldb=# update test set str='first' where id=1;
+UPDATE 1
 
+repldb=# insert into test(str) values (md5(random()::text)::char(10));
+INSERT 0 1
+repldb=# select* from test;
+ id |    str
+----+------------
+  2 | 951236d920
+  3 | 09124a3798
+  4 | dc7d406807
+  1 | first
+(4 rows)
+```
 
+**Сессия#2**
+```
+repldb=# select* from test;
+ id |    str
+----+------------
+  2 | 951236d920
+  3 | 09124a3798
+  4 | dc7d406807
+  1 | first
+(4 rows)
+```
 
-
+**Сессия#3**
+```
+repldb=# select* from test;
+ id |    str
+----+------------
+  2 | 951236d920
+  3 | 09124a3798
+  4 | dc7d406807
+  1 | first
+(4 rows)
+```
+Данные реплицированы на все подписанные кластеры.
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
