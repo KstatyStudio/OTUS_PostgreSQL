@@ -64,10 +64,10 @@ CREATE DATABASE
 postgres=# \c repldb;
 You are now connected to database "repldb" as user "postgres".
 
-repldb=# create table test (id int, str char(10));
+repldb=# create table test (id serial primary key, str char(10));
 CREATE TABLE
 
-repldb=# create table test2 (id int, str char(10));
+repldb=# create table test2 (id serial primary key, str char(10));
 CREATE TABLE
 
 repldb=# \dt+
@@ -161,16 +161,16 @@ repldb=# \dt+
  public | test2 | table | postgres | permanent   | heap          | 0 bytes |
 (2 rows)
 
-repldb=# insert into test2 (id, str) select generate_series(1, 4), md5(random()::text)::char(10);
+repldb=# insert into test2 (str) select md5(random()::text)::char(10) from generate_series(1, 4);
 INSERT 0 4
 
 repldb=# select* from test2;
  id |    str
 ----+------------
-  1 | f17d283e0f
-  2 | 525f680929
-  3 | bf0ddd856d
-  4 | f55a9e7b41
+  1 | 1e36afe32a
+  2 | 33dfb0bd19
+  3 | bcda117e62
+  4 | 99edca1679
 (4 rows)
 
 repldb=# \dt+
@@ -180,6 +180,9 @@ repldb=# \dt+
  public | test  | table | postgres | permanent   | heap          | 0 bytes    |
  public | test2 | table | postgres | permanent   | heap          | 8192 bytes |
 (2 rows)
+
+repldb=# create publication test2_pub for table test2;
+CREATE PUBLICATION
 
 repldb=# \dRp+
                            Publication test2_pub
