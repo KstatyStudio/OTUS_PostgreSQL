@@ -550,6 +550,48 @@ repldb=# select* from test;
 -postgres@vmotus1:/home/devops$ rm -rf /var/lib/postgresql/14/main4
 ```
 
+**Сессия#3** - Проверяем настройки сервера PostgreSQL:
+```
+repldb=# select name, setting from pg_settings where name in ('wal_level', 'synchronous_commit', 'hot_standby_feedback', 'max_standby_streaming_delay');
+            name             | setting
+-----------------------------+---------
+ hot_standby_feedback        | off
+ max_standby_streaming_delay | 30000
+ synchronous_commit          | on
+ wal_level                   | logical
+(5 rows)
+
+repldb=# \q
+```
+Для настройки горячего реплицирования со стороны главного/передающего сервера требуется установить параметр synchronous_commit=on (установлен по умолчанию), со стороны ведомого сервера требуется установить параметры hot_standby_feedback=off (установлен по умолчанию), max_standby_streaming_delay (по умолчанию установлено 30 секунд (30000 миллисекуунд) - для тестирования можно не изменять).
+
+
+Создаём бэкап кластера _main3_ с опцией -R (--write-recovery-conf - настройка резервного сервера с использованием результатов резервного копирования):
+```
+postgres@vmotus1:/home/devops$ pg_basebackup -p 5434 -R -D /var/lib/postgresql/14/main4
+
+postgres@vmotus1:/home/devops$ pg_lsclusters
+Ver Cluster Port Status        Owner    Data directory               Log file
+14  main    5432 online        postgres /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
+14  main2   5433 online        postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
+14  main3   5434 online        postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
+14  main4   5435 down,recovery postgres /var/lib/postgresql/14/main4 /var/log/postgresql/postgresql-14-main4.log
+```
+
+**Сессия#4** - Запускаем кластер _main4_ (порт 5435):
+```
+postgres@vmotus1:/home/devops$ pg_ctlcluster 14 main4 start
+
+postgres@vmotus1:/home/devops$ pg_lsclusters
+Ver Cluster Port Status          Owner    Data directory               Log file
+14  main    5432 online          postgres /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
+14  main2   5433 online          postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
+14  main3   5434 online          postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
+14  main4   5435 online,recovery postgres /var/lib/postgresql/14/main4 /var/log/postgresql/postgresql-14-main4.log
+```
+
+
+
 
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
