@@ -189,7 +189,7 @@ Tables:
     "public.test2"
 ```
 
-**5. Сессия#2** - Заполняем таблицу _test_ в кластере _main_:
+**5. Сессия#1** - Заполняем таблицу _test_ в кластере _main_:
 ```
 postgres@vmotus1:/home/devops$ psql
 psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
@@ -235,9 +235,9 @@ Tables:
     "public.test"
 ```
 
-Создаём подписку на таблицу _test2_ из кластера _main2_:
+Создаём подписку на таблицу _test2_ из кластера _main2_ с опцией копирования существующих данных:
 ```
-repldb=# create subscription test2_sub connection 'host=localhost port=5433 user=postgres password=repl14 dbname=repldb' publication test2_pub with (copy_data=false);
+repldb=# create subscription test2_sub connection 'host=localhost port=5433 user=postgres password=repl14 dbname=repldb' publication test2_pub with (copy_data=true);
 NOTICE:  created replication slot "test2_sub" on publisher
 CREATE SUBSCRIPTION
 
@@ -248,9 +248,105 @@ repldb=# \dRs
  test2_sub | postgres | t       | {test2_pub}
 (1 row)
 
+repldb=# select* from test2;
+ id |    str
+----+------------
+  1 | f17d283e0f
+  2 | 525f680929
+  3 | bf0ddd856d
+  4 | f55a9e7b41
+(4 rows)
+
+repldb=# \dt+
+                                     List of relations
+ Schema | Name  | Type  |  Owner   | Persistence | Access method |    Size    | Description
+--------+-------+-------+----------+-------------+---------------+------------+-------------
+ public | test  | table | postgres | permanent   | heap          | 8192 bytes |
+ public | test2 | table | postgres | permanent   | heap          | 8192 bytes |
+(2 rows)
+```
+
+**6. Сессия#2** - Создаём подписку на таблицу _test_ из кластера _main_ с опцией копирования существующих данных:
+```
+repldb=# create subscription test_sub connection 'host=localhost port=5432 user=postgres password=repl14 dbname=repldb' publication test_pub with (copy_data=true);
+NOTICE:  created replication slot "test_sub" on publisher
+CREATE SUBSCRIPTION
+
+repldb=# select* from test;
+ id |    str
+----+------------
+  1 | 938a3da5a4
+  2 | 6d53d88e01
+  3 | a9e8426663
+(3 rows)
+
+repldb=# \dt+
+                                     List of relations
+ Schema | Name  | Type  |  Owner   | Persistence | Access method |    Size    | Description
+--------+-------+-------+----------+-------------+---------------+------------+-------------
+ public | test  | table | postgres | permanent   | heap          | 8192 bytes |
+ public | test2 | table | postgres | permanent   | heap          | 8192 bytes |
+(2 rows)
+```
+
+
+
+
+##!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+Вносим изменения в таблицу _test2_:
+```
 
 ```
 
+
+##!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+**7. Сессия#1** - Проверяем изменения в таблице _test2_
+
+
+
+
+
+**8. Сессия#3** - Создаём третий кластер PostgreSQL 14 _main3_:
+```
+devops@vmotus1:~$ sudo su postgres
+
+postgres@vmotus1:/home/devops$ pg_createcluster -d /var/lib/postgresql/14/main3 14 main3
+
+Creating new PostgreSQL cluster 14/main3 ...
+/usr/lib/postgresql/14/bin/initdb -D /var/lib/postgresql/14/main3 --auth-local peer --auth-host scram-sha-256 --no-instructions
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "en_US.UTF-8".
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+fixing permissions on existing directory /var/lib/postgresql/14/main3 ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default max_connections ... 100
+selecting default shared_buffers ... 128MB
+selecting default time zone ... Etc/UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+Warning: systemd does not know about the new cluster yet. Operations like "service postgresql start" will not handle it. To fix, run:
+  sudo systemctl daemon-reload
+Ver Cluster Port Status Owner    Data directory               Log file
+14  main3   5434 down   postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
+```
+Кластеру _main3_ назначен порт 5434.
+
+Удаляем каталог кластера _main3_:
+```
+postgres@vmotus1:/home/devops$ rm -rf /var/lib/postgresql/14/main3
+```
 
 
 
