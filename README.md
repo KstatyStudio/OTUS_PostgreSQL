@@ -110,6 +110,7 @@ Warning: systemd does not know about the new cluster yet. Operations like "servi
 Ver Cluster Port Status Owner    Data directory               Log file
 14  main2   5433 down   postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
 ```
+Кластеру _main2_ назначен порт 5433.
 
 Удаляем каталог кластера _main2_:
 ```
