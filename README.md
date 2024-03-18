@@ -122,7 +122,7 @@ repldb=# \q
 !14  main2   5433 down   <unknown> /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
 ```
 
-**3. Сессия#1** - Создаём бэкап кластера _main_ в каталоге кластера _main2_:
+**Сессия#1** - Создаём бэкап кластера _main_ в каталоге кластера _main2_:
 ```
 postgres@vmotus1:/home/devops$ pg_basebackup -p 5432 -D /var/lib/postgresql/14/main2
 
@@ -132,7 +132,7 @@ Ver Cluster Port Status Owner    Data directory               Log file
 14  main2   5433 down   postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
 ```
 
-**4. Сессия#2** - Запускаем кластер _main2_ (порт 5433):
+**Сессия#2** - Запускаем кластер _main2_ (порт 5433):
 ```diff
 !postgres@vmotus1:/home/devops$ pg_ctlcluster 14 main2 start
 !postgres@vmotus1:/home/devops$ pg_lsclusters
@@ -193,7 +193,7 @@ Ver Cluster Port Status Owner    Data directory               Log file
 !    "public.test2"
 ```
 
-**5. Сессия#1** - Заполняем таблицу _test_ в кластере _main_:
+**3. Сессия#1** - Заполняем таблицу _test_ в кластере _main_:
 ```
 postgres@vmotus1:/home/devops$ psql
 psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
@@ -271,7 +271,7 @@ repldb=# \dt+
 ```
 Данные из таблицы _test2_ кластера _main2_ были реплицированы на кластер _main_.
 
-**6. Сессия#2** - Создаём подписку на таблицу _test_ из кластера _main_ с опцией копирования существующих данных:
+**4. Сессия#2** - Создаём подписку на таблицу _test_ из кластера _main_ с опцией копирования существующих данных:
 ```diff
 !repldb=# create subscription test_sub connection 'host=localhost port=5432 user=postgres password=****** dbname=repldb' publication test_pub with (copy_data=true);
 !NOTICE:  created replication slot "test_sub" on publisher
@@ -309,7 +309,7 @@ repldb=# \dt+
 !(4 rows)
 ```
 
-**7. Сессия#1** - Проверяем изменения в таблице _test2_:
+**Сессия#1** - Проверяем изменения в таблице _test2_:
 ```
 repldb=# select* from test2;
  id |    str
@@ -324,7 +324,7 @@ repldb=# \q
 ```
 Изменение данных в таблице _test2_ кластера _main2_ так же были реплицированы на кластер _main_.
 
-**8. Сессия#3** - Создаём третий кластер PostgreSQL 14 _main3_:
+**5. Сессия#3** - Создаём третий кластер PostgreSQL 14 _main3_:
 ```diff
 +devops@vmotus1:~$ sudo su postgres
 
@@ -363,7 +363,7 @@ repldb=# \q
 +postgres@vmotus1:/home/devops$ rm -rf /var/lib/postgresql/14/main3
 ```
 
-**9. Сессия#1** - Создаём бэкап кластера _main_ в каталоге кластера _main3_:
+**Сессия#1** - Создаём бэкап кластера _main_ в каталоге кластера _main3_:
 ```
 postgres@vmotus1:/home/devops$ pg_basebackup -p 5432 -D /var/lib/postgresql/14/main3
 
@@ -374,7 +374,7 @@ Ver Cluster Port Status Owner    Data directory               Log file
 14  main3   5434 down   postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
 ```
 
-**10. Сессия#3** - Запускаем кластер _main3_ (порт 5434):
+**Сессия#3** - Запускаем кластер _main3_ (порт 5434):
 ```diff
 +postgres@vmotus1:/home/devops$ pg_ctlcluster 14 main3 start
 
@@ -448,7 +448,7 @@ Ver Cluster Port Status Owner    Data directory               Log file
 +repldb=# alter subscription test2_sub disable;
 +ALTER SUBSCRIPTION
 
-+repldb=# alter subscription test2_sub set (slot_name = NONE);
++repldb=# alter subscription test2_sub set (slot_name=none);
 +ALTER SUBSCRIPTION
 
 +repldb=# drop subscription test2_sub;
@@ -463,7 +463,7 @@ Ver Cluster Port Status Owner    Data directory               Log file
 ```
 В базе данных _repldb_ кластера _main3_ остались две подписки. 
 
-**11. Сессия#1** - Вносим изменения в таблицу _test_ на кластере _main_ и проверяем репликацию изменений на кластерах _main2_ и _main3_:
+**6. Сессия#1** - Вносим изменения в таблицу _test_ на кластере _main_ и проверяем репликацию изменений на кластерах _main2_ и _main3_:
 ```
 postgres@vmotus1:/home/devops$ psql
 psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
@@ -512,7 +512,7 @@ repldb=# select* from test;
 ```
 Данные реплицированы на все подписанные кластеры.
 
-**12. Сессия#4** - **Задание со \*.**
+**7. Сессия#4** - **Задание со \*.**
 Создаём четвертый кластер PostgreSQL 14 _main4_:
 ```diff
 -devops@vmotus1:~$ sudo su postgres
@@ -565,7 +565,6 @@ repldb=# \q
 ```
 Для настройки горячего реплицирования со стороны главного/передающего сервера требуется установить параметр synchronous_commit=on (установлен по умолчанию), со стороны ведомого сервера требуется установить параметры hot_standby_feedback=off (установлен по умолчанию), max_standby_streaming_delay (по умолчанию установлено 30 секунд (30000 миллисекуунд) - для тестирования можно не изменять).
 
-
 Создаём бэкап кластера _main3_ с опцией -R (--write-recovery-conf - настройка резервного сервера с использованием результатов резервного копирования):
 ```
 postgres@vmotus1:/home/devops$ pg_basebackup -p 5434 -R -D /var/lib/postgresql/14/main4
@@ -590,8 +589,73 @@ Ver Cluster Port Status          Owner    Data directory               Log file
 14  main4   5435 online,recovery postgres /var/lib/postgresql/14/main4 /var/log/postgresql/postgresql-14-main4.log
 ```
 
+Подключаемся к базе данных _repldb_, проверяем данные:
+```
+postgres@vmotus1:/home/devops$ psql -p 5435
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
 
+postgres=# \c repldb
+You are now connected to database "repldb" as user "postgres".
 
+repldb=# \conninfo
+You are connected to database "repldb" as user "postgres" via socket in "/var/run/postgresql" at port "5435".
+
+repldb=# select* from test;
+ id |    str
+----+------------
+  2 | 951236d920
+  3 | 09124a3798
+  4 | dc7d406807
+  1 | first
+(4 rows)
+
+repldb=# select* from test2;
+ id |    str
+----+------------
+  1 | 1e36afe32a
+  3 | bcda117e62
+  4 | 99edca1679
+  2 | second
+(4 rows)
+```
+
+**Сессия#1** - Вносим изменения в таблицу _test_ на кластере _main_:
+```
+repldb=# insert into test(str) values (md5(random()::text)::char(10));
+INSERT 0 1
+
+repldb=# select* from test;
+ id |    str
+----+------------
+  2 | 951236d920
+  3 | 09124a3798
+  5 | 6a0ca08ecb
+  4 | dc7d406807
+  1 | first
+(5 rows)
+```
+
+**Сессия#2** - Вносим изменения в таблицу _test2_ на кластере _main2_:
+```
+repldb=# insert into test2(str) values (md5(random()::text)::char(10));
+INSERT 0 1
+
+repldb=# select* from test2;
+ id |    str
+----+------------
+  1 | 1e36afe32a
+  3 | bcda117e62
+  4 | 99edca1679
+  2 | second
+  5 | 6452dbfa30
+(5 rows)
+```
+
+**Сессия#4** - Проверяем репликацию данных:
+```
+
+```
 
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
