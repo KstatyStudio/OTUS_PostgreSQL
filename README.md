@@ -241,7 +241,7 @@ Tables:
 
 Создаём подписку на таблицу _test2_ из кластера _main2_ с опцией копирования существующих данных:
 ```
-repldb=# create subscription test2_sub connection 'host=localhost port=5433 user=postgres password=repl14 dbname=repldb' publication test2_pub with (copy_data=true);
+repldb=# create subscription test2_sub connection 'host=localhost port=5433 user=postgres password=****** dbname=repldb' publication test2_pub with (copy_data=true);
 NOTICE:  created replication slot "test2_sub" on publisher
 CREATE SUBSCRIPTION
 
@@ -269,11 +269,11 @@ repldb=# \dt+
  public | test2 | table | postgres | permanent   | heap          | 8192 bytes |
 (2 rows)
 ```
-Данные из таблицы _test2_ кластера _main2_ были реплицированы в кластер _main_.
+Данные из таблицы _test2_ кластера _main2_ были реплицированы на кластер _main_.
 
 **6. Сессия#2** - Создаём подписку на таблицу _test_ из кластера _main_ с опцией копирования существующих данных:
 ```diff
-!repldb=# create subscription test_sub connection 'host=localhost port=5432 user=postgres password=repl14 dbname=repldb' publication test_pub with (copy_data=true);
+!repldb=# create subscription test_sub connection 'host=localhost port=5432 user=postgres password=****** dbname=repldb' publication test_pub with (copy_data=true);
 !NOTICE:  created replication slot "test_sub" on publisher
 !CREATE SUBSCRIPTION
 
@@ -293,7 +293,7 @@ repldb=# \dt+
 ! public | test2 | table | postgres | permanent   | heap          | 8192 bytes |
 !(2 rows)
 ```
-Данные из таблицы _test_ кластера _main_ были реплицированы в кластер _main2_.
+Данные из таблицы _test_ кластера _main_ были реплицированы на кластер _main2_.
 
 Вносим изменения в таблицу _test2_:
 ```diff
@@ -322,7 +322,7 @@ repldb=# select* from test2;
 
 repldb=# \q
 ```
-Изменение данных в таблице _test2_ кластера _main2_ так же были реплицированы в кластер _main_.
+Изменение данных в таблице _test2_ кластера _main2_ так же были реплицированы на кластер _main_.
 
 **8. Сессия#3** - Создаём третий кластер PostgreSQL 14 _main3_:
 ```diff
@@ -425,11 +425,11 @@ Ver Cluster Port Status Owner    Data directory               Log file
 
 Создаём подписки на таблицу _test_ из кластера _main_ и таблицу _test2_ из кластера _main2_ без опции копирования существующих данных:
 ```diff
-+repldb=# create subscription test_sub_3 connection 'host=localhost port=5432 user=postgres password=repl14 dbname=repldb' publication test_pub with (copy_data=false);
++repldb=# create subscription test_sub_3 connection 'host=localhost port=5432 user=postgres password=****** dbname=repldb' publication test_pub with (copy_data=false);
 +NOTICE:  created replication slot "test_sub_3" on publisher
 +CREATE SUBSCRIPTION
 
-+repldb=# create subscription test2_sub_3 connection 'host=localhost port=5433 user=postgres password=repl14 dbname=repldb' publication test2_pub with (copy_data=false);
++repldb=# create subscription test2_sub_3 connection 'host=localhost port=5433 user=postgres password=****** dbname=repldb' publication test2_pub with (copy_data=false);
 +NOTICE:  created replication slot "test2_sub_3" on publisher
 +CREATE SUBSCRIPTION
 
@@ -444,9 +444,24 @@ Ver Cluster Port Status Owner    Data directory               Log file
 ```
 
 При копировании кластера была скопирована и подписка _test2_sub_, удалим её, чтобы избежать двойной репликации.
-```
+```diff
++repldb=# alter subscription test2_sub disable;
++ALTER SUBSCRIPTION
 
++repldb=# alter subscription test2_sub set (slot_name = NONE);
++ALTER SUBSCRIPTION
+
++repldb=# drop subscription test2_sub;
++DROP SUBSCRIPTION
+
++repldb=# \dRs+
++    Name     |  Owner   | Enabled | Publication | Binary | Streaming | Synchronous commit |                               Conninfo
++-------------+----------+---------+-------------+--------+-----------+--------------------+----------------------------------------------------------------------
++ test2_sub_3 | postgres | t       | {test2_pub} | f      | f         | off                | host=localhost port=5433 user=postgres password=****** dbname=repldb
++ test_sub_3  | postgres | t       | {test_pub}  | f      | f         | off                | host=localhost port=5432 user=postgres password=****** dbname=repldb
++(2 rows)
 ```
+В базе данных _repldb_ кластера _main3_ остались две подписки. 
 
 **11. Сессия#1** - Вносим изменения в таблицу _test_ на кластере _main_ и проверяем репликацию изменений на кластерах _main2_ и _main3_:
 ```
