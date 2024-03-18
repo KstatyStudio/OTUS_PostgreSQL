@@ -385,6 +385,15 @@ Ver Cluster Port Status Owner    Data directory               Log file
 14  main3   5434 online postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
 ```
 
+Подключаемся к базе данных _repldb_ и создаём подписки на таблицу _test_ из кластера _main_ и таблицу _test2_ из кластера _main2_ без опции копирования существующих данных:
+```
+
+```
+
+
+
+
+
 
 
 
