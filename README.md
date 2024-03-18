@@ -385,11 +385,45 @@ Ver Cluster Port Status Owner    Data directory               Log file
 14  main3   5434 online postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
 ```
 
-Подключаемся к базе данных _repldb_ и создаём подписки на таблицу _test_ из кластера _main_ и таблицу _test2_ из кластера _main2_ без опции копирования существующих данных:
+Подключаемся к базе данных _repldb_ и проверяем данные, загруженные при копировании кластера:
+```
+postgres@vmotus1:/home/devops$ psql
+psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+Type "help" for help.
+
+postgres=# \c repldb
+You are now connected to database "repldb" as user "postgres".
+
+repldb=# \dt+
+                                     List of relations
+ Schema | Name  | Type  |  Owner   | Persistence | Access method |    Size    | Description
+--------+-------+-------+----------+-------------+---------------+------------+-------------
+ public | test  | table | postgres | permanent   | heap          | 8192 bytes |
+ public | test2 | table | postgres | permanent   | heap          | 8192 bytes |
+(2 rows)
+
+repldb=# select* from test;
+ id |    str
+----+------------
+  1 | cec8aeabe2
+  2 | 951236d920
+  3 | 09124a3798
+(3 rows)
+
+repldb=# select* from test2;
+ id |    str
+----+------------
+  1 | 1e36afe32a
+  3 | bcda117e62
+  4 | 99edca1679
+  2 | second
+(4 rows)
+```
+
+Создаём подписки на таблицу _test_ из кластера _main_ и таблицу _test2_ из кластера _main2_ без опции копирования существующих данных:
 ```
 
 ```
-
 
 
 
