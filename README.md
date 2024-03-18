@@ -443,7 +443,7 @@ Ver Cluster Port Status Owner    Data directory               Log file
 +(3 rows)
 ```
 
-При копировании кластера была скопирована и подписка _test2_sub_, удалим её, чтобы избежать двойной репликации.
+При копировании кластера была скопирована и подписка _test2_sub_, удалим её, чтобы избежать двойной нагрузки на сервер.
 ```diff
 +repldb=# alter subscription test2_sub disable;
 +ALTER SUBSCRIPTION
@@ -511,5 +511,15 @@ repldb=# select* from test;
 +(4 rows)
 ```
 Данные реплицированы на все подписанные кластеры.
+
+**12. Сессия#4** - **Задание со звёздочкой.**
+Создаём четвертый кластер PostgreSQL 14 _main4_:
+```
+
+```
+
+
+
+
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
