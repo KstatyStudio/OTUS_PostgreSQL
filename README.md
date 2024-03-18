@@ -269,6 +269,7 @@ repldb=# \dt+
  public | test2 | table | postgres | permanent   | heap          | 8192 bytes |
 (2 rows)
 ```
+Данные из таблицы _test2_ кластера _main2_ были реплицированы на кластер _main_.
 
 **6. Сессия#2** - Создаём подписку на таблицу _test_ из кластера _main_ с опцией копирования существующих данных:
 ```
@@ -279,9 +280,9 @@ CREATE SUBSCRIPTION
 repldb=# select* from test;
  id |    str
 ----+------------
-  1 | 938a3da5a4
-  2 | 6d53d88e01
-  3 | a9e8426663
+  1 | cec8aeabe2
+  2 | 951236d920
+  3 | 09124a3798
 (3 rows)
 
 repldb=# \dt+
@@ -292,23 +293,34 @@ repldb=# \dt+
  public | test2 | table | postgres | permanent   | heap          | 8192 bytes |
 (2 rows)
 ```
-
-
-
-
-##!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+Данные из таблицы _test_ кластера _main_ были реплицированы на кластер _main2_.
 
 Вносим изменения в таблицу _test2_:
 ```
-
+repldb=# update test2 set str='second' where id=2;
+UPDATE 1
+repldb=# select* from test2;
+ id |    str
+----+------------
+  1 | 1e36afe32a
+  3 | bcda117e62
+  4 | 99edca1679
+  2 | second
+(4 rows)
 ```
 
-
-##!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-**7. Сессия#1** - Проверяем изменения в таблице _test2_
-
+**7. Сессия#1** - Проверяем изменения в таблице _test2_:
+```
+repldb=# select* from test2;
+ id |    str
+----+------------
+  1 | 1e36afe32a
+  3 | bcda117e62
+  4 | 99edca1679
+  2 | second
+(4 rows)
+```
+Изменение данных в таблице _test2_ кластера _main2_ так же были реплицированы на кластер _main_.
 
 
 
