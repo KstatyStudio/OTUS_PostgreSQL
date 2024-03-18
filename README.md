@@ -319,11 +319,10 @@ repldb=# select* from test2;
   4 | 99edca1679
   2 | second
 (4 rows)
+
+repldb=# \q
 ```
 Изменение данных в таблице _test2_ кластера _main2_ так же были реплицированы на кластер _main_.
-
-
-
 
 **8. Сессия#3** - Создаём третий кластер PostgreSQL 14 _main3_:
 ```
@@ -364,7 +363,27 @@ Ver Cluster Port Status Owner    Data directory               Log file
 postgres@vmotus1:/home/devops$ rm -rf /var/lib/postgresql/14/main3
 ```
 
+**9. Сессия#1** - Создаём бэкап кластера _main_ в каталоге кластера _main3_:
+```
+postgres@vmotus1:/home/devops$ pg_basebackup -p 5432 -D /var/lib/postgresql/14/main3
 
+postgres@vmotus1:/home/devops$ pg_lsclusters
+Ver Cluster Port Status Owner    Data directory               Log file
+14  main    5432 online postgres /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
+14  main2   5433 online postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
+14  main3   5434 down   postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
+```
+
+**10. Сессия#3** - Запускаем кластер _main3_ (порт 5434):
+```
+postgres@vmotus1:/home/devops$ pg_ctlcluster 14 main3 start
+
+postgres@vmotus1:/home/devops$ pg_lsclusters
+Ver Cluster Port Status Owner    Data directory               Log file
+14  main    5432 online postgres /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
+14  main2   5433 online postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
+14  main3   5434 online postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
+```
 
 
 
