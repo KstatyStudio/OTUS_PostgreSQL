@@ -551,110 +551,205 @@ repldb=# select* from test;
 ```
 
 **Сессия#3** - Проверяем настройки сервера PostgreSQL:
-```
-repldb=# select name, setting from pg_settings where name in ('wal_level', 'synchronous_commit', 'hot_standby_feedback', 'max_standby_streaming_delay');
-            name             | setting
------------------------------+---------
- hot_standby_feedback        | off
- max_standby_streaming_delay | 30000
- synchronous_commit          | on
- wal_level                   | logical
-(5 rows)
+```diff
++repldb=# select name, setting from pg_settings where name in ('wal_level', 'synchronous_commit', 'hot_standby_feedback', 'max_standby_streaming_delay');
++            name             | setting
++-----------------------------+---------
++ hot_standby_feedback        | off
++ max_standby_streaming_delay | 30000
++ synchronous_commit          | on
++ wal_level                   | logical
++(5 rows)
 
-repldb=# \q
++repldb=# \q
 ```
-Для настройки горячего реплицирования со стороны главного/передающего сервера требуется установить параметр synchronous_commit=on (установлен по умолчанию), со стороны ведомого сервера требуется установить параметры hot_standby_feedback=off (установлен по умолчанию), max_standby_streaming_delay (по умолчанию установлено 30 секунд (30000 миллисекунд) - для тестирования можно не изменять).
+Для настройки горячего реплицирования со стороны главного/передающего сервера требуется установить параметр _synchronous_commit=on_ (установлен по умолчанию) и _wal_level=replica_ (требуется изменить), со стороны ведомого сервера требуется установить параметры _hot_standby_feedback=off_ (установлен по умолчанию), _max_standby_streaming_delay_ (по умолчанию установлено 30 секунд (30000 миллисекунд) - для тестирования можно не изменять).
 
-Создаём бэкап кластера _main3_ с опцией -R (--write-recovery-conf - настройка резервного сервера с использованием результатов резервного копирования):
-```
-postgres@vmotus1:/home/devops$ pg_basebackup -p 5434 -R -D /var/lib/postgresql/14/main4
+Изменяем  _wal_level_:
+```diff
++postgres=# alter system set wal_level='replica';
++ALTER SYSTEM
 
-postgres@vmotus1:/home/devops$ pg_lsclusters
-Ver Cluster Port Status        Owner    Data directory               Log file
-14  main    5432 online        postgres /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
-14  main2   5433 online        postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
-14  main3   5434 online        postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
-14  main4   5435 down,recovery postgres /var/lib/postgresql/14/main4 /var/log/postgresql/postgresql-14-main4.log
-```
++postgres=# \q
++postgres@vmotus1:/home/devops$ exit
 
-**Сессия#4** - Запускаем кластер _main4_ (порт 5435):
-```
-postgres@vmotus1:/home/devops$ pg_ctlcluster 14 main4 start
++devops@vmotus1:~$ sudo pg_ctlcluster 14 main3 restart
 
-postgres@vmotus1:/home/devops$ pg_lsclusters
-Ver Cluster Port Status          Owner    Data directory               Log file
-14  main    5432 online          postgres /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
-14  main2   5433 online          postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
-14  main3   5434 online          postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
-14  main4   5435 online,recovery postgres /var/lib/postgresql/14/main4 /var/log/postgresql/postgresql-14-main4.log
++devops@vmotus1:~$ sudo su postgres
+
++postgres@vmotus1:/home/devops$ psql -p 5434
++psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
++Type "help" for help.
+
++postgres=# select name, setting from pg_settings where name in ('wal_level', 'synchronous_commit', 'hot_standby_feedback', 'max_standby_streaming_delay');
++            name             | setting
++-----------------------------+---------
++ hot_standby_feedback        | off
++ max_standby_streaming_delay | 30000
++ synchronous_commit          | on
++ wal_level                   | replica
++(4 rows)
 ```
 
 Подключаемся к базе данных _repldb_, проверяем данные:
+```diff
++postgres=# \c repldb
++You are now connected to database "repldb" as user "postgres".
+
++repldb=# select* from test;
++ id |    str
++----+------------
++  2 | 951236d920
++  3 | 09124a3798
++  5 | 6a0ca08ecb
++  6 | d0f98f2a64
++  7 | f86d982626
++  4 | dc7d406807
++  1 | first
++(7 rows)
+
++repldb=# select* from test2;
++ id |    str
++----+------------
++  1 | 1e36afe32a
++  3 | bcda117e62
++  4 | 99edca1679
++  2 | second
++  5 | 6452dbfa30
++  6 | 3d075ebc35
++  7 | 0f9f913f3e
++(7 rows)
+
++repldb=# \q
 ```
-postgres@vmotus1:/home/devops$ psql -p 5435
-psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
-Type "help" for help.
 
-postgres=# \c repldb
-You are now connected to database "repldb" as user "postgres".
+Создаём бэкап кластера _main3_ в каталог кластера _main4_ с опцией -R (--write-recovery-conf - настройка резервного сервера с использованием результатов резервного копирования):
+```diff
++postgres@vmotus1:/home/devops$ pg_basebackup -p 5434 -R -D /var/lib/postgresql/14/main4
 
-repldb=# \conninfo
-You are connected to database "repldb" as user "postgres" via socket in "/var/run/postgresql" at port "5435".
-
-repldb=# select* from test;
- id |    str
-----+------------
-  2 | 951236d920
-  3 | 09124a3798
-  4 | dc7d406807
-  1 | first
-(4 rows)
-
-repldb=# select* from test2;
- id |    str
-----+------------
-  1 | 1e36afe32a
-  3 | bcda117e62
-  4 | 99edca1679
-  2 | second
-(4 rows)
++postgres@vmotus1:/home/devops$ pg_lsclusters
++Ver Cluster Port Status        Owner    Data directory               Log file
++14  main    5432 online        postgres /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
++14  main2   5433 online        postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
++14  main3   5434 online        postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
++14  main4   5435 down,recovery postgres /var/lib/postgresql/14/main4 /var/log/postgresql/postgresql-14-main4.log
 ```
 
+**Сессия#4** - Запускаем кластер _main4_ (порт 5435):
+```diff
+-postgres@vmotus1:/home/devops$ pg_ctlcluster 14 main4 start
+
+-postgres@vmotus1:/home/devops$ pg_lsclusters
+-Ver Cluster Port Status          Owner    Data directory               Log file
+-14  main    5432 online          postgres /var/lib/postgresql/14/main  /var/log/postgresql/postgresql-14-main.log
+-14  main2   5433 online          postgres /var/lib/postgresql/14/main2 /var/log/postgresql/postgresql-14-main2.log
+-14  main3   5434 online          postgres /var/lib/postgresql/14/main3 /var/log/postgresql/postgresql-14-main3.log
+-14  main4   5435 online,recovery postgres /var/lib/postgresql/14/main4 /var/log/postgresql/postgresql-14-main4.log
+```
+
+Подключаемся к базе данных _repldb_, проверяем данные:
+```diff
+-postgres@vmotus1:/home/devops$ psql -p 5435
+-psql (14.11 (Ubuntu 14.11-1.pgdg22.04+1))
+-Type "help" for help.
+
+-postgres=# \c repldb
+-You are now connected to database "repldb" as user "postgres".
+
+-repldb=# \conninfo
+-You are connected to database "repldb" as user "postgres" via socket in "/var/run/postgresql" at port "5435".
+
+-repldb=# select* from test;
+- id |    str
+-\----+------------
+-  2 | 951236d920
+-  3 | 09124a3798
+-  5 | 6a0ca08ecb
+-  6 | d0f98f2a64
+-  7 | f86d982626
+-  4 | dc7d406807
+-  1 | first
+-(7 rows)
+
+-repldb=# select* from test2;
+- id |    str
+-\----+------------
+-  1 | 1e36afe32a
+-  3 | bcda117e62
+-  4 | 99edca1679
+-  2 | second
+-  5 | 6452dbfa30
+-  6 | 3d075ebc35
+-  7 | 0f9f913f3e
+-(7 rows)
+```
+Данные скопированы полностью.
+
+Проверяем репликацию:
 **Сессия#1** - Вносим изменения в таблицу _test_ на кластере _main_:
 ```
 repldb=# insert into test(str) values (md5(random()::text)::char(10));
 INSERT 0 1
-
 repldb=# select* from test;
  id |    str
 ----+------------
   2 | 951236d920
   3 | 09124a3798
   5 | 6a0ca08ecb
+  6 | d0f98f2a64
+  7 | f86d982626
+  8 | ecb0b09c50
   4 | dc7d406807
   1 | first
-(5 rows)
+(8 rows)
 ```
 
 **Сессия#2** - Вносим изменения в таблицу _test2_ на кластере _main2_:
-```
-repldb=# insert into test2(str) values (md5(random()::text)::char(10));
-INSERT 0 1
+```diff
+!repldb=# insert into test2(str) values (md5(random()::text)::char(10));
+!INSERT 0 1
 
-repldb=# select* from test2;
- id |    str
-----+------------
-  1 | 1e36afe32a
-  3 | bcda117e62
-  4 | 99edca1679
-  2 | second
-  5 | 6452dbfa30
-(5 rows)
+!repldb=# select* from test2;
+! id |    str
+!----+------------
+!  1 | 1e36afe32a
+!  3 | bcda117e62
+!  4 | 99edca1679
+!  2 | second
+!  5 | 6452dbfa30
+!  6 | 3d075ebc35
+!  7 | 0f9f913f3e
+!  8 | 4197cf833e
+!(8 rows)
 ```
 
 **Сессия#4** - Проверяем репликацию данных:
-```
+```diff
+-repldb=# select* from test;
+- id |    str
+-\----+------------
+-  2 | 951236d920
+-  3 | 09124a3798
+-  5 | 6a0ca08ecb
+-  6 | d0f98f2a64
+-  7 | f86d982626
+-  8 | ecb0b09c50
+-  4 | dc7d406807
+-  1 | first
+-(8 rows)
 
+-repldb=# select* from test2;
+- id |    str
+-\----+------------
+-  1 | 1e36afe32a
+-  3 | bcda117e62
+-  4 | 99edca1679
+-  2 | second
+-  5 | 6452dbfa30
+-  6 | 3d075ebc35
+-  7 | 0f9f913f3e
+-  8 | 4197cf833e
+-(8 rows)
 ```
 
 
