@@ -661,7 +661,7 @@ repldb=# select* from test;
 
 -repldb=# select* from test;
 - id |    str
--\----+------------
+-----+------------
 -  2 | 951236d920
 -  3 | 09124a3798
 -  5 | 6a0ca08ecb
@@ -673,7 +673,7 @@ repldb=# select* from test;
 
 -repldb=# select* from test2;
 - id |    str
--\----+------------
+-----+------------
 -  1 | 1e36afe32a
 -  3 | bcda117e62
 -  4 | 99edca1679
@@ -727,7 +727,7 @@ repldb=# select* from test;
 ```diff
 -repldb=# select* from test;
 - id |    str
--\----+------------
+-----+------------
 -  2 | 951236d920
 -  3 | 09124a3798
 -  5 | 6a0ca08ecb
@@ -740,7 +740,7 @@ repldb=# select* from test;
 
 -repldb=# select* from test2;
 - id |    str
--\----+------------
+-----+------------
 -  1 | 1e36afe32a
 -  3 | bcda117e62
 -  4 | 99edca1679
