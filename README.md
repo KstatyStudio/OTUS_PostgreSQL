@@ -441,9 +441,16 @@ Ver Cluster Port Status Owner    Data directory               Log file
 + test2_sub_3 | postgres | t       | {test2_pub}
 + test_sub_3  | postgres | t       | {test_pub}
 +(3 rows)
+
++repldb=# \dRp
++                                 List of publications
++   Name   |  Owner   | All tables | Inserts | Updates | Deletes | Truncates | Via root
++----------+----------+------------+---------+---------+---------+-----------+----------
++ test_pub | postgres | f          | t       | t       | t       | t         | f
++(1 row)
 ```
 
-При копировании кластера была скопирована и подписка _test2_sub_, удалим её, чтобы избежать двойной нагрузки на сервер.
+При копировании кластера были скопированы подписка _test2_sub_ и публикация _test_pub_, удалим их, чтобы избежать двойной нагрузки на сервер.
 ```diff
 +repldb=# alter subscription test2_sub disable;
 +ALTER SUBSCRIPTION
@@ -460,6 +467,15 @@ Ver Cluster Port Status Owner    Data directory               Log file
 + test2_sub_3 | postgres | t       | {test2_pub} | f      | f         | off                | host=localhost port=5433 user=postgres password=****** dbname=repldb
 + test_sub_3  | postgres | t       | {test_pub}  | f      | f         | off                | host=localhost port=5432 user=postgres password=****** dbname=repldb
 +(2 rows)
+
++repldb=# drop publication test_pub;
++DROP PUBLICATION
+
++repldb=# \dRp
++                              List of publications
++ Name | Owner | All tables | Inserts | Updates | Deletes | Truncates | Via root
++------+-------+------------+---------+---------+---------+-----------+----------
++(0 rows)
 ```
 В базе данных _repldb_ кластера _main3_ остались две подписки. 
 
