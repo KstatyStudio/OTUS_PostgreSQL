@@ -131,7 +131,6 @@ UPDATE 1
 !UPDATE 1
 
 !locks=*# update accounts set amount=amount+10 where acc_no=1;
-!UPDATE 1
 ```
 Транзакция в сессии #2 зависает - ожидает снятия блокировки строки _acc_no = 1_, установленной транзакцией в сессии #1.
 
@@ -144,25 +143,49 @@ Process 19541 waits for ShareLock on transaction 501; blocked by process 18576.
 HINT:  See server log for query details.
 CONTEXT:  while updating tuple (0,2) in relation "accounts"
 ```
-
-
-
-**Сессия #2** - Проверим журнал сообщений:
+Система идентифицирует взаимную блокировку транзакций и приостанавливает выполнение транзакции в **сессии #1**. При этом отменяются блокировки установленные в сесии #1 и выполняется запрос в **сесии #2**: 
 ```diff
-!locks=# \q
-!devops@vmotus07:~$ sudo tail -n 10 /var/log/postgresql/postgresql-13-main.log | grep duration
-!2024-03-06 11:57:34.965 UTC [135902] postgres@locks LOG:  duration: 372.286 ms  statement: insert into accounts (amount) select generate_series (1000, 100999);
-!2024-03-06 11:57:42.626 UTC [135902] postgres@locks LOG:  duration: 257.364 ms  statement: create extension pageinspect;
-!2024-03-06 12:16:01.976 UTC [135902] postgres@locks LOG:  duration: 596.174 ms  statement: update accounts set amount=amount+10;
+!UPDATE 1
 ```
-В журнал стали записываться данные о блокировках и их длительности, например видно, что заполнение данными таблицы _accounts_ вызвало блокировку длительностью 372 миллисекунды, а выборка 3 строк в незавершённой транзакции не вызвала блокировок, превышающих 200 миллисекунд. Подключение расширения "подвисло" на 257 миллисекунд. Обновление всех строк таблицы _account_ вызвало блокировку на 596 миллисекунд.
+Отменяем транзакции в обоих сессиях:
+**Сессия #1**
+```
+locks=!# rollback;
+ROLLBACK
+```
 
+**Сессия #2**
+```diff
+!locks=*# rollback;
+!ROLLBACK
+```
 
-
-
-
-
-
+**Сессия #1** - Проверим журнал сообщений:
+```
+locks=# \q
+devops@vmotus07:~$ sudo tail -n 10 /var/log/postgresql/postgresql-13-main.log
+2024-03-26 06:24:08.877 UTC [17430] postgres@locks STATEMENT:  update accounts set amount=amount+10 where acc_no=1;
+2024-03-26 06:33:53.757 UTC [19541] postgres@locks LOG:  process 19541 still waiting for ShareLock on transaction 501 after 200.121 ms
+2024-03-26 06:33:53.757 UTC [19541] postgres@locks DETAIL:  Process holding the lock: 18576. Wait queue: 19541.
+2024-03-26 06:33:53.757 UTC [19541] postgres@locks CONTEXT:  while updating tuple (0,1) in relation "accounts"
+2024-03-26 06:33:53.757 UTC [19541] postgres@locks STATEMENT:  update accounts set amount=amount+10 where acc_no=1;
+2024-03-26 06:34:03.477 UTC [18576] postgres@locks LOG:  process 18576 detected deadlock while waiting for ShareLock on transaction 502 after 200.136 ms
+2024-03-26 06:34:03.477 UTC [18576] postgres@locks DETAIL:  Process holding the lock: 19541. Wait queue: .
+2024-03-26 06:34:03.477 UTC [18576] postgres@locks CONTEXT:  while updating tuple (0,2) in relation "accounts"
+2024-03-26 06:34:03.477 UTC [18576] postgres@locks STATEMENT:  update accounts set amount=amount+10 where acc_no=2;
+2024-03-26 06:34:03.478 UTC [18576] postgres@locks ERROR:  deadlock detected
+2024-03-26 06:34:03.478 UTC [18576] postgres@locks DETAIL:  Process 18576 waits for ShareLock on transaction 502; blocked by process 19541.
+        Process 19541 waits for ShareLock on transaction 501; blocked by process 18576.
+        Process 18576: update accounts set amount=amount+10 where acc_no=2;
+        Process 19541: update accounts set amount=amount+10 where acc_no=1;
+2024-03-26 06:34:03.478 UTC [18576] postgres@locks HINT:  See server log for query details.
+2024-03-26 06:34:03.478 UTC [18576] postgres@locks CONTEXT:  while updating tuple (0,2) in relation "accounts"
+2024-03-26 06:34:03.478 UTC [18576] postgres@locks STATEMENT:  update accounts set amount=amount+10 where acc_no=2;
+2024-03-26 06:34:03.478 UTC [19541] postgres@locks LOG:  process 19541 acquired ShareLock on transaction 501 after 9920.544 ms
+2024-03-26 06:34:03.478 UTC [19541] postgres@locks CONTEXT:  while updating tuple (0,1) in relation "accounts"
+2024-03-26 06:34:03.478 UTC [19541] postgres@locks STATEMENT:  update accounts set amount=amount+10 where acc_no=1;
+```
+В журнале записаны данные о блокировках, например видно, что выполнение обновления первого счета во второй транзакци (pid=19541) ожидало снятия блокировки 200.121 миллисекунд. А так же взаимная блокировка, вызванная первой транзакцией была идентифицирована через 200.136 миллисекунд. Подробно зафиксированы процессы и запросы, участвовавшие во взаимной блокировке.
 
 **2. - Смоделируем ситуацию обновления одной и той же строки тремя командами UPDATE в разных сеансах:**
 
