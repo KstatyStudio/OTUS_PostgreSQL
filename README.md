@@ -116,7 +116,7 @@ UPDATE 1
 !You are now connected to database "locks" as user "postgres".
 
 !locks=# select pg_backend_pid();
-! pg_backend_pid
+!pg_backend_pid
 !----------------
 !          19541
 !(1 row)
