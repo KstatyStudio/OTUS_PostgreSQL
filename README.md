@@ -147,7 +147,7 @@ CONTEXT:  while updating tuple (0,2) in relation "accounts"
 ```diff
 !UPDATE 1
 ```
-Отменяем транзакции в обоих сессиях:
+Отменяем транзакции в обоих сессиях:  
 **Сессия #1**
 ```
 locks=!# rollback;
