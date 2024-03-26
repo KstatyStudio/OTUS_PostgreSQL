@@ -6,8 +6,7 @@
 Механизм блокировок
 
 ### Исходные данные
-ВМ (облако): Ubuntu 22.04, PostgreSQL 13
-
+ВМ (облако): Ubuntu 22.04, PostgreSQL 13  
 SSH-сессии: 3 подключения
 
 ### Решение
@@ -18,27 +17,39 @@ devops@vmotus07:~$ sudo -u postgres psql
 psql (13.14 (Ubuntu 13.14-1.pgdg22.04+1))
 Type "help" for help.
 
-postgres=# show log_min_duration_statement;
- log_min_duration_statement
-----------------------------
- -1
-(1 row)
+postgres=# select name, setting, unit from pg_settings where name in ('deadlock_timeout', 'log_lock_waits');
+       name       | setting | unit
+------------------+---------+------
+ deadlock_timeout | 1000    | ms
+ log_lock_waits   | off     |
+(2 rows)
 ```
-Логирование длительных блокировок отключено.
+По умолчанию таймаут по взаимным блокировкам равен 1000 миллисекунд, логирование взаимных блокировок отключено.  
 
-Изменяем параметр _log_min_duration_statement_ для отображения в журнале сообщений информации о блокировках, удерживаемых более 200 миллисекунд:
+Уменьшим таймаут до 200 миллисекунд и включим логирование:
 ```
-postgres=# alter system set log_min_duration_statement=200;
+postgres=# alter system set deadlock_timeout=200;
+ALTER SYSTEM
+
+postgres=# alter system set log_lock_waits=on;
 ALTER SYSTEM
 ```
 
-Перечитываем конфигурацию для применения изменений без перезагрузки сервиса PostgreSQL.
+Перезагрузим сервер PostgreSQL для применения изменений конфигурации:
 ```
-postgres=# select pg_reload_conf();
- pg_reload_conf
-----------------
- t
-(1 row)
+postgres=# \q
+devops@vmotus07:~$ sudo systemctl restart postgresql
+
+devops@vmotus07:~$ sudo -u postgres psql
+psql (13.14 (Ubuntu 13.14-1.pgdg22.04+1))
+Type "help" for help.
+
+postgres=# select name, setting, unit from pg_settings where name in ('deadlock_timeout', 'log_lock_waits');
+       name       | setting | unit
+------------------+---------+------
+ deadlock_timeout | 200     | ms
+ log_lock_waits   | on      |
+(2 rows)
 ```
 
 Создаём базу данных _locks_, таблицу _accounts_, заполняем тестовыми данными:
@@ -65,18 +76,20 @@ locks=# create extension pgrowlocks;
 CREATE EXTENSION
 ```
 
-**2. - Смоделируем длительные блокировки**:
+**Смоделируем взаимную блокировку двух транзакций**:
+
+![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/959c0532-f11a-4792-aa8d-4bf5777e4770)
 
 **Сессия #1** - Определяем номер процесса:
 ```
 locks=*# select pg_backend_pid();
  pg_backend_pid
 ----------------
-          135902
+          18576
 (1 row)
 ```
 
-Начнём транзакцию и выполним запрос к таблице _accounts_, а так же обновим все строки:
+Начнём транзакцию и выполним запрос к таблице _accounts_, а так же обновим строку - уменьшим сумму на 10,00 на первом счёте (acc_no = 1):
 ```
 locks=# begin;
 BEGIN
@@ -89,12 +102,50 @@ locks=*# select* from accounts limit 3;
       3 |   1002
 (3 rows)
 
-locks=*# update accounts set amount=amount+10;
-UPDATE 100000
-
-locks=*# rollback;
-ROLLBACK
+locks=*# update accounts set amount=amount-10 where acc_no=1;
+UPDATE 1
 ```
+
+**Сессия #2** - Определяем номер процесса:
+```diff
+!devops@vmotus07:~$ sudo -u postgres psql
+!psql (13.14 (Ubuntu 13.14-1.pgdg22.04+1))
+!Type "help" for help.
+
+!postgres=# \c locks
+!You are now connected to database "locks" as user "postgres".
+
+!locks=# select pg_backend_pid();
+! pg_backend_pid
+!----------------
+!          19541
+!(1 row)
+```
+
+Начнём транзакцию и обновим строки - уменьшим сумму на 10,00 на втором счёте (acc_no = 2), и увеличим сумму на 10,00 на первом счёте (acc_no = 1):
+```diff
+!locks=# begin;
+!BEGIN
+
+!locks=*# update accounts set amount=amount-10 where acc_no=2;
+!UPDATE 1
+
+!locks=*# update accounts set amount=amount+10 where acc_no=1;
+!UPDATE 1
+```
+Транзакция в сессии #2 зависает - ожидает снятия блокировки строки _acc_no = 1_, установленной транзакцией в сессии #1.
+
+**Сессия #1** - попытаемся обновить строку -  увеличить сумму на втором счете (acc_no = 2):
+```
+locks=*# update accounts set amount=amount+10 where acc_no=2;
+ERROR:  deadlock detected
+DETAIL:  Process 18576 waits for ShareLock on transaction 502; blocked by process 19541.
+Process 19541 waits for ShareLock on transaction 501; blocked by process 18576.
+HINT:  See server log for query details.
+CONTEXT:  while updating tuple (0,2) in relation "accounts"
+```
+
+
 
 **Сессия #2** - Проверим журнал сообщений:
 ```diff
@@ -106,7 +157,14 @@ ROLLBACK
 ```
 В журнал стали записываться данные о блокировках и их длительности, например видно, что заполнение данными таблицы _accounts_ вызвало блокировку длительностью 372 миллисекунды, а выборка 3 строк в незавершённой транзакции не вызвала блокировок, превышающих 200 миллисекунд. Подключение расширения "подвисло" на 257 миллисекунд. Обновление всех строк таблицы _account_ вызвало блокировку на 596 миллисекунд.
 
-**3. - Смоделируем ситуацию обновления одной и той же строки тремя командами UPDATE в разных сеансах:**
+
+
+
+
+
+
+
+**2. - Смоделируем ситуацию обновления одной и той же строки тремя командами UPDATE в разных сеансах:**
 
 **Сессия #1** - Начнём новую транзакцию и выполним обновление строки - увеличим сумму на 10,00 на первом счёте (acc_no = 1):
 ```
