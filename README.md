@@ -127,13 +127,36 @@ indexdb=# select id, cmd, content, content_tsvector from commandtbl;
 (21 rows)
 ```
 
+Создаём Gin индекс для столбца _content_tsvector_:
+```
+indexdb=# create index on commandtbl using gin(content_tsvector);
+CREATE INDEX
+```
 
+Отключаем последовательное сканирование и проверяем полнотекстовый поиск - найдём команду, описание которой содержит слова _file_ и _Full_:
+```
+indexdb=# set enable_seqscan = off;
+SET
 
+indexdb=# select cmd, content from commandtbl where content_tsvector @@ to_tsquery('english', 'file & Full');
+            cmd            |                                                content
+---------------------------+--------------------------------------------------------------------------------------------------------
+ --tls-ca-file CA-file     | Full pathname of a file containing the top-level CA(s) certificates for peer certificate verification.
+ --tls-crl-file CRL-file   | Full pathname of a file containing revoked certificates.
+ --tls-cert-file cert-file | Full pathname of a file containing the certificate or certificate chain.
+ --tls-key-file key-file   | Full pathname of a file containing the private key.
+ --tls-psk-file PSK-file   | Full pathname of a file containing the pre-shared key.
+(5 rows)
 
-
-
-
-
+indexdb=# explain select cmd, content from commandtbl where content_tsvector @@ to_tsquery('english', 'file & Full');
+                                          QUERY PLAN
+-----------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on commandtbl  (cost=12.00..16.01 rows=1 width=64)
+   Recheck Cond: (content_tsvector @@ '''file'' & ''full'''::tsquery)
+   ->  Bitmap Index Scan on commandtbl_content_tsvector_idx  (cost=0.00..12.00 rows=1 width=0)
+         Index Cond: (content_tsvector @@ '''file'' & ''full'''::tsquery)
+(4 rows)
+```
 
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
