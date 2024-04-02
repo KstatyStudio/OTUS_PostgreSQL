@@ -25,7 +25,8 @@ CREATE TABLE
 indexdb=# insert into indextbl (id, string, checkout) select s.id, md5(random()::text)::char(32), random()<0.01 from generate_series(1,10000) as s(id) order by random();
 INSERT 0 10000
 
-indexdb=# select id, string, checkout from indextbl limit 10;                                                                                id  |              string              | checkout
+indexdb=# select id, string, checkout from indextbl limit 10;
+  id  |              string              | checkout
 ------+----------------------------------+----------
  5789 | 30fbb16b5ed3746d4b1084775429945d | t
  8800 | dfa8d5ed6ec36906c85a15447563ee7e | t
