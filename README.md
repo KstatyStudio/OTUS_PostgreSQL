@@ -69,7 +69,7 @@ indexdb=# explain select id, string, checkout from indextbl where id=551;
 ```
 Максимальная оценка стоимости выполнения запроса снизилась с 209 до 8.30 - более чем в 25 раз.
 
-**2. - Создание индекса для полнотекстового поиска:**
+**2. - Создание индекса для полнотекстового поиска:**  
 Создаём таблицу _commandtbl_ и заполняем тестовыми данными:
 ```
 indexdb=# create table commandtbl (id serial primary key, cmd text, content text);
