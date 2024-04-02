@@ -10,9 +10,23 @@
 
 ### Решение
 
-**1.** - Создание индекса:
+**1.** - Создание индекса:  
+Создаём базу данных _indexdb_, таблицу _indextbl_ и заполняем её тестовыми данными:
+```
+postgres=# create database indexdb;
+CREATE DATABASE
+
+postgres=# \c indexdb
+You are now connected to database "indexdb" as user "postgres".
+
+indexdb=# create table indextbl (id integer, string text, checkout boolean);
+CREATE TABLE
+
+indexdb=# insert into indextbl (id, string, checkout) select s.id, chr((32+random()*94)::integer), random()<0.01 from generate_series(1,10000) as s(id) order by random();
+INSERT 0 10000
 
 
+```
 
 
 
