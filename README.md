@@ -10,7 +10,7 @@
 
 ### Решение
 
-**1.** - Создание индекса:  
+**1.** - **Создание индекса:**  
 Создаём базу данных _indexdb_, таблицу _indextbl_ и заполняем её тестовыми данными:
 ```
 postgres=# create database indexdb;
@@ -41,8 +41,33 @@ indexdb=# select id, string, checkout from indextbl limit 10;
 (10 rows)
 ```
 
+Смотрим план выполнения запроса:
+```
+indexdb=# explain select id, string, checkout from indextbl where id=551;
+                        QUERY PLAN
+-----------------------------------------------------------
+ Seq Scan on indextbl  (cost=0.00..209.00 rows=1 width=38)
+   Filter: (id = 551)
+(2 rows)
+```
+Стоимость выполнения запроса оценивается в диапазоне 0 - 209.
 
+Создаём индекс по числовому полю:
+```
+indexdb=# create index on indextbl (id);
+CREATE INDEX
+```
 
+Сравниваем план выполнения запроса:
+```
+indexdb=# explain select id, string, checkout from indextbl where id=551;
+                                   QUERY PLAN
+---------------------------------------------------------------------------------
+ Index Scan using indextbl_id_idx on indextbl  (cost=0.29..8.30 rows=1 width=38)
+   Index Cond: (id = 551)
+(2 rows)
+```
+Максимальная оценка стоимости выполнения запроса снизилась с 209 до 8.30 - более чем в 25 раз.
 
 
 
