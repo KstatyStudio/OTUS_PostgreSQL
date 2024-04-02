@@ -11,6 +11,7 @@
 ### Решение
 
 **1. - Создание индекса:**  
+
 Создаём базу данных _indexdb_, таблицу _indextbl_ и заполняем её тестовыми данными:
 ```
 postgres=# create database indexdb;
@@ -70,9 +71,10 @@ indexdb=# explain select id, string, checkout from indextbl where id=551;
 Максимальная оценка стоимости выполнения запроса снизилась с 209 до 8.30 - более чем в 25 раз.
 
 **2. - Создание индекса для полнотекстового поиска:**  
-Создаём таблицу _commandtbl_ и заполняем тестовыми данными:
+
+Создаём таблицу _commandtbl_ с автоматически заполняющимся полем _content_tsvector_ для полнотекстового поиска и заполняем тестовыми данными:
 ```
-indexdb=# create table commandtbl (id serial primary key, cmd text, content text);
+indexdb=# create table commandtbl (id serial primary key, cmd text, content text, content_tsvector tsvector generated always as (to_tsvector('english', content)) stored);
 CREATE TABLE
 
 indexdb=# insert into commandtbl (cmd, content) values ('-s, --host host-name-or-IP', 'Specify host name or IP address of a host.'),
@@ -98,32 +100,33 @@ indexdb=# insert into commandtbl (cmd, content) values ('-s, --host host-name-
 ('-V, --version', 'Output version information and exit.');
 INSERT 0 21
 
-indexdb=# select id, cmd, content from commandtbl;
- id |                  cmd                  |                                                                                    content
-----+---------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  1 | -s, --host host-name-or-IP            | Specify host name or IP address of a host.
-  2 | -p, --port port-number                | Specify port number of agent running on the host. Default is 10050.
-  3 | -I, --source-address IP-address       | Specify source IP address.
-  4 | -t, --timeout seconds                 | Specify timeout. Valid range: 1-30 seconds (default: 30)
-  5 | -k, --key item-key                    | Specify key of item to retrieve value for.
-  6 | --tls-connect value                   | How to connect to agent. Values:
-  7 | unencrypted                           | connect without encryption (default)
-  8 | psk                                   | connect using TLS and a pre-shared key
-  9 | cert                                  | connect using TLS and a certificate
- 10 | --tls-ca-file CA-file                 | Full pathname of a file containing the top-level CA(s) certificates for peer certificate verification.
- 11 | --tls-crl-file CRL-file               | Full pathname of a file containing revoked certificates.
- 12 | --tls-agent-cert-issuer cert-issuer   | Allowed agent certificate issuer.
- 13 | --tls-agent-cert-subject cert-subject | Allowed agent certificate subject.
- 14 | --tls-cert-file cert-file             | Full pathname of a file containing the certificate or certificate chain.
- 15 | --tls-key-file key-file               | Full pathname of a file containing the private key.
- 16 | --tls-psk-identity PSK-identity       | PSK-identity string.
- 17 | --tls-psk-file PSK-file               | Full pathname of a file containing the pre-shared key.
- 18 | --tls-cipher13 cipher-string          | Cipher string for OpenSSL 1.1.1 or newer for TLS 1.3. Override the default ciphersuite selection criteria. This option is not available if OpenSSL version is less than 1.1.1.
- 19 | --tls-cipher cipher-string            | GnuTLS priority string (for TLS 1.2 and up) or OpenSSL cipher string (only for TLS 1.2). Override the default ciphersuite selection criteria.
- 20 | -h, --help                            | Display this help and exit.
- 21 | -V, --version                         | Output version information and exit.
+indexdb=# select id, cmd, content, content_tsvector from commandtbl;
+ id |                  cmd                  |                                                                                    content                                                                                     |                                                                                        content_tsvector
+----+---------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1 | -s, --host host-name-or-IP            | Specify host name or IP address of a host.                                                                                                                                     | 'address':6 'host':2,9 'ip':5 'name':3 'specifi':1
+  2 | -p, --port port-number                | Specify port number of agent running on the host. Default is 10050.                                                                                                            | '10050':12 'agent':5 'default':10 'host':9 'number':3 'port':2 'run':6 'specifi':1
+  3 | -I, --source-address IP-address       | Specify source IP address.                                                                                                                                                     | 'address':4 'ip':3 'sourc':2 'specifi':1
+  4 | -t, --timeout seconds                 | Specify timeout. Valid range: 1-30 seconds (default: 30)                                                                                                                       | '-30':6 '1':5 '30':9 'default':8 'rang':4 'second':7 'specifi':1 'timeout':2 'valid':3
+  5 | -k, --key item-key                    | Specify key of item to retrieve value for.                                                                                                                                     | 'item':4 'key':2 'retriev':6 'specifi':1 'valu':7
+  6 | --tls-connect value                   | How to connect to agent. Values:                                                                                                                                               | 'agent':5 'connect':3 'valu':6
+  7 | unencrypted                           | connect without encryption (default)                                                                                                                                           | 'connect':1 'default':4 'encrypt':3 'without':2
+  8 | psk                                   | connect using TLS and a pre-shared key                                                                                                                                         | 'connect':1 'key':9 'pre':7 'pre-shar':6 'share':8 'tls':3 'use':2
+  9 | cert                                  | connect using TLS and a certificate                                                                                                                                            | 'certif':6 'connect':1 'tls':3 'use':2
+ 10 | --tls-ca-file CA-file                 | Full pathname of a file containing the top-level CA(s) certificates for peer certificate verification.                                                                         | 'ca':11 'certif':13,16 'contain':6 'file':5 'full':1 'level':10 'pathnam':2 'peer':15 'top':9 'top-level':8 'verif':17
+ 11 | --tls-crl-file CRL-file               | Full pathname of a file containing revoked certificates.                                                                                                                       | 'certif':8 'contain':6 'file':5 'full':1 'pathnam':2 'revok':7
+ 12 | --tls-agent-cert-issuer cert-issuer   | Allowed agent certificate issuer.                                                                                                                                              | 'agent':2 'allow':1 'certif':3 'issuer':4
+ 13 | --tls-agent-cert-subject cert-subject | Allowed agent certificate subject.                                                                                                                                             | 'agent':2 'allow':1 'certif':3 'subject':4
+ 14 | --tls-cert-file cert-file             | Full pathname of a file containing the certificate or certificate chain.                                                                                                       | 'certif':8,10 'chain':11 'contain':6 'file':5 'full':1 'pathnam':2
+ 15 | --tls-key-file key-file               | Full pathname of a file containing the private key.                                                                                                                            | 'contain':6 'file':5 'full':1 'key':9 'pathnam':2 'privat':8
+ 16 | --tls-psk-identity PSK-identity       | PSK-identity string.                                                                                                                                                           | 'ident':3 'psk':2 'psk-ident':1 'string':4
+ 17 | --tls-psk-file PSK-file               | Full pathname of a file containing the pre-shared key.                                                                                                                         | 'contain':6 'file':5 'full':1 'key':11 'pathnam':2 'pre':9 'pre-shar':8 'share':10
+ 18 | --tls-cipher13 cipher-string          | Cipher string for OpenSSL 1.1.1 or newer for TLS 1.3. Override the default ciphersuite selection criteria. This option is not available if OpenSSL version is less than 1.1.1. | '1.1.1':5,28 '1.3':10 'avail':21 'cipher':1 'ciphersuit':14 'criteria':16 'default':13 'less':26 'newer':7 'openssl':4,23 'option':18 'overrid':11 'select':15 'string':2 'tls':9 'version':24
+ 19 | --tls-cipher cipher-string            | GnuTLS priority string (for TLS 1.2 and up) or OpenSSL cipher string (only for TLS 1.2). Override the default ciphersuite selection criteria.                                  | '1.2':6,16 'cipher':11 'ciphersuit':20 'criteria':22 'default':19 'gnutl':1 'openssl':10 'overrid':17 'prioriti':2 'select':21 'string':3,12 'tls':5,15
+ 20 | -h, --help                            | Display this help and exit.                                                                                                                                                    | 'display':1 'exit':5 'help':3
+ 21 | -V, --version                         | Output version information and exit.                                                                                                                                           | 'exit':5 'inform':3 'output':1 'version':2
 (21 rows)
 ```
+
 
 
 
