@@ -22,10 +22,22 @@ You are now connected to database "indexdb" as user "postgres".
 indexdb=# create table indextbl (id integer, string text, checkout boolean);
 CREATE TABLE
 
-indexdb=# insert into indextbl (id, string, checkout) select s.id, chr((32+random()*94)::integer), random()<0.01 from generate_series(1,10000) as s(id) order by random();
+indexdb=# insert into indextbl (id, string, checkout) select s.id, md5(random()::text)::char(32), random()<0.01 from generate_series(1,10000) as s(id) order by random();
 INSERT 0 10000
 
-
+indexdb=# select id, string, checkout from indextbl limit 10;                                                                                id  |              string              | checkout
+------+----------------------------------+----------
+ 5789 | 30fbb16b5ed3746d4b1084775429945d | t
+ 8800 | dfa8d5ed6ec36906c85a15447563ee7e | t
+ 3810 | f809f4b9147399f4a43a268316bf0cf9 | t
+ 4278 | 089a72ef64d6f525b02f18a62f54958f | t
+ 1882 | c99895b329667a004ea990bcb13ce00b | t
+ 2064 | 556ed17b8222e4b4392aec89b34ad2d9 | t
+ 6835 | 76cd1caa0860feafecc99cfe8c32a905 | t
+ 2161 | a892799021b0c7acb1e8dc7a581c2719 | t
+ 2852 | 95740f46450289d6b6513bed453753bb | t
+  551 | a9fe0e0d7a1f8af01227fa0b8a64bcda | t
+(10 rows)
 ```
 
 
