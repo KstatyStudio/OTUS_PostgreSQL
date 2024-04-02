@@ -156,6 +156,9 @@ indexdb=# explain select cmd, content from commandtbl where content_tsvector @@ 
    ->  Bitmap Index Scan on commandtbl_content_tsvector_idx  (cost=0.00..12.00 rows=1 width=0)
          Index Cond: (content_tsvector @@ '''file'' & ''full'''::tsquery)
 (4 rows)
+
+indexdb=# set enable_seqscan = on;
+SET
 ```
 
 
