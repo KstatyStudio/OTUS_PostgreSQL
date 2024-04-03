@@ -210,7 +210,7 @@ indexdb=# explain select count(id) from indextbl where not checkout;
          Filter: (NOT checkout)
 (3 rows)
 ```
-Создание индекса по полю _checkout_ с _false_ значением не привело к повышению производительности.  
+Создание индекса по полю _checkout_ с _false_ значением не привело к повышению производительности. При планировании выполнения запроса индекс не использовался.  
 Удаляем это вариант индекса:
 ```
 indexdb=# drop index indextbl_checkout_idx;
