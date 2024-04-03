@@ -99,7 +99,10 @@ indexdb=# insert into commandtbl (cmd, content) values ('-s, --host host-name-
 ('-h, --help', 'Display this help and exit.'),
 ('-V, --version', 'Output version information and exit.');
 INSERT 0 21
+```
 
+Проверяем:
+```
 indexdb=# select id, cmd, content, content_tsvector from commandtbl;
  id |                  cmd                  |                                                                                    content                                                                                     |                                                                                        content_tsvector
 ----+---------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -160,6 +163,92 @@ indexdb=# explain select cmd, content from commandtbl where content_tsvector @@ 
 indexdb=# set enable_seqscan = on;
 SET
 ```
+
+**3. - Создание индекса для части таблицы:**
+Вернёмся к таблице _indextbl_ и удалим индекс по числовому полю:
+```
+indexdb=# select* from pg_indexes where tablename='indextbl';
+ schemaname | tablename |    indexname    | tablespace |                             indexdef
+------------+-----------+-----------------+------------+------------------------------------------------------------------
+ public     | indextbl  | indextbl_id_idx |            | CREATE INDEX indextbl_id_idx ON public.indextbl USING btree (id)
+(1 row)
+
+indexdb=# drop index indextbl_id_idx;
+DROP INDEX
+```
+
+Посмотрим распределение значений в столбце _checkout_:
+```
+indexdb=# select count(id) from indextbl where checkout;
+ count
+-------
+    99
+(1 row)
+```
+Из 10 тысяч только в 99 строках столбец _checkout_ принимает значение _true_. 
+
+Проверяем время выполнения запроса по _false_ значениям:
+```
+indexdb=# explain analyze select count(id) from indextbl where not checkout;
+                                                   QUERY PLAN
+----------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=208.75..208.76 rows=1 width=8) (actual time=1.342..1.343 rows=1 loops=1)
+   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=9901 width=4) (actual time=0.013..0.856 rows=9901 loops=1)
+         Filter: (NOT checkout)
+         Rows Removed by Filter: 99
+ Planning Time: 0.049 ms
+ Execution Time: 1.363 ms
+(6 rows)
+```
+
+Создаём индекс для столбца _checkout_, при условии значения _false_:
+```
+indexdb=# create index on indextbl(checkout) where not checkout;
+CREATE INDEX
+```
+
+Проверяем время выполнения запроса:
+```
+indexdb=# explain analyze select count(id) from indextbl where not checkout;
+                                                   QUERY PLAN
+----------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=208.75..208.76 rows=1 width=8) (actual time=1.342..1.343 rows=1 loops=1)
+   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=9901 width=4) (actual time=0.013..0.850 rows=9901 loops=1)
+         Filter: (NOT checkout)
+         Rows Removed by Filter: 99
+ Planning Time: 0.072 ms
+ Execution Time: 1.360 ms
+(6 rows)
+
+indexdb=# explain analyze select count(id) from indextbl where not checkout;
+                                                   QUERY PLAN
+----------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=208.75..208.76 rows=1 width=8) (actual time=1.363..1.364 rows=1 loops=1)
+   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=9901 width=4) (actual time=0.012..0.860 rows=9901 loops=1)
+         Filter: (NOT checkout)
+         Rows Removed by Filter: 99
+ Planning Time: 0.061 ms
+ Execution Time: 1.382 ms
+(6 rows)
+
+indexdb=# explain analyze select count(id) from indextbl where not checkout;
+                                                   QUERY PLAN
+----------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=208.75..208.76 rows=1 width=8) (actual time=1.359..1.360 rows=1 loops=1)
+   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=9901 width=4) (actual time=0.019..0.863 rows=9901 loops=1)
+         Filter: (NOT checkout)
+         Rows Removed by Filter: 99
+ Planning Time: 0.096 ms
+ Execution Time: 1.381 ms
+(6 rows)
+```
+Увеличения производительности достичь не удалось.
+
+**4. - Создание составного индекса:**
+
+
+
+
 
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
