@@ -164,7 +164,8 @@ indexdb=# set enable_seqscan = on;
 SET
 ```
 
-**3. - Создание индекса для части таблицы:**
+**3. - Создание индекса для части таблицы:**  
+
 Вернёмся к таблице _indextbl_ и удалим индекс по числовому полю:
 ```
 indexdb=# select* from pg_indexes where tablename='indextbl';
