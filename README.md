@@ -168,12 +168,6 @@ SET
 
 Вернёмся к таблице _indextbl_ и удалим индекс по числовому полю:
 ```
-indexdb=# select* from pg_indexes where tablename='indextbl';
- schemaname | tablename |    indexname    | tablespace |                             indexdef
-------------+-----------+-----------------+------------+------------------------------------------------------------------
- public     | indextbl  | indextbl_id_idx |            | CREATE INDEX indextbl_id_idx ON public.indextbl USING btree (id)
-(1 row)
-
 indexdb=# drop index indextbl_id_idx;
 DROP INDEX
 ```
@@ -187,7 +181,41 @@ indexdb=# select checkout, count(id) from indextbl group by 1;
  t        |    99
 (2 rows)
 ```
-Из 10 тысяч в 9901 строке поле _checkout_ принимает значение _false_ и только в 99 строках значение _true_. 
+Из 10 тысяч в 9901 строке поле _checkout_ принимает значение _false_ и только в 99 строках значение _true_. Не имеет смысла индексировать по значению _false_, т.к. эти значения преобладают и с большой долей вероятности PostgeSQL будет применять сплошное сканирование (метод Seq Scan) при выборке по значению _false_.
+
+Проверим это предположение. Проверяем план выполнения запроса по _false_ значениям:
+```
+indexdb=# explain select count(id) from indextbl where not checkout;
+                            QUERY PLAN
+-------------------------------------------------------------------
+ Aggregate  (cost=208.75..208.76 rows=1 width=8)
+   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=9901 width=4)
+         Filter: (NOT checkout)
+(3 rows)
+```
+
+Создаём индекс по полю _checkout_, при условии значения _false_:
+```
+indexdb=# create index on indextbl(checkout) where not checkout;
+CREATE INDEX
+```
+
+Проверяем план выполнения запроса:
+```
+indexdb=# explain select count(id) from indextbl where not checkout;
+                            QUERY PLAN
+-------------------------------------------------------------------
+ Aggregate  (cost=208.75..208.76 rows=1 width=8)
+   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=9901 width=4)
+         Filter: (NOT checkout)
+(3 rows)
+```
+Создание индекса по полю _checkout_ с _false_ значением не привело к повышению производительности.  
+Удаляем это вариант индекса:
+```
+indexdb=# drop index indextbl_checkout_idx;
+DROP INDEX
+```
 
 Проверяем план выполнения запроса по _true_ значениям:
 ```
@@ -215,18 +243,12 @@ indexdb=# explain select count(id) from indextbl where checkout;
    ->  Index Scan using indextbl_checkout_idx on indextbl  (cost=0.14..41.94 rows=99 width=4)
 (2 rows)
 ```
-Оценка стоимости выполнения запроса снизилась со 184.26 до 42.20 - более чем в 4 раза. 
+После создания индекса по полю _checkout_ с _true_ значениями оценка стоимости выполнения запроса снизилась со 184.26 до 42.20 - более чем в 4 раза. 
 
 **4. - Создание составного индекса:**
 
 Удаляем индекс по полю _checkout_:
 ```
-indexdb=# select* from pg_indexes where tablename='indextbl';
- schemaname | tablename |       indexname       | tablespace |                                             indexdef
-------------+-----------+-----------------------+------------+---------------------------------------------------------------------------------------------------
- public     | indextbl  | indextbl_checkout_idx |            | CREATE INDEX indextbl_checkout_idx ON public.indextbl USING btree (checkout) WHERE (NOT checkout)
-(1 row)
-
 indexdb=# drop index indextbl_checkout_idx;
 DROP INDEX
 ```
