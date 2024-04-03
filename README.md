@@ -179,76 +179,100 @@ DROP INDEX
 
 Посмотрим распределение значений в столбце _checkout_:
 ```
-indexdb=# select count(id) from indextbl where checkout;
- count
--------
-    99
-(1 row)
+indexdb=# select checkout, count(id) from indextbl group by 1;
+ checkout | count
+----------+-------
+ f        |  9901
+ t        |    99
+(2 rows)
 ```
-Из 10 тысяч только в 99 строках столбец _checkout_ принимает значение _true_. 
+Из 10 тысяч в 9901 строке поле _checkout_ принимает значение _false_ и только в 99 строках значение _true_. 
 
-Проверяем время выполнения запроса по _false_ значениям:
+Проверяем план выполнения запроса по _true_ значениям:
 ```
-indexdb=# explain analyze select count(id) from indextbl where not checkout;
-                                                   QUERY PLAN
-----------------------------------------------------------------------------------------------------------------
- Aggregate  (cost=208.75..208.76 rows=1 width=8) (actual time=1.342..1.343 rows=1 loops=1)
-   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=9901 width=4) (actual time=0.013..0.856 rows=9901 loops=1)
-         Filter: (NOT checkout)
-         Rows Removed by Filter: 99
- Planning Time: 0.049 ms
- Execution Time: 1.363 ms
-(6 rows)
+indexdb=# explain select count(id) from indextbl where checkout;
+                           QUERY PLAN
+-----------------------------------------------------------------
+ Aggregate  (cost=184.25..184.26 rows=1 width=8)
+   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=99 width=4)
+         Filter: checkout
+(3 rows)
 ```
 
-Создаём индекс для столбца _checkout_, при условии значения _false_:
+Создаём индекс по полю _checkout_, при условии значения _true_:
 ```
-indexdb=# create index on indextbl(checkout) where not checkout;
+indexdb=# create index on indextbl(checkout) where checkout;
 CREATE INDEX
 ```
 
-Проверяем время выполнения запроса:
+Проверяем план выполнения запроса:
 ```
-indexdb=# explain analyze select count(id) from indextbl where not checkout;
-                                                   QUERY PLAN
-----------------------------------------------------------------------------------------------------------------
- Aggregate  (cost=208.75..208.76 rows=1 width=8) (actual time=1.342..1.343 rows=1 loops=1)
-   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=9901 width=4) (actual time=0.013..0.850 rows=9901 loops=1)
-         Filter: (NOT checkout)
-         Rows Removed by Filter: 99
- Planning Time: 0.072 ms
- Execution Time: 1.360 ms
-(6 rows)
-
-indexdb=# explain analyze select count(id) from indextbl where not checkout;
-                                                   QUERY PLAN
-----------------------------------------------------------------------------------------------------------------
- Aggregate  (cost=208.75..208.76 rows=1 width=8) (actual time=1.363..1.364 rows=1 loops=1)
-   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=9901 width=4) (actual time=0.012..0.860 rows=9901 loops=1)
-         Filter: (NOT checkout)
-         Rows Removed by Filter: 99
- Planning Time: 0.061 ms
- Execution Time: 1.382 ms
-(6 rows)
-
-indexdb=# explain analyze select count(id) from indextbl where not checkout;
-                                                   QUERY PLAN
-----------------------------------------------------------------------------------------------------------------
- Aggregate  (cost=208.75..208.76 rows=1 width=8) (actual time=1.359..1.360 rows=1 loops=1)
-   ->  Seq Scan on indextbl  (cost=0.00..184.00 rows=9901 width=4) (actual time=0.019..0.863 rows=9901 loops=1)
-         Filter: (NOT checkout)
-         Rows Removed by Filter: 99
- Planning Time: 0.096 ms
- Execution Time: 1.381 ms
-(6 rows)
+indexdb=# explain select count(id) from indextbl where checkout;
+                                          QUERY PLAN
+----------------------------------------------------------------------------------------------
+ Aggregate  (cost=42.19..42.20 rows=1 width=8)
+   ->  Index Scan using indextbl_checkout_idx on indextbl  (cost=0.14..41.94 rows=99 width=4)
+(2 rows)
 ```
-Увеличения производительности достичь не удалось.
+Максимальная оценка стоимости выполнения запроса снизилась со 184.26 до 42.20 - более чем в 4 раза. 
 
 **4. - Создание составного индекса:**
 
+Удаляем индекс по полю _checkout_:
+```
+indexdb=# select* from pg_indexes where tablename='indextbl';
+ schemaname | tablename |       indexname       | tablespace |                                             indexdef
+------------+-----------+-----------------------+------------+---------------------------------------------------------------------------------------------------
+ public     | indextbl  | indextbl_checkout_idx |            | CREATE INDEX indextbl_checkout_idx ON public.indextbl USING btree (checkout) WHERE (NOT checkout)
+(1 row)
 
+indexdb=# drop index indextbl_checkout_idx;
+DROP INDEX
+```
 
+Смотрим планы выполнения запросов:
+```
+indexdb=# explain select count(id) from indextbl where id > 5000 and checkout;
+                           QUERY PLAN
+-----------------------------------------------------------------
+ Aggregate  (cost=209.12..209.13 rows=1 width=8)
+   ->  Seq Scan on indextbl  (cost=0.00..209.00 rows=49 width=4)
+         Filter: (checkout AND (id > 5000))
+(3 rows)
 
+indexdb=# explain select count(id) from indextbl where id < 300 and not checkout;
+                            QUERY PLAN
+------------------------------------------------------------------
+ Aggregate  (cost=209.74..209.75 rows=1 width=8)
+   ->  Seq Scan on indextbl  (cost=0.00..209.00 rows=296 width=4)
+         Filter: ((NOT checkout) AND (id < 300))
+(3 rows)
+```
 
+Создаём индекс по полям _id_ и _checkout_:
+```
+indexdb=# create index on indextbl(id, checkout);
+CREATE INDEX
+```
+
+Проверяем планы выполнения запросов:
+```
+indexdb=# explain select count(id) from indextbl where id > 5000 and checkout;
+                                              QUERY PLAN
+-------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=110.90..110.91 rows=1 width=8)
+   ->  Index Only Scan using indextbl_id_checkout_idx on indextbl  (cost=0.29..110.77 rows=49 width=4)
+         Index Cond: ((id > 5000) AND (checkout = true))
+(3 rows)
+
+indexdb=# explain select count(id) from indextbl where id < 300 and not checkout;
+                                              QUERY PLAN
+-------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=10.97..10.98 rows=1 width=8)
+   ->  Index Only Scan using indextbl_id_checkout_idx on indextbl  (cost=0.29..10.23 rows=296 width=4)
+         Index Cond: ((id < 300) AND (checkout = false))
+(3 rows)
+```
+После создания составного индекса оценка стоимости выполнения запроса заметно снизилась.
 
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
