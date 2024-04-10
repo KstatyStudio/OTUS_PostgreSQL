@@ -314,7 +314,7 @@ demo=# select* from tickets limit 10;
 **1. - Прямое соединение двух или более таблиц**  
 Выведем _расписание вылетов_ из аэропорта _Внуково_ на 25 августа 2017 года:
 ```
-demo=# select* from flights f join airports_data p on f.departure_airport=p.airport_code where f.departure_airport='VKO' and scheduled_departure::date='2017-08-25' limit 10;
+demo=# select* from flights f join airports_data dep on f.departure_airport=dep.airport_code where f.departure_airport='VKO' and f.scheduled_departure::date='2017-08-25' limit 10;
  flight_id | flight_no |  scheduled_departure   |   scheduled_arrival    | departure_airport | arrival_airport |  status   | aircraft_code | actual_departure | actual_arrival | airport_code |                       airport_name                       |               city               |          coordinates          |   timezone
 -----------+-----------+------------------------+------------------------+-------------------+-----------------+-----------+---------------+------------------+----------------+--------------+----------------------------------------------------------+----------------------------------+-------------------------------+---------------
       3979 | PG0052    | 2017-08-25 11:50:00+00 | 2017-08-25 14:35:00+00 | VKO               | HMA             | Scheduled | CR2           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
@@ -333,7 +333,7 @@ demo=# select* from flights f join airports_data p on f.departure_airport=p.airp
 
 Выведем это же расписание, но с указанием аэропортов назначения:
 ```
-demo=# select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airport||' '||pdep.airport_name as "departure", scheduled_arrival, f.arrival_airport||' '||parr.airport_name as "arrival" from flights f join airports_data pdep on f.departure_airport=pdep.airport_code join airports_data parr on f.arrival_airport=parr.airport_code where f.departure_airport='VKO' and scheduled_departure::date='2017-08-25' limit 10;
+demo=# select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airport||' '||dep.airport_name as "departure", scheduled_arrival, f.arrival_airport||' '||arr.airport_name as "arrival" from flights f join airports_data dep on f.departure_airport=dep.airport_code join airports_data arr on f.arrival_airport=arr.airport_code where f.departure_airport='VKO' and f.scheduled_departure::date='2017-08-25' limit 10;
  flight_id | flight_no |  scheduled_departure   |                          departure                           |   scheduled_arrival    |                            arrival
 -----------+-----------+------------------------+--------------------------------------------------------------+------------------------+---------------------------------------------------------------
       3979 | PG0052    | 2017-08-25 11:50:00+00 | VKO {"en": "Vnukovo International Airport", "ru": "Внуково"} | 2017-08-25 14:35:00+00 | HMA {"en": "Khanty Mansiysk Airport", "ru": "Ханты-Мансийск"}
@@ -378,7 +378,30 @@ demo=# select * from aircrafts_data a left join flights f on a.aircraft_code=f.a
 (1 row)
 ```
 
-**3. - Кросс соединение двух или более таблиц**
+**3. - Кросс соединение двух или более таблиц**  
+Выведем перечень всех возможный вариантов перелётов: 
+```
+demo=# select dep.airport_code as "departure.code", dep.airport_name as "departure.name", dep.coordinates as "departure.coordinates", arr.airport_code as "arrival.code", arr.airport_name as "arrival.name", arr.coordinates as "arrival.coordinates" from airports_data dep cross join airports_data arr limit 10;
+ departure.code |              departure.name               |        departure.coordinates         | arrival.code |                           arrival.name                           |           arrival.coordinates
+----------------+-------------------------------------------+--------------------------------------+--------------+------------------------------------------------------------------+-----------------------------------------
+ YKS            | {"en": "Yakutsk Airport", "ru": "Якутск"} | (129.77099609375,62.093299865722656) | YKS          | {"en": "Yakutsk Airport", "ru": "Якутск"}                        | (129.77099609375,62.093299865722656)
+ YKS            | {"en": "Yakutsk Airport", "ru": "Якутск"} | (129.77099609375,62.093299865722656) | MJZ          | {"en": "Mirny Airport", "ru": "Мирный"}                          | (114.03900146484375,62.534698486328125)
+ YKS            | {"en": "Yakutsk Airport", "ru": "Якутск"} | (129.77099609375,62.093299865722656) | KHV          | {"en": "Khabarovsk-Novy Airport", "ru": "Хабаровск-Новый"}       | (135.18800354004,48.52799987793)
+ YKS            | {"en": "Yakutsk Airport", "ru": "Якутск"} | (129.77099609375,62.093299865722656) | PKC          | {"en": "Yelizovo Airport", "ru": "Елизово"}                      | (158.45399475097656,53.16790008544922)
+ YKS            | {"en": "Yakutsk Airport", "ru": "Якутск"} | (129.77099609375,62.093299865722656) | UUS          | {"en": "Yuzhno-Sakhalinsk Airport", "ru": "Хомутово"}            | (142.71800231933594,46.88869857788086)
+ YKS            | {"en": "Yakutsk Airport", "ru": "Якутск"} | (129.77099609375,62.093299865722656) | VVO          | {"en": "Vladivostok International Airport", "ru": "Владивосток"} | (132.1479949951172,43.39899826049805)
+ YKS            | {"en": "Yakutsk Airport", "ru": "Якутск"} | (129.77099609375,62.093299865722656) | LED          | {"en": "Pulkovo Airport", "ru": "Пулково"}                       | (30.262500762939453,59.80030059814453)
+ YKS            | {"en": "Yakutsk Airport", "ru": "Якутск"} | (129.77099609375,62.093299865722656) | KGD          | {"en": "Khrabrovo Airport", "ru": "Храброво"}                    | (20.592599868774414,54.88999938964844)
+ YKS            | {"en": "Yakutsk Airport", "ru": "Якутск"} | (129.77099609375,62.093299865722656) | KEJ          | {"en": "Kemerovo Airport", "ru": "Кемерово"}                     | (86.1072006225586,55.27009963989258)
+ YKS            | {"en": "Yakutsk Airport", "ru": "Якутск"} | (129.77099609375,62.093299865722656) | CEK          | {"en": "Chelyabinsk Balandino Airport", "ru": "Челябинск"}       | (61.5033,55.305801)
+(10 rows)
+```
+Результат запроса включает соединение всех строк одного экземпляра таблицы _airports_data dep_ со всеми строками второго экземпляра.
+
+**4. - Полное соединение двух или более таблиц**
+
+
+
 
 
 
