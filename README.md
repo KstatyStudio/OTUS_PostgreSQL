@@ -312,9 +312,22 @@ demo=# select* from tickets limit 10;
 ```
 
 **1. - Прямое соединение двух или более таблиц**  
-Посмотрим _расписание вылетов_ из аэропорта _Пулково_ на 28 августа 2017 года:
+Посмотрим _расписание вылетов_ из аэропорта _Внуково_ на 25 августа 2017 года:
 ```
-
+demo=# select* from flights f join airports_data p on f.departure_airport=p.airport_code where f.departure_airport='VKO' and date(scheduled_departure)='2017-08-25'::date limit 10;
+ flight_id | flight_no |  scheduled_departure   |   scheduled_arrival    | departure_airport | arrival_airport |  status   | aircraft_code | actual_departure | actual_arrival | airport_code |                       airport_name                       |               city               |          coordinates          |   timezone
+-----------+-----------+------------------------+------------------------+-------------------+-----------------+-----------+---------------+------------------+----------------+--------------+----------------------------------------------------------+----------------------------------+-------------------------------+---------------
+      3979 | PG0052    | 2017-08-25 11:50:00+00 | 2017-08-25 14:35:00+00 | VKO               | HMA             | Scheduled | CR2           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
+      3285 | PG0229    | 2017-08-25 08:50:00+00 | 2017-08-25 09:40:00+00 | VKO               | LED             | Scheduled | 321           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
+      3294 | PG0228    | 2017-08-25 08:25:00+00 | 2017-08-25 09:15:00+00 | VKO               | LED             | Scheduled | 321           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
+      3298 | PG0227    | 2017-08-25 06:45:00+00 | 2017-08-25 07:35:00+00 | VKO               | LED             | Scheduled | 321           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
+      3425 | PG0671    | 2017-08-25 10:05:00+00 | 2017-08-25 13:20:00+00 | VKO               | OMS             | Scheduled | CR2           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
+      3505 | PG0412    | 2017-08-25 08:00:00+00 | 2017-08-25 09:25:00+00 | VKO               | PEE             | Scheduled | 773           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
+      3534 | PG0396    | 2017-08-25 13:20:00+00 | 2017-08-25 14:30:00+00 | VKO               | VOG             | Scheduled | SU9           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
+      3601 | PG0414    | 2017-08-25 06:05:00+00 | 2017-08-25 08:10:00+00 | VKO               | MMK             | Scheduled | CR2           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
+      3661 | PG0050    | 2017-08-25 11:20:00+00 | 2017-08-25 12:20:00+00 | VKO               | PES             | Scheduled | CR2           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
+      3795 | PG0008    | 2017-08-25 08:45:00+00 | 2017-08-25 10:55:00+00 | VKO               | JOK             | Scheduled | CN1           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
+(10 rows)
 ```
 
 
