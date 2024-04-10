@@ -11,6 +11,11 @@
 
 ### Решение
 
+**Схема базы данных _demo_:**
+
+![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/492a3b54-27f8-4eff-b666-77597c87a8ae)
+
+
 **Список таблиц базы данных _demo_:**
 ```
 demo=# \dt
