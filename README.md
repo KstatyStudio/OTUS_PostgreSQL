@@ -350,13 +350,35 @@ demo=# select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airpo
 ```
 Результат содержит объединение столбцов из трёх таблиц - _flights_ и дважды _airports_data_. 
 
-**2. - Левостороннее (или правостороннее) соединение двух или более таблиц** 
+**2. - Левостороннее (или правостороннее) соединение двух или более таблиц**  
+Выведем список типов самолётов и посмотрим сколько раз каждый тип самолёта вылетал из аэропорта _Владивосток_:
+```
+demo=# select a.aircraft_code, a.model, a.range, count(flight_id) from aircrafts_data a left join flights f on a.aircraft_code=f.aircraft_code and f.departure_airport='VVO' group by a.aircraft_code;
+ aircraft_code |                           model                            | range | count
+---------------+------------------------------------------------------------+-------+-------
+ 319           | {"en": "Airbus A319-100", "ru": "Аэробус A319-100"}        |  6700 |     0
+ 320           | {"en": "Airbus A320-200", "ru": "Аэробус A320-200"}        |  5700 |     0
+ 321           | {"en": "Airbus A321-200", "ru": "Аэробус A321-200"}        |  5600 |     0
+ 733           | {"en": "Boeing 737-300", "ru": "Боинг 737-300"}            |  4200 |     0
+ 763           | {"en": "Boeing 767-300", "ru": "Боинг 767-300"}            |  7900 |    61
+ 773           | {"en": "Boeing 777-300", "ru": "Боинг 777-300"}            | 11100 |     0
+ CN1           | {"en": "Cessna 208 Caravan", "ru": "Сессна 208 Караван"}   |  1200 |     0
+ CR2           | {"en": "Bombardier CRJ-200", "ru": "Бомбардье CRJ-200"}    |  2700 |    61
+ SU9           | {"en": "Sukhoi Superjet-100", "ru": "Сухой Суперджет-100"} |  3000 |    61
+(9 rows)
+```
+В результате мы видим, что из аэропорта _Владивосток_ вылетали только три типа самолётов, а для остальных типов самолётов соответствий в таблице _flights_ не найдены.  
 
+Например, запрос без ограничения списка столбцов для самолёта _Аэробус A319-100_ выдаёт строку с незаполненными столбцами из таблицы _flights_:
+```
+demo=# select * from aircrafts_data a left join flights f on a.aircraft_code=f.aircraft_code and f.departure_airport='VVO' where a.aircraft_code='319';
+ aircraft_code |                        model                        | range | flight_id | flight_no | scheduled_departure | scheduled_arrival | departure_airport | arrival_airport | status | aircraft_code | actual_departure | actual_arrival
+---------------+-----------------------------------------------------+-------+-----------+-----------+---------------------+-------------------+-------------------+-----------------+--------+---------------+------------------+----------------
+ 319           | {"en": "Airbus A319-100", "ru": "Аэробус A319-100"} |  6700 |           |           |                     |                   |                   |                 |        |               |                  |
+(1 row)
+```
 
-
-
-
-
+**3. - Кросс соединение двух или более таблиц**
 
 
 
