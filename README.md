@@ -28,8 +28,23 @@ demo=# \dt
 (8 rows)
 ```
 
-**Содержание таблицы _aircrafts_data_:**
+**Структура и содержание таблицы _aircrafts_data_:**
 ```
+demo=# \d aircrafts_data
+                Table "bookings.aircrafts_data"
+    Column     |     Type     | Collation | Nullable | Default
+---------------+--------------+-----------+----------+---------
+ aircraft_code | character(3) |           | not null |
+ model         | jsonb        |           | not null |
+ range         | integer      |           | not null |
+Indexes:
+    "aircrafts_pkey" PRIMARY KEY, btree (aircraft_code)
+Check constraints:
+    "aircrafts_range_check" CHECK (range > 0)
+Referenced by:
+    TABLE "flights" CONSTRAINT "flights_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts_data(aircraft_code)
+    TABLE "seats" CONSTRAINT "seats_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts_data(aircraft_code) ON DELETE CASCADE
+
 demo=# select* from aircrafts_data limit 10;
  aircraft_code |                           model                            | range
 ---------------+------------------------------------------------------------+-------
@@ -45,8 +60,23 @@ demo=# select* from aircrafts_data limit 10;
 (9 rows)
 ```
 
-**Содержание таблицы _airports_data_:**
+**Структура и содержание таблицы _airports_data_:**
 ```
+demo=# \d airports_data
+                Table "bookings.airports_data"
+    Column    |     Type     | Collation | Nullable | Default
+--------------+--------------+-----------+----------+---------
+ airport_code | character(3) |           | not null |
+ airport_name | jsonb        |           | not null |
+ city         | jsonb        |           | not null |
+ coordinates  | point        |           | not null |
+ timezone     | text         |           | not null |
+Indexes:
+    "airports_data_pkey" PRIMARY KEY, btree (airport_code)
+Referenced by:
+    TABLE "flights" CONSTRAINT "flights_arrival_airport_fkey" FOREIGN KEY (arrival_airport) REFERENCES airports_data(airport_code)
+    TABLE "flights" CONSTRAINT "flights_departure_airport_fkey" FOREIGN KEY (departure_airport) REFERENCES airports_data(airport_code)
+
 demo=# select* from airports_data limit 10;
  airport_code |                           airport_name                           |                           city                            |               coordinates               |      timezone
 --------------+------------------------------------------------------------------+-----------------------------------------------------------+-----------------------------------------+--------------------
@@ -63,8 +93,23 @@ demo=# select* from airports_data limit 10;
 (10 rows)
 ```
 
-**Содержание таблицы _boarding_passes_:**
+**Структура и содержание таблицы _boarding_passes_:**
 ```
+demo=# \d boarding_passes
+                  Table "bookings.boarding_passes"
+   Column    |         Type         | Collation | Nullable | Default
+-------------+----------------------+-----------+----------+---------
+ ticket_no   | character(13)        |           | not null |
+ flight_id   | integer              |           | not null |
+ boarding_no | integer              |           | not null |
+ seat_no     | character varying(4) |           | not null |
+Indexes:
+    "boarding_passes_pkey" PRIMARY KEY, btree (ticket_no, flight_id)
+    "boarding_passes_flight_id_boarding_no_key" UNIQUE CONSTRAINT, btree (flight_id, boarding_no)
+    "boarding_passes_flight_id_seat_no_key" UNIQUE CONSTRAINT, btree (flight_id, seat_no)
+Foreign-key constraints:
+    "boarding_passes_ticket_no_fkey" FOREIGN KEY (ticket_no, flight_id) REFERENCES ticket_flights(ticket_no, flight_id)
+
 demo=# select* from boarding_passes limit 10;
    ticket_no   | flight_id | boarding_no | seat_no
 ---------------+-----------+-------------+---------
@@ -81,8 +126,20 @@ demo=# select* from boarding_passes limit 10;
 (10 rows)
 ```
 
-**Содержание таблицы _bookings_:**
+**Структура и содержание таблицы _bookings_:**
 ```
+demo=# \d bookings
+                        Table "bookings.bookings"
+    Column    |           Type           | Collation | Nullable | Default
+--------------+--------------------------+-----------+----------+---------
+ book_ref     | character(6)             |           | not null |
+ book_date    | timestamp with time zone |           | not null |
+ total_amount | numeric(10,2)            |           | not null |
+Indexes:
+    "bookings_pkey" PRIMARY KEY, btree (book_ref)
+Referenced by:
+    TABLE "tickets" CONSTRAINT "tickets_book_ref_fkey" FOREIGN KEY (book_ref) REFERENCES bookings(book_ref)
+
 demo=# select* from bookings limit 10;
  book_ref |       book_date        | total_amount
 ----------+------------------------+--------------
@@ -99,8 +156,36 @@ demo=# select* from bookings limit 10;
 (10 rows)
 ```
 
-**Содержание таблицы _flights_:**
+**Структура и содержание таблицы _flights_:**
 ```
+demo=# \d flights
+                                              Table "bookings.flights"
+       Column        |           Type           | Collation | Nullable |                  Default
+---------------------+--------------------------+-----------+----------+--------------------------------------------
+ flight_id           | integer                  |           | not null | nextval('flights_flight_id_seq'::regclass)
+ flight_no           | character(6)             |           | not null |
+ scheduled_departure | timestamp with time zone |           | not null |
+ scheduled_arrival   | timestamp with time zone |           | not null |
+ departure_airport   | character(3)             |           | not null |
+ arrival_airport     | character(3)             |           | not null |
+ status              | character varying(20)    |           | not null |
+ aircraft_code       | character(3)             |           | not null |
+ actual_departure    | timestamp with time zone |           |          |
+ actual_arrival      | timestamp with time zone |           |          |
+Indexes:
+    "flights_pkey" PRIMARY KEY, btree (flight_id)
+    "flights_flight_no_scheduled_departure_key" UNIQUE CONSTRAINT, btree (flight_no, scheduled_departure)
+Check constraints:
+    "flights_check" CHECK (scheduled_arrival > scheduled_departure)
+    "flights_check1" CHECK (actual_arrival IS NULL OR actual_departure IS NOT NULL AND actual_arrival IS NOT NULL AND actual_arrival > actual_departure)
+    "flights_status_check" CHECK (status::text = ANY (ARRAY['On Time'::character varying::text, 'Delayed'::character varying::text, 'Departed'::character varying::text, 'Arrived'::character varying::text, 'Scheduled'::character varying::text, 'Cancelled'::character varying::text]))
+Foreign-key constraints:
+    "flights_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts_data(aircraft_code)
+    "flights_arrival_airport_fkey" FOREIGN KEY (arrival_airport) REFERENCES airports_data(airport_code)
+    "flights_departure_airport_fkey" FOREIGN KEY (departure_airport) REFERENCES airports_data(airport_code)
+Referenced by:
+    TABLE "ticket_flights" CONSTRAINT "ticket_flights_flight_id_fkey" FOREIGN KEY (flight_id) REFERENCES flights(flight_id)
+
 demo=# select* from flights limit 10;
  flight_id | flight_no |  scheduled_departure   |   scheduled_arrival    | departure_airport | arrival_airport |  status   | aircraft_code | actual_departure | actual_arrival
 -----------+-----------+------------------------+------------------------+-------------------+-----------------+-----------+---------------+------------------+----------------
@@ -117,8 +202,22 @@ demo=# select* from flights limit 10;
 (10 rows)
 ```
 
-**Содержание таблицы _seats_:**
+**Структура и содержание таблицы _seats_:**
 ```
+demo=# \d seats
+                          Table "bookings.seats"
+     Column      |         Type          | Collation | Nullable | Default
+-----------------+-----------------------+-----------+----------+---------
+ aircraft_code   | character(3)          |           | not null |
+ seat_no         | character varying(4)  |           | not null |
+ fare_conditions | character varying(10) |           | not null |
+Indexes:
+    "seats_pkey" PRIMARY KEY, btree (aircraft_code, seat_no)
+Check constraints:
+    "seats_fare_conditions_check" CHECK (fare_conditions::text = ANY (ARRAY['Economy'::character varying::text, 'Comfort'::character varying::text, 'Business'::character varying::text]))
+Foreign-key constraints:
+    "seats_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts_data(aircraft_code) ON DELETE CASCADE
+
 demo=# select* from seats limit 10;
  aircraft_code | seat_no | fare_conditions
 ---------------+---------+-----------------
@@ -135,8 +234,27 @@ demo=# select* from seats limit 10;
 (10 rows)
 ```
 
-**Содержание таблицы _ticket_flights_:**
+**Структура и содержание таблицы _ticket_flights_:**
 ```
+demo=# \d ticket_flights
+                     Table "bookings.ticket_flights"
+     Column      |         Type          | Collation | Nullable | Default
+-----------------+-----------------------+-----------+----------+---------
+ ticket_no       | character(13)         |           | not null |
+ flight_id       | integer               |           | not null |
+ fare_conditions | character varying(10) |           | not null |
+ amount          | numeric(10,2)         |           | not null |
+Indexes:
+    "ticket_flights_pkey" PRIMARY KEY, btree (ticket_no, flight_id)
+Check constraints:
+    "ticket_flights_amount_check" CHECK (amount >= 0::numeric)
+    "ticket_flights_fare_conditions_check" CHECK (fare_conditions::text = ANY (ARRAY['Economy'::character varying::text, 'Comfort'::character varying::text, 'Business'::character varying::text]))
+Foreign-key constraints:
+    "ticket_flights_flight_id_fkey" FOREIGN KEY (flight_id) REFERENCES flights(flight_id)
+    "ticket_flights_ticket_no_fkey" FOREIGN KEY (ticket_no) REFERENCES tickets(ticket_no)
+Referenced by:
+    TABLE "boarding_passes" CONSTRAINT "boarding_passes_ticket_no_fkey" FOREIGN KEY (ticket_no, flight_id) REFERENCES ticket_flights(ticket_no, flight_id)
+
 demo=# select* from ticket_flights limit 10;
    ticket_no   | flight_id | fare_conditions |  amount
 ---------------+-----------+-----------------+----------
@@ -153,8 +271,24 @@ demo=# select* from ticket_flights limit 10;
 (10 rows)
 ```
 
-**Содержание таблицы _tickets_:**
+**Структура и содержание таблицы _tickets_:**
 ```
+demo=# \d tickets
+                        Table "bookings.tickets"
+     Column     |         Type          | Collation | Nullable | Default
+----------------+-----------------------+-----------+----------+---------
+ ticket_no      | character(13)         |           | not null |
+ book_ref       | character(6)          |           | not null |
+ passenger_id   | character varying(20) |           | not null |
+ passenger_name | text                  |           | not null |
+ contact_data   | jsonb                 |           |          |
+Indexes:
+    "tickets_pkey" PRIMARY KEY, btree (ticket_no)
+Foreign-key constraints:
+    "tickets_book_ref_fkey" FOREIGN KEY (book_ref) REFERENCES bookings(book_ref)
+Referenced by:
+    TABLE "ticket_flights" CONSTRAINT "ticket_flights_ticket_no_fkey" FOREIGN KEY (ticket_no) REFERENCES tickets(ticket_no)
+
 demo=# select* from tickets limit 10;
    ticket_no   | book_ref | passenger_id |   passenger_name    |                                   contact_data
 ---------------+----------+--------------+---------------------+----------------------------------------------------------------------------------
