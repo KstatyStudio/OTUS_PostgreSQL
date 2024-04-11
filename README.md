@@ -35,7 +35,7 @@ demo=# \dt
 Структура и содержание таблиц приведены в конце отчёта.  
 
 **1. - Прямое соединение двух или более таблиц**  
-Выведем _расписание вылетов_ из аэропорта _Внуково_ на 25 августа 2017 года:
+Выведем расписание вылетов из аэропорта _Внуково_ на 25 августа 2017 года:
 ```
 demo=# select* from flights f join airports_data dep on f.departure_airport=dep.airport_code where f.departure_airport='VKO' and f.scheduled_departure::date='2017-08-25' limit 10;
  flight_id | flight_no |  scheduled_departure   |   scheduled_arrival    | departure_airport | arrival_airport |  status   | aircraft_code | actual_departure | actual_arrival | airport_code |                       airport_name                       |               city               |          coordinates          |   timezone
