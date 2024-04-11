@@ -71,7 +71,7 @@ demo=# select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airpo
       3795 | PG0008    | 2017-08-25 08:45:00+00 | VKO {"en": "Vnukovo International Airport", "ru": "Внуково"} | 2017-08-25 10:55:00+00 | JOK {"en": "Yoshkar-Ola Airport", "ru": "Йошкар-Ола"}
 (10 rows)
 ```
-Результат содержит объединение столбцов из трёх таблиц - _flights_ и дважды _airports_data_. Вывод ограничен 10 строками и перечнем столбцов.
+Результат содержит объединение столбцов из трёх таблиц - _flights_ и два экземпляра _airports_data_. Вывод ограничен 10 строками и перечнем столбцов.
 
 **2. - Левостороннее (или правостороннее) соединение двух или более таблиц**  
 Выведем список типов самолётов и посмотрим сколько раз каждый тип самолёта вылетал из аэропорта _Владивосток_:
@@ -140,13 +140,100 @@ demo=# select* from aircrafts_data a full join seats s on a.aircraft_code=s.airc
 Результат запроса включает все строки из обеих таблиц _aircrafts_data_ и _seats_, соединённые по столбцу _aircraft_code_. Для строк из таблицы _aircrafts_data_ в случае отсутствия соответствующей записи в таблице _seats_ столбцы _s.aircraft_code_, _s.seat_no_ и _s.fare_conditions_ заполняются _null_-значениями. И аналогично для строк из таблицы _seats_ столбцы _a.aircraft_code_, _a.model_ и _a.range_ заполняются _null_-значениями, если для строки не найдено соотвтетсвие в таблице _aircrafts_data_.  
 
 **5. - Запрос, в котором будут использованы разные типы соединений**
+Выведем список бронирований (_booking_), билетов (_tickets_) и посадочных талонов (_boarding_passes_). Таблицы _booking_ и _tickets_ будем соединять простым джоином, т.к. нас интересует информация по привязанным к бронированиям билетам. Таблицы _tickets_ и _boarding_passes_ будем соединять левосторонним джоином без учёта дополнительной таблицы _ticket_flights_, т.к. по планируемым полётам могут отсутствовать посадочные талоны и подробная информация о полётах в рамках данного запроса не нужна.
+```
+demo=# select* from bookings b join tickets t on b.book_ref=t.book_ref left join boarding_passes bp on t.ticket_no=bp.ticket_no limit 20;
+ book_ref |       book_date        | total_amount |   ticket_no   | book_ref | passenger_id |   passenger_name    |                                   contact_data                                   |   ticket_no   | flight_id | boarding_no | seat_no
+----------+------------------------+--------------+---------------+----------+--------------+---------------------+----------------------------------------------------------------------------------+---------------+-----------+-------------+---------
+ 06B046   | 2017-07-05 17:19:00+00 |     12400.00 | 0005432000987 | 06B046   | 8149 604011  | VALERIY TIKHONOV    | {"phone": "+70127117011"}                                                        | 0005432000987 |     28935 |          10 | 7A
+ 06B046   | 2017-07-05 17:19:00+00 |     12400.00 | 0005432000988 | 06B046   | 8499 420203  | EVGENIYA ALEKSEEVA  | {"phone": "+70378089255"}                                                        | 0005432000988 |     28935 |          14 | 10E
+ E170C3   | 2017-06-28 22:55:00+00 |     24700.00 | 0005432000989 | E170C3   | 1011 752484  | ARTUR GERASIMOV     | {"phone": "+70760429203"}                                                        | 0005432000989 |     28939 |          27 | 18E
+ E170C3   | 2017-06-28 22:55:00+00 |     24700.00 | 0005432000990 | E170C3   | 4849 400049  | ALINA VOLKOVA       | {"email": "volkova.alina_03101973@postgrespro.ru", "phone": "+70582584031"}      | 0005432000990 |     28939 |           2 | 3F
+ F313DD   | 2017-07-03 01:37:00+00 |     30900.00 | 0005432000991 | F313DD   | 6615 976589  | MAKSIM ZHUKOV       | {"email": "m-zhukov061972@postgrespro.ru", "phone": "+70149562185"}              | 0005432000991 |     28913 |           1 | 1D
+ F313DD   | 2017-07-03 01:37:00+00 |     30900.00 | 0005432000992 | F313DD   | 2021 652719  | NIKOLAY EGOROV      | {"phone": "+70791452932"}                                                        | 0005432000992 |     28913 |           6 | 5F
+ F313DD   | 2017-07-03 01:37:00+00 |     30900.00 | 0005432000993 | F313DD   | 0817 363231  | TATYANA KUZNECOVA   | {"email": "kuznecova-t-011961@postgrespro.ru", "phone": "+70400736223"}          | 0005432000993 |     28913 |          24 | 19E
+ CCC5CB   | 2017-07-07 00:03:00+00 |     13000.00 | 0005432000994 | CCC5CB   | 2883 989356  | IRINA ANTONOVA      | {"email": "antonova.irina04121972@postgrespro.ru", "phone": "+70844502960"}      | 0005432000994 |     28912 |           8 | 6F
+ CCC5CB   | 2017-07-07 00:03:00+00 |     13000.00 | 0005432000995 | CCC5CB   | 3097 995546  | VALENTINA KUZNECOVA | {"email": "kuznecova.valentina10101976@postgrespro.ru", "phone": "+70268080457"} | 0005432000995 |     28912 |          26 | 17A
+ 1FB1E4   | 2017-07-05 21:08:00+00 |      6200.00 | 0005432000996 | 1FB1E4   | 6866 920231  | POLINA ZHURAVLEVA   | {"phone": "+70639918455"}                                                        | 0005432000996 |     28929 |          13 | 14A
+ DE3EA6   | 2017-07-04 18:12:00+00 |      6200.00 | 0005432000997 | DE3EA6   | 6030 369450  | ALEKSANDR TIKHONOV  | {"phone": "+70568350272"}                                                        | 0005432000997 |     28904 |          38 | 19F
+ 4B75D1   | 2017-07-05 17:49:00+00 |     18500.00 | 0005432000998 | 4B75D1   | 8675 588663  | ILYA POPOV          | {"email": "popov_ilya.1971@postgrespro.ru", "phone": "+70003638926"}             | 0005432000998 |     28904 |           2 | 2C
+ 9E60AA   | 2017-06-30 16:44:00+00 |      6200.00 | 0005432000999 | 9E60AA   | 0764 728785  | ALEKSANDR KUZNECOV  | {"phone": "+70892601069"}                                                        | 0005432000999 |     28904 |          16 | 8F
+ 69DAD1   | 2017-07-07 08:46:00+00 |     18600.00 | 0005432001000 | 69DAD1   | 8954 972101  | VSEVOLOD BORISOV    | {"email": "borisov_v_1975@postgrespro.ru", "phone": "+70126208679"}              | 0005432001000 |     28895 |          21 | 11D
+ 69DAD1   | 2017-07-07 08:46:00+00 |     18600.00 | 0005432001001 | 69DAD1   | 6772 748756  | NATALYA ROMANOVA    | {"email": "n-romanova.1981@postgrespro.ru", "phone": "+70898580864"}             | 0005432001001 |     28895 |          20 | 11A
+ 69DAD1   | 2017-07-07 08:46:00+00 |     18600.00 | 0005432001002 | 69DAD1   | 7364 216524  | ANTON BONDARENKO    | {"phone": "+70322899756"}                                                        | 0005432001002 |     28895 |          24 | 12C
+ 08A2A5   | 2017-07-07 16:18:00+00 |     25300.00 | 0005432001003 | 08A2A5   | 3635 182357  | VALENTINA NIKITINA  | {"email": "nikitinavalentina.1975@postgrespro.ru", "phone": "+70794132478"}      | 0005432001003 |     28948 |           3 | 2C
+ 08A2A5   | 2017-07-07 16:18:00+00 |     25300.00 | 0005432001004 | 08A2A5   | 8252 507584  | ALLA TARASOVA       | {"phone": "+70212106431"}                                                        | 0005432001004 |     28948 |          15 | 6F
+ C2CAB7   | 2017-07-12 17:03:00+00 |      6200.00 | 0005432001005 | C2CAB7   | 1026 982766  | OKSANA MOROZOVA     | {"phone": "+70806484401"}                                                        | 0005432001005 |     28942 |          42 | 17C
+ C6DA66   | 2017-07-13 06:08:00+00 |     12400.00 | 0005432001006 | C6DA66   | 7107 950192  | GENNADIY GERASIMOV  | {"email": "gerasimov.g111981@postgrespro.ru", "phone": "+70733090498"}           | 0005432001006 |     28915 |          41 | 16C
+(20 rows)
+```
+Результат запроса включает строки со столбцами из трёх таблиц 
+  
+Повторим запрос с ортировкой по коду бронирования:
+```
+demo=# select* from bookings b join tickets t on b.book_ref=t.book_ref left join boarding_passes bp on t.ticket_no=bp.ticket_no order by b.book_ref limit 20;
+ book_ref |       book_date        | total_amount |   ticket_no   | book_ref | passenger_id |  passenger_name   |                                contact_data                                |   ticket_no   | flight_id | boarding_no | seat_no
+----------+------------------------+--------------+---------------+----------+--------------+-------------------+----------------------------------------------------------------------------+---------------+-----------+-------------+---------
+ 00000F   | 2017-07-05 00:12:00+00 |    265700.00 | 0005435838975 | 00000F   | 1708 262537  | ANNA ANTONOVA     | {"email": "annaantonova-19021973@postgrespro.ru", "phone": "+70938049942"} | 0005435838975 |      5995 |          15 | 10E
+ 00000F   | 2017-07-05 00:12:00+00 |    265700.00 | 0005435838975 | 00000F   | 1708 262537  | ANNA ANTONOVA     | {"email": "annaantonova-19021973@postgrespro.ru", "phone": "+70938049942"} | 0005435838975 |     18058 |           6 | 5C
+ 000012   | 2017-07-14 06:02:00+00 |     37900.00 | 0005432527326 | 000012   | 9091 269355  | TAMARA ZAYCEVA    | {"email": "tamarazayceva-1971@postgrespro.ru", "phone": "+70749401734"}    | 0005432527326 |      7737 |         159 | 28C
+ 000012   | 2017-07-14 06:02:00+00 |     37900.00 | 0005432527326 | 000012   | 9091 269355  | TAMARA ZAYCEVA    | {"email": "tamarazayceva-1971@postgrespro.ru", "phone": "+70749401734"}    | 0005432527326 |     30620 |          46 | 13G
+ 000068   | 2017-08-15 11:27:00+00 |     18100.00 | 0005432293273 | 000068   | 5895 674437  | TATYANA PETROVA   | {"email": "t_petrova1970@postgrespro.ru", "phone": "+70886117503"}         |               |           |             |
+ 000181   | 2017-08-10 10:28:00+00 |    131800.00 | 0005435545945 | 000181   | 0929 739492  | EVGENIYA KARPOVA  | {"email": "karpovaevgeniya.1985@postgrespro.ru", "phone": "+70669289906"}  |               |           |             |
+ 000181   | 2017-08-10 10:28:00+00 |    131800.00 | 0005435545944 | 000181   | 6799 285573  | ALEKSANDR ZHUKOV  | {"email": "aleksandrzhukov111972@postgrespro.ru", "phone": "+70411811316"} |               |           |             |
+ 0002D8   | 2017-08-07 18:40:00+00 |     23600.00 | 0005435767874 | 0002D8   | 2126 190814  | SANIYA KOROLEVA   | {"email": "s_koroleva_1965@postgrespro.ru", "phone": "+70635878668"}       |               |           |             |
+ 0002DB   | 2017-07-29 03:30:00+00 |    101500.00 | 0005433986734 | 0002DB   | 9617 908381  | OLGA POTAPOVA     | {"phone": "+70138304349"}                                                  |               |           |             |
+ 0002DB   | 2017-07-29 03:30:00+00 |    101500.00 | 0005433986733 | 0002DB   | 1093 509566  | ANNA TITOVA       | {"email": "titova-a_051959@postgrespro.ru", "phone": "+70594590451"}       |               |           |             |
+ 0002E0   | 2017-07-11 13:09:00+00 |     89600.00 | 0005434407174 | 0002E0   | 5699 345447  | ALEKSANDR TARASOV | {"email": "tarasov.a-1972@postgrespro.ru", "phone": "+70450335494"}        | 0005434407174 |      7064 |         101 | 22B
+ 0002E0   | 2017-07-11 13:09:00+00 |     89600.00 | 0005434407174 | 0002E0   | 5699 345447  | ALEKSANDR TARASOV | {"email": "tarasov.a-1972@postgrespro.ru", "phone": "+70450335494"}        | 0005434407174 |     20299 |          13 | 4C
+ 0002E0   | 2017-07-11 13:09:00+00 |     89600.00 | 0005434407174 | 0002E0   | 5699 345447  | ALEKSANDR TARASOV | {"email": "tarasov.a-1972@postgrespro.ru", "phone": "+70450335494"}        | 0005434407174 |     26920 |          35 | 8C
+ 0002E0   | 2017-07-11 13:09:00+00 |     89600.00 | 0005434407174 | 0002E0   | 5699 345447  | ALEKSANDR TARASOV | {"email": "tarasov.a-1972@postgrespro.ru", "phone": "+70450335494"}        | 0005434407174 |     26987 |          28 | 8C
+ 0002E0   | 2017-07-11 13:09:00+00 |     89600.00 | 0005434407173 | 0002E0   | 3986 620108  | IGOR KARPOV       | {"email": "karpov-igor.1970@postgrespro.ru", "phone": "+70253260520"}      | 0005434407173 |      7064 |          63 | 14B
+ 0002E0   | 2017-07-11 13:09:00+00 |     89600.00 | 0005434407173 | 0002E0   | 3986 620108  | IGOR KARPOV       | {"email": "karpov-igor.1970@postgrespro.ru", "phone": "+70253260520"}      | 0005434407173 |     20299 |          56 | 14D
+ 0002E0   | 2017-07-11 13:09:00+00 |     89600.00 | 0005434407173 | 0002E0   | 3986 620108  | IGOR KARPOV       | {"email": "karpov-igor.1970@postgrespro.ru", "phone": "+70253260520"}      | 0005434407173 |     26920 |          15 | 4E
+ 0002E0   | 2017-07-11 13:09:00+00 |     89600.00 | 0005434407173 | 0002E0   | 3986 620108  | IGOR KARPOV       | {"email": "karpov-igor.1970@postgrespro.ru", "phone": "+70253260520"}      | 0005434407173 |     26987 |           2 | 1D
+ 0002F3   | 2017-07-10 02:31:00+00 |     69600.00 | 0005433036155 | 0002F3   | 7293 080905  | NATALYA KISELEVA  | {"email": "n_kiseleva-16071971@postgrespro.ru", "phone": "+70989197928"}   | 0005433036155 |      2139 |          82 | 20H
+ 0002F3   | 2017-07-10 02:31:00+00 |     69600.00 | 0005433036155 | 0002F3   | 7293 080905  | NATALYA KISELEVA  | {"email": "n_kiseleva-16071971@postgrespro.ru", "phone": "+70989197928"}   | 0005433036155 |     24086 |          33 | 12G
+(20 rows)
+```
+  
+Сравним планы выполнения приведённых запросов:
+```
+demo=# explain select* from bookings b join tickets t on b.book_ref=t.book_ref left join boarding_passes bp on t.ticket_no=bp.ticket_no limit 20;
+                                                     QUERY PLAN
+---------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1.27..9.33 rows=20 width=150)
+   ->  Merge Left Join  (cost=1.27..233666.58 rows=579686 width=150)
+         Merge Cond: (t.ticket_no = bp.ticket_no)
+         ->  Nested Loop  (cost=0.84..188258.89 rows=366733 width=125)
+               ->  Index Scan using tickets_pkey on tickets t  (cost=0.42..17308.42 rows=366733 width=104)
+               ->  Index Scan using bookings_pkey on bookings b  (cost=0.42..0.47 rows=1 width=21)
+                     Index Cond: (book_ref = t.book_ref)
+         ->  Index Scan using boarding_passes_pkey on boarding_passes bp  (cost=0.42..37244.78 rows=579686 width=25)
+(8 rows)
+
+demo=# explain select* from bookings b join tickets t on b.book_ref=t.book_ref left join boarding_passes bp on t.ticket_no=bp.ticket_no order by b.book_ref limit 20;
+                                                 QUERY PLAN
+------------------------------------------------------------------------------------------------------------
+ Limit  (cost=30192.86..30202.21 rows=20 width=150)
+   ->  Nested Loop Left Join  (cost=30192.86..301316.68 rows=579686 width=150)
+         ->  Merge Join  (cost=30192.43..86647.68 rows=366733 width=125)
+               Merge Cond: (t.book_ref = b.book_ref)
+               ->  Gather Merge  (cost=30187.61..72899.71 rows=366733 width=104)
+                     Workers Planned: 2
+                     ->  Sort  (cost=29187.58..29569.60 rows=152805 width=104)
+                           Sort Key: t.book_ref
+                           ->  Parallel Seq Scan on tickets t  (cost=0.00..7672.05 rows=152805 width=104)
+               ->  Index Scan using bookings_pkey on bookings b  (cost=0.42..8511.24 rows=262788 width=21)
+         ->  Index Scan using boarding_passes_pkey on boarding_passes bp  (cost=0.42..0.56 rows=3 width=25)
+               Index Cond: (ticket_no = t.ticket_no)
+(12 rows)
+```
+Не смотря на наличие индекса по столбцу b.book_ref (первичный ключ) стоимость запроса с группировкой значительно выше стоимости выполнения запроса без группировки.
 
 
 
-
-
-
-
+  
 **ОПИСАНИЕ БАЗЫ ДАННЫХ _demo_**  
 
 **Структура и содержание таблицы _aircrafts_data_:**
