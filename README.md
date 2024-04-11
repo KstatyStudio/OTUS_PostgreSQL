@@ -13,7 +13,8 @@
 
 **Схема базы данных _demo_:**
 
-![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/df12e1f8-aa0c-44e6-9fb6-e47fada4cc50)
+![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/b6f7cf2d-16ab-48cd-baef-2e6ba68b1545)
+
 
 **Список таблиц базы данных _demo_:**
 ```
@@ -118,7 +119,7 @@ demo=# select dep.airport_code as "departure.code", dep.airport_name as "departu
 ```
 Результат запроса включает соединение всех строк одного экземпляра таблицы _airports_data_ со всеми строками второго экземпляра этой же таблицы без каких либо условий.
 
-**4. - Полное соединение двух или более таблиц**
+**4. - Полное соединение двух или более таблиц**  
 Выведем информацию о билетах и посадочных талонах:
 ```
 
