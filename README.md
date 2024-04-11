@@ -13,7 +13,7 @@
 
 **Схема базы данных _demo_:**
 
-![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/b6f7cf2d-16ab-48cd-baef-2e6ba68b1545)
+![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/4f6dae90-00af-4394-a7d4-82c14c9bb876)
 
 
 **Список таблиц базы данных _demo_:**
