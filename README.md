@@ -329,7 +329,7 @@ demo=# select* from flights f join airports_data dep on f.departure_airport=dep.
       3795 | PG0008    | 2017-08-25 08:45:00+00 | 2017-08-25 10:55:00+00 | VKO               | JOK             | Scheduled | CN1           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
 (10 rows)
 ```
-Результат содержит объединение всех столбцов из обеих таблиц - _flights_ и _airports_data_, для которых найдено соответствие по столбцу _departure_airport/airport_code_ и значение этого столбца соответствует услолвию (равно _'VKO'_).
+Результат содержит объединение всех столбцов из обеих таблиц - _flights_ и _airports_data_, для которых найдено соответствие по столбцу _departure_airport/airport_code_ и значение этого столбца равно _'VKO'_ (соответствует услолвию).
 
 Выведем это же расписание, но с указанием аэропортов назначения:
 ```
