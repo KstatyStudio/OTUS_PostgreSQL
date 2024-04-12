@@ -153,7 +153,7 @@ jit_optimization_time  | 0
 jit_emission_count     | 0
 jit_emission_time      | 0
 ```
-Запрос _select_ был вызван 2 раза, максимальное время выполнения составило 320 миллисекунд (первый вызов), а минимальное - 0,5 миллисекунды (последующие вызовы при наличии данных в кэше выполняются значительно быстрее). 
+Запрос _select_ был вызван 2 раза, максимальное время выполнения составило 320 миллисекунд (первый вызов), а минимальное - 0,5 миллисекунды (последующие вызовы при наличии данных в кэше выполняются значительно быстрее). При этом было произведено 53/47 операций записи/чтения разделяемого кэша и возращено 20 строк (по 10 в каждом запросе).
     
 **2. - Левостороннее (или правостороннее) соединение двух или более таблиц**  
 Выведем список типов самолётов и посмотрим сколько раз каждый тип самолёта вылетал из аэропорта _Владивосток_:
@@ -180,6 +180,36 @@ demo=# select * from aircrafts_data a left join flights f on a.aircraft_code=f.a
  319           | {"en": "Airbus A319-100", "ru": "Аэробус A319-100"} |  6700 |           |           |                     |                   |                   |                 |        |               |                  |
 (1 row)
 ```
+
+План запроса:  
+```
+demo=# explain select a.aircraft_code, a.model, a.range, count(flight_id) from aircrafts_data a left join flights f on a.aircraft_code=f.aircraft_code and f.departure_airport='VVO' group by a.aircraft_code;
+                                       QUERY PLAN
+-----------------------------------------------------------------------------------------
+ GroupAggregate  (cost=814.61..816.04 rows=9 width=60)
+   Group Key: a.aircraft_code
+   ->  Sort  (cost=814.61..815.05 rows=179 width=56)
+         Sort Key: a.aircraft_code
+         ->  Hash Right Join  (cost=1.20..807.91 rows=179 width=56)
+               Hash Cond: (f.aircraft_code = a.aircraft_code)
+               ->  Seq Scan on flights f  (cost=0.00..806.01 rows=179 width=8)
+                     Filter: (departure_airport = 'VVO'::bpchar)
+               ->  Hash  (cost=1.09..1.09 rows=9 width=52)
+                     ->  Seq Scan on aircrafts_data a  (cost=0.00..1.09 rows=9 width=52)
+(10 rows)
+```
+Наступило время занимательных фактов: _left join_ таблиц _aircrafts_data_ и _flights_ оптимизатор собирается выполнять как _right join_ _flights_ и _aircrafts_data_. Да, это эквивалентные соединения таблиц, но логика человека и машины не совпали. В ходе изучения причин данного нюанса обнаружилось, что за ограничение таких вольностей оптимизатора отвечает параметр конфигурации _join_collapse_limit_ установленный в _1_.  
+```
+demo=# show join_collapse_limit;
+ join_collapse_limit
+---------------------
+ 8
+(1 row)
+```
+А значение по умолчанию - _join_collapse_limit=8_.
+
+
+
 
 **3. - Кросс соединение двух или более таблиц**  
 Выведем перечень всех возможный вариантов прямых перелётов между двумя аэропортами: 
