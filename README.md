@@ -496,7 +496,7 @@ demo=# select* from bookings b join tickets t on b.book_ref=t.book_ref left join
 ```
 Результат запроса включает строки со столбцами из трёх таблиц 
   
-Повторим запрос с ортировкой по коду бронирования:
+Повторим запрос с сортировкой по коду бронирования:
 ```
 demo=# select* from bookings b join tickets t on b.book_ref=t.book_ref left join boarding_passes bp on t.ticket_no=bp.ticket_no order by b.book_ref limit 20;
  book_ref |       book_date        | total_amount |   ticket_no   | book_ref | passenger_id |  passenger_name   |                                contact_data                                |   ticket_no   | flight_id | boarding_no | seat_no
