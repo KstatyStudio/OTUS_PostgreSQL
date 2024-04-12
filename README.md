@@ -54,7 +54,7 @@ demo=# explain select f.flight_id, f.flight_no, f.scheduled_departure, f.departu
                ->  Seq Scan on airports_data arr  (cost=0.00..4.04 rows=104 width=65)
 (10 rows)
 ```
-Первый джойн по столбцу departure_airpor выполняется по алгоритму _Nested Loop_ с предварительным сплошным перебором строк и фильтрацией по заданным значениям. Второй джойн по столбцу _arrival_airport_ уже выполняется по алгоритму _Hash Join_.
+Первый джойн по столбцу _departure_airport_ выполняется по алгоритму _Nested Loop_ с предварительным сплошным перебором строк и фильтрацией по заданным значениям. Второй джойн по столбцу _arrival_airport_ уже выполняется по алгоритму _Hash Join_.
   
 Статистика:
 ```
