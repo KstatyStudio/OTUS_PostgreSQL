@@ -198,7 +198,7 @@ demo=# explain select a.aircraft_code, a.model, a.range, count(flight_id) from a
                      ->  Seq Scan on aircrafts_data a  (cost=0.00..1.09 rows=9 width=52)
 (10 rows)
 ```
-Наступило время занимательных фактов: _left join_ таблиц _aircrafts_data_ и _flights_ оптимизатор собирается выполнять как _right join_ _flights_ и _aircrafts_data_. Да, это эквивалентные соединения таблиц, но логика человека и машины не совпали. В ходе изучения причин данного нюанса обнаружилось, что за ограничение таких вольностей оптимизатора отвечает параметр конфигурации _join_collapse_limit_ установленный в _1_.  
+Наступило время занимательных фактов: _left join_ таблиц _aircrafts_data_ и _flights_ оптимизатор собирается выполнять как _right join_ _flights_ и _aircrafts_data_. Да, это эквивалентные соединения таблиц, но логика человека и машины не совпали. В ходе изучения причин данного нюанса обнаружилось, что за ограничение таких вольностей оптимизатора отвечает параметр конфигурации _join_collapse_limit_ установленный в _1_, а значение по умолчанию - _8_.  
 ```
 demo=# show join_collapse_limit;
  join_collapse_limit
@@ -206,10 +206,59 @@ demo=# show join_collapse_limit;
  8
 (1 row)
 ```
-А значение по умолчанию - _join_collapse_limit=8_.
+  
+Выполним запрос _select_ ещё раз и посмотрим статистику:  
+```
+demo=# select* from pg_stat_statements where query like '%select a.aircraft_code%' \gx 
 
-
-
+-[ RECORD 1 ]----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------
+userid                 | 10
+dbid                   | 16388
+toplevel               | t
+queryid                | -6282581184085683728
+query                  | select a.aircraft_code, a.model, a.range, count(flight_id) from aircrafts_data a left join flights f on a.aircraft_code=f.aircraft_code and f.departure_airport=$1 group by a.air
+craft_code
+plans                  | 0
+total_plan_time        | 0
+min_plan_time          | 0
+max_plan_time          | 0
+mean_plan_time         | 0
+stddev_plan_time       | 0
+calls                  | 2
+total_exec_time        | 38.46776199999999
+min_exec_time          | 3.433977
+max_exec_time          | 35.033784999999995
+mean_exec_time         | 19.233880999999997
+stddev_exec_time       | 15.799903999999998
+rows                   | 18
+shared_blks_hit        | 471
+shared_blks_read       | 315
+shared_blks_dirtied    | 0
+shared_blks_written    | 0
+local_blks_hit         | 0
+local_blks_read        | 0
+local_blks_dirtied     | 0
+local_blks_written     | 0
+temp_blks_read         | 0
+temp_blks_written      | 0
+blk_read_time          | 0
+blk_write_time         | 0
+temp_blk_read_time     | 0
+temp_blk_write_time    | 0
+wal_records            | 0
+wal_fpi                | 0
+wal_bytes              | 0
+jit_functions          | 0
+jit_generation_time    | 0
+jit_inlining_count     | 0
+jit_inlining_time      | 0
+jit_optimization_count | 0
+jit_optimization_time  | 0
+jit_emission_count     | 0
+jit_emission_time      | 0
+```
+Минимальное время выполнения запроса - 3 миллисекунды.
 
 **3. - Кросс соединение двух или более таблиц**  
 Выведем перечень всех возможный вариантов прямых перелётов между двумя аэропортами: 
