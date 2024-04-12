@@ -35,7 +35,7 @@ demo=# select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airpo
       3795 | PG0008    | 2017-08-25 08:45:00+00 | VKO {"en": "Vnukovo International Airport", "ru": "Внуково"} | 2017-08-25 10:55:00+00 | JOK {"en": "Yoshkar-Ola Airport", "ru": "Йошкар-Ола"}
 (10 rows)
 ```
-Результат содержит объединение столбцов из трёх таблиц - _flights_ и два экземпляра _airports_data_, для которых найдено соответствие по столбцам _departure_airport, arrival_airport, airport_code_ и значение этих столбцов равно _'VKO'_ (соответствует услолвию). Вывод ограничен 10 строками и перечнем столбцов.  
+Результат содержит объединение столбцов из трёх таблиц - _flights_ и два экземпляра _airports_data_, для которых найдено соответствие по столбцам _departure_airport/arrival_airport, airport_code_ и значение этих столбцов равно _'VKO'_ (соответствует услолвию). Вывод ограничен 10 строками и перечнем столбцов.  
 
 План запроса:  
 ```
