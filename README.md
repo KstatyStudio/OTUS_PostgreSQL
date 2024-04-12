@@ -401,7 +401,71 @@ demo=# select* from aircrafts_data a full join seats s on a.aircraft_code=s.airc
 (10 rows)
 ```
 Результат запроса включает все строки из обеих таблиц _aircrafts_data_ и _seats_, соединённые по столбцу _aircraft_code_. Для строк из таблицы _aircrafts_data_ в случае отсутствия соответствующей записи в таблице _seats_ столбцы _s.aircraft_code_, _s.seat_no_ и _s.fare_conditions_ заполняются _null_-значениями. И аналогично для строк из таблицы _seats_ столбцы _a.aircraft_code_, _a.model_ и _a.range_ заполняются _null_-значениями, если для строки не найдено соотвтетсвие в таблице _aircrafts_data_.  
+  
+План запроса:
+```
+demo=# explain select* from aircrafts_data a full join seats s on a.aircraft_code=s.aircraft_code limit 10;
+                                             QUERY PLAN
+-----------------------------------------------------------------------------------------------------
+ Limit  (cost=0.41..1.11 rows=10 width=67)
+   ->  Merge Full Join  (cost=0.41..93.63 rows=1339 width=67)
+         Merge Cond: (a.aircraft_code = s.aircraft_code)
+         ->  Index Scan using aircrafts_pkey on aircrafts_data a  (cost=0.14..12.27 rows=9 width=52)
+         ->  Index Scan using seats_pkey on seats s  (cost=0.28..64.60 rows=1339 width=15)
+(5 rows)
+```
+Выбран алгоритм соединения _Merge Full Join_.
 
+Статистика:  
+```
+demo=# select* from pg_stat_statements where query like '%select* from aircrafts_data%' \gx
+-[ RECORD 1 ]----------+--------------------------------------------------------------------------------------------
+userid                 | 10
+dbid                   | 16388
+toplevel               | t
+queryid                | -4464873193909352813
+query                  | select* from aircrafts_data a full join seats s on a.aircraft_code=s.aircraft_code limit $1
+plans                  | 0
+total_plan_time        | 0
+min_plan_time          | 0
+max_plan_time          | 0
+mean_plan_time         | 0
+stddev_plan_time       | 0
+calls                  | 1
+total_exec_time        | 6.575043
+min_exec_time          | 6.575043
+max_exec_time          | 6.575043
+mean_exec_time         | 6.575043
+stddev_exec_time       | 0
+rows                   | 10
+shared_blks_hit        | 0
+shared_blks_read       | 5
+shared_blks_dirtied    | 0
+shared_blks_written    | 0
+local_blks_hit         | 0
+local_blks_read        | 0
+local_blks_dirtied     | 0
+local_blks_written     | 0
+temp_blks_read         | 0
+temp_blks_written      | 0
+blk_read_time          | 0
+blk_write_time         | 0
+temp_blk_read_time     | 0
+temp_blk_write_time    | 0
+wal_records            | 0
+wal_fpi                | 0
+wal_bytes              | 0
+jit_functions          | 0
+jit_generation_time    | 0
+jit_inlining_count     | 0
+jit_inlining_time      | 0
+jit_optimization_count | 0
+jit_optimization_time  | 0
+jit_emission_count     | 0
+jit_emission_time      | 0
+```
+Запрос полного соединения выполняется максимально за 6.5 миллисекунд.
+  
 **5. - Запрос, в котором будут использованы разные типы соединений**  
 Выведем список бронирований (_booking_), билетов (_tickets_) и посадочных талонов (_boarding_passes_). Таблицы _booking_ и _tickets_ будем соединять простым джоином, т.к. нас интересует информация по привязанным к бронированиям билетам. Таблицы _tickets_ и _boarding_passes_ будем соединять левосторонним джоином без учёта дополнительной таблицы _ticket_flights_, т.к. по планируемым полётам могут отсутствовать посадочные талоны и подробная информация о полётах в рамках данного запроса не нужна.
 ```
