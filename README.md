@@ -54,7 +54,8 @@ demo=# explain select f.flight_id, f.flight_no, f.scheduled_departure, f.departu
                ->  Seq Scan on airports_data arr  (cost=0.00..4.04 rows=104 width=65)
 (10 rows)
 ```
-
+Первый джойн по столбцу departure_airpor выполняется по алгоритму _Nested Loop_ с предварительным сплошным перебором строк и фильтрацией по заданным значениям. Второй джойн по столбцу _arrival_airport_ уже выполняется по алгоритму _Hash Join_.
+  
 Статистика:
 ```
 demo=# select* from pg_stat_statements where query like '%select f.flight_id%' \gx
@@ -168,7 +169,7 @@ demo=# select a.aircraft_code, a.model, a.range, count(flight_id) from aircrafts
  SU9           | {"en": "Sukhoi Superjet-100", "ru": "Сухой Суперджет-100"} |  3000 |    61
 (9 rows)
 ```
-В результате мы видим, что из аэропорта _Владивосток_ вылетали только три типа самолётов, а для остальных типов самолётов соответствий в таблице _flights_ не найдены. Так например, запрос без ограничения списка столбцов для самолёта _Аэробус A319-100_ выдаёт строку с незаполненными столбцами из таблицы _flights_:
+В результате мы видим, что из аэропорта _Владивосток_ вылетали только три типа самолётов, а для остальных типов самолётов соответствий в таблице _flights_ не найдены. Так например, запрос без ограничения списка столбцов для типа самолёта _Аэробус A319-100_ выдаёт строку с незаполненными столбцами из таблицы _flights_:
 ```
 demo=# select * from aircrafts_data a left join flights f on a.aircraft_code=f.aircraft_code and f.departure_airport='VVO' where a.aircraft_code='319';
  aircraft_code |                        model                        | range | flight_id | flight_no | scheduled_departure | scheduled_arrival | departure_airport | arrival_airport | status | aircraft_code | actual_departure | actual_arrival
