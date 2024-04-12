@@ -12,24 +12,8 @@
 **Схема базы данных _demo_:**
 
 ![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/3d6c1854-bb3b-47b4-a2f6-16bc6d971650)
-
-**Список таблиц базы данных _demo_:**
-```
-demo=# \dt
-               List of relations
-  Schema  |      Name       | Type  |  Owner
-----------+-----------------+-------+----------
- bookings | aircrafts_data  | table | postgres
- bookings | airports_data   | table | postgres
- bookings | boarding_passes | table | postgres
- bookings | bookings        | table | postgres
- bookings | flights         | table | postgres
- bookings | seats           | table | postgres
- bookings | ticket_flights  | table | postgres
- bookings | tickets         | table | postgres
-(8 rows)
-```
-Структура и содержание таблиц приведены в конце отчёта.  
+  
+Подробно структура и содержание таблиц приведены в конце отчёта.  
 
 ### Решение  
 
