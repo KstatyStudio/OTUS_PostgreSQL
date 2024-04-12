@@ -7,7 +7,7 @@
 
 ### Исходные данные
 ВМ (облако): Ubuntu 22.04, PostgreSQL 15,  
-база данных _demo_ (https://edu.postgrespro.ru/demo-small.zip), разархивированный скрипт (https://github.com/KstatyStudio/OTUS_PostgreSQL/blob/hw18/demo-small-20170815.sql)
+база данных _demo small_ (https://postgrespro.ru/education/demodb), разархивированный скрипт (https://github.com/KstatyStudio/OTUS_PostgreSQL/blob/hw18/demo-small-20170815.sql)
 
 **Схема базы данных _demo_:**
 
@@ -35,7 +35,7 @@ demo=# select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airpo
       3795 | PG0008    | 2017-08-25 08:45:00+00 | VKO {"en": "Vnukovo International Airport", "ru": "Внуково"} | 2017-08-25 10:55:00+00 | JOK {"en": "Yoshkar-Ola Airport", "ru": "Йошкар-Ола"}
 (10 rows)
 ```
-Результат содержит объединение столбцов из трёх таблиц - _flights_ и два экземпляра _airports_data_, для которых найдено соответствие по столбцам _departure_airport/arrival_airport, airport_code_ и значение этих столбцов равно _'VKO'_ (соответствует услолвию). Вывод ограничен 10 строками и перечнем столбцов.  
+Результат содержит объединение столбцов из трёх таблиц - _flights_ и двух экземпляров _airports_data_, для которых найдено соответствие по столбцам _departure_airport/arrival_airport, airport_code_ и значение этих столбцов равно _'VKO'_ (соответствует услолвию). Вывод ограничен 10 строками и перечнем столбцов.  
 
 План запроса:  
 ```
@@ -153,7 +153,7 @@ jit_optimization_time  | 0
 jit_emission_count     | 0
 jit_emission_time      | 0
 ```
-Запрос _select_ был вызван 2 раза, максимальное время выполнения составило 320 миллисекунд (первый вызов), а минимальное - 0,5 миллисекунды (последующие вызовы при наличии данных в кэше выполняются значительно быстрее). При этом было произведено 53/47 операций записи/чтения разделяемого кэша и возращено 20 строк (по 10 в каждом запросе).
+Запрос _select_ был вызван 2 раза, максимальное время выполнения составило 320 миллисекунд (первый вызов), а минимальное - 0,5 миллисекунды (последующие вызовы при наличии данных в кэше выполняются значительно быстрее). При этом было произведено 53/47 операций записи/чтения разделяемого кэша и возращено 20 строк (по 10 в каждом вызове запроса).
     
 **2. - Левостороннее (или правостороннее) соединение двух или более таблиц**  
 Выведем список типов самолётов и посмотрим сколько раз каждый тип самолёта вылетал из аэропорта _Владивосток_:
@@ -259,6 +259,42 @@ jit_emission_count     | 0
 jit_emission_time      | 0
 ```
 Минимальное время выполнения запроса - 3 миллисекунды.
+  
+Попробуем настоять на своём по поводу _left join_:  
+```
+demo=# alter system set join_collapse_limit=1;
+ALTER SYSTEM
+demo=# \q
+
+devops@vmotus18:~$ sudo pg_ctlcluster 15 main restart
+devops@vmotus18:~$ sudo -u postgres psql
+psql (15.6 (Ubuntu 15.6-1.pgdg22.04+1))
+Type "help" for help.
+postgres=# \c demo
+You are now connected to database "demo" as user "postgres".
+
+demo=# show join_collapse_limit;
+ join_collapse_limit
+---------------------
+ 1
+(1 row)
+
+demo=# explain select a.aircraft_code, a.model, a.range, count(flight_id) from aircrafts_data a left join flights f on a.aircraft_code=f.aircraft_code and f.departure_airport='VVO' group by a.aircraft_code;
+                                       QUERY PLAN
+-----------------------------------------------------------------------------------------
+ GroupAggregate  (cost=814.61..816.04 rows=9 width=60)
+   Group Key: a.aircraft_code
+   ->  Sort  (cost=814.61..815.05 rows=179 width=56)
+         Sort Key: a.aircraft_code
+         ->  Hash Right Join  (cost=1.20..807.91 rows=179 width=56)
+               Hash Cond: (f.aircraft_code = a.aircraft_code)
+               ->  Seq Scan on flights f  (cost=0.00..806.01 rows=179 width=8)
+                     Filter: (departure_airport = 'VVO'::bpchar)
+               ->  Hash  (cost=1.09..1.09 rows=9 width=52)
+                     ->  Seq Scan on aircrafts_data a  (cost=0.00..1.09 rows=9 width=52)
+(10 rows)
+```
+В результате всё то же самое. По своей сути параметр конфигурации _join_collapse_limit_ ограничивает выбор последовательности выполения операций, но не методов. Т.е. при _join_collapse_limit=1_ оптимизатор не может поменять местами соединение и сортировку, даже если это приведёт к повышению производительности, но спокойно может выполнить _right join_ вместо аналогичного _left join_.  
 
 **3. - Кросс соединение двух или более таблиц**  
 Выведем перечень всех возможный вариантов прямых перелётов между двумя аэропортами: 
@@ -280,6 +316,72 @@ demo=# select dep.airport_code as "departure.code", dep.airport_name as "departu
 ```
 Результат запроса включает соединение всех строк одного экземпляра таблицы _airports_data_ со всеми строками второго экземпляра этой же таблицы без каких либо условий.
 
+План запроса:  
+```
+demo=# select dep.airport_code as "departure.code", dep.airport_name as "departure.name", dep.coordinates as "departure.coordinates", arr.airport_code as "arrival.code", arr.airport_name as "arrival.name", arr.coordinates as "arrival.coordinates" from airports_data dep cross join airports_data arr limit 10;
+demo=# explain select dep.airport_code as "departure.code", dep.airport_name as "departure.name", dep.coordinates as "departure.coordinates", arr.airport_code as "arrival.code", arr.airport_name as "arrival.name", arr.coordinates as "arrival.coordinates" from airports_data dep cross join airports_data arr limit 10;
+                                      QUERY PLAN
+--------------------------------------------------------------------------------------
+ Limit  (cost=0.00..0.13 rows=10 width=162)
+   ->  Nested Loop  (cost=0.00..143.54 rows=10816 width=162)
+         ->  Seq Scan on airports_data dep  (cost=0.00..4.04 rows=104 width=81)
+         ->  Materialize  (cost=0.00..4.56 rows=104 width=81)
+               ->  Seq Scan on airports_data arr  (cost=0.00..4.04 rows=104 width=81)
+(5 rows)
+```
+В случае с кросс джойном оптимизатор предпочитает алгоритм _Nested Loop_ и нашёл в базе данных материализованное представление.  
+  
+Статистика:  
+```
+demo=# select* from pg_stat_statements where query like '%select dep.airport_code%' \gx
+
+-[ RECORD 1 ]----------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+userid                 | 10
+dbid                   | 16388
+toplevel               | t
+queryid                | -7570733271780171730
+query                  | select dep.airport_code as "departure.code", dep.airport_name as "departure.name", dep.coordinates as "departure.coordinates", arr.airport_code as "arrival.code", arr.airport_name as "arrival.name", arr.coordinates as "arrival.coordinates" from airports_data dep cross join airports_data arr limit $1
+plans                  | 0
+total_plan_time        | 0
+min_plan_time          | 0
+max_plan_time          | 0
+mean_plan_time         | 0
+stddev_plan_time       | 0
+calls                  | 1
+total_exec_time        | 0.098716
+min_exec_time          | 0.098716
+max_exec_time          | 0.098716
+mean_exec_time         | 0.098716
+stddev_exec_time       | 0
+rows                   | 10
+shared_blks_hit        | 1
+shared_blks_read       | 1
+shared_blks_dirtied    | 0
+shared_blks_written    | 0
+local_blks_hit         | 0
+local_blks_read        | 0
+local_blks_dirtied     | 0
+local_blks_written     | 0
+temp_blks_read         | 0
+temp_blks_written      | 0
+blk_read_time          | 0
+blk_write_time         | 0
+temp_blk_read_time     | 0
+temp_blk_write_time    | 0
+wal_records            | 0
+wal_fpi                | 0
+wal_bytes              | 0
+jit_functions          | 0
+jit_generation_time    | 0
+jit_inlining_count     | 0
+jit_inlining_time      | 0
+jit_optimization_count | 0
+jit_optimization_time  | 0
+jit_emission_count     | 0
+jit_emission_time      | 0
+```
+Таблица _airports_data_ уже есть в кэше, запрос выполнился за 0.098 миллисекунды.  
+    
 **4. - Полное соединение двух или более таблиц**  
 Выведем информацию о местах в самолётах:
 ```
@@ -300,7 +402,7 @@ demo=# select* from aircrafts_data a full join seats s on a.aircraft_code=s.airc
 ```
 Результат запроса включает все строки из обеих таблиц _aircrafts_data_ и _seats_, соединённые по столбцу _aircraft_code_. Для строк из таблицы _aircrafts_data_ в случае отсутствия соответствующей записи в таблице _seats_ столбцы _s.aircraft_code_, _s.seat_no_ и _s.fare_conditions_ заполняются _null_-значениями. И аналогично для строк из таблицы _seats_ столбцы _a.aircraft_code_, _a.model_ и _a.range_ заполняются _null_-значениями, если для строки не найдено соотвтетсвие в таблице _aircrafts_data_.  
 
-**5. - Запрос, в котором будут использованы разные типы соединений**
+**5. - Запрос, в котором будут использованы разные типы соединений**  
 Выведем список бронирований (_booking_), билетов (_tickets_) и посадочных талонов (_boarding_passes_). Таблицы _booking_ и _tickets_ будем соединять простым джоином, т.к. нас интересует информация по привязанным к бронированиям билетам. Таблицы _tickets_ и _boarding_passes_ будем соединять левосторонним джоином без учёта дополнительной таблицы _ticket_flights_, т.к. по планируемым полётам могут отсутствовать посадочные талоны и подробная информация о полётах в рамках данного запроса не нужна.
 ```
 demo=# select* from bookings b join tickets t on b.book_ref=t.book_ref left join boarding_passes bp on t.ticket_no=bp.ticket_no limit 20;
