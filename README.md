@@ -464,10 +464,10 @@ jit_optimization_time  | 0
 jit_emission_count     | 0
 jit_emission_time      | 0
 ```
-Запрос полного соединения выполняется максимально за 6.5 миллисекунд.
+Запрос с применением полного соединения выполняется максимально за 6.5 миллисекунд.
   
 **5. - Запрос, в котором будут использованы разные типы соединений**  
-Выведем список бронирований (_booking_), билетов (_tickets_) и посадочных талонов (_boarding_passes_). Таблицы _booking_ и _tickets_ будем соединять простым джоином, т.к. нас интересует информация по привязанным к бронированиям билетам. Таблицы _tickets_ и _boarding_passes_ будем соединять левосторонним джоином без учёта дополнительной таблицы _ticket_flights_, т.к. по планируемым полётам могут отсутствовать посадочные талоны и подробная информация о полётах в рамках данного запроса не нужна.
+Выведем список бронирований (_booking_), билетов (_tickets_) и посадочных талонов (_boarding_passes_). Таблицы _booking_ и _tickets_ будем соединять простым джоином, т.к. нас интересует информация по привязанным к бронированиям билетам. Таблицы _tickets_ и _boarding_passes_ будем соединять левосторонним джойном без учёта дополнительной таблицы _ticket_flights_, т.к. по планируемым полётам могут отсутствовать посадочные талоны и подробная информация о полётах в рамках данного запроса не нужна.
 ```
 demo=# select* from bookings b join tickets t on b.book_ref=t.book_ref left join boarding_passes bp on t.ticket_no=bp.ticket_no limit 20;
  book_ref |       book_date        | total_amount |   ticket_no   | book_ref | passenger_id |   passenger_name    |                                   contact_data                                   |   ticket_no   | flight_id | boarding_no | seat_no
@@ -558,9 +558,107 @@ demo=# explain select* from bookings b join tickets t on b.book_ref=t.book_ref l
 ```
 Не смотря на наличие индекса по столбцу b.book_ref (первичный ключ) стоимость запроса с группировкой значительно выше стоимости выполнения запроса без группировки.
 
+Статистика про запросу без сортировки:
+```
+-[ RECORD 2 ]----------+------------------------------------------------------------------------------------------------------------------------------------------
+userid                 | 10
+dbid                   | 16388
+toplevel               | t
+queryid                | -9178999239226577339
+query                  | select* from bookings b join tickets t on b.book_ref=t.book_ref left join boarding_passes bp on t.ticket_no=bp.ticket_no limit $1
+plans                  | 0
+total_plan_time        | 0
+min_plan_time          | 0
+max_plan_time          | 0
+mean_plan_time         | 0
+stddev_plan_time       | 0
+calls                  | 2
+total_exec_time        | 1313.422934
+min_exec_time          | 0.18843000000000001
+max_exec_time          | 1313.234504
+mean_exec_time         | 656.711467
+stddev_exec_time       | 656.523037
+rows                   | 40
+shared_blks_hit        | 158
+shared_blks_read       | 36
+shared_blks_dirtied    | 0
+shared_blks_written    | 0
+local_blks_hit         | 0
+local_blks_read        | 0
+local_blks_dirtied     | 0
+local_blks_written     | 0
+temp_blks_read         | 0
+temp_blks_written      | 0
+blk_read_time          | 0
+blk_write_time         | 0
+temp_blk_read_time     | 0
+temp_blk_write_time    | 0
+wal_records            | 0
+wal_fpi                | 0
+wal_bytes              | 0
+jit_functions          | 0
+jit_generation_time    | 0
+jit_inlining_count     | 0
+jit_inlining_time      | 0
+jit_optimization_count | 0
+jit_optimization_time  | 0
+jit_emission_count     | 0
+jit_emission_time      | 0
+```
+Минимальное время выполнения запроса с применением соединения без сортировки - 656 миллисекунд.  
 
-
+Статистика по запросу с сортировкой:    
+```
+-[ RECORD 2 ]----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+userid                 | 10
+dbid                   | 16388
+toplevel               | t
+queryid                | -83310798485264798
+query                  | select* from bookings b join tickets t on b.book_ref=t.book_ref left join boarding_passes bp on t.ticket_no=bp.ticket_no order by b.book_ref limit $1
+plans                  | 0
+total_plan_time        | 0
+min_plan_time          | 0
+max_plan_time          | 0
+mean_plan_time         | 0
+stddev_plan_time       | 0
+calls                  | 2
+total_exec_time        | 8725.059286
+min_exec_time          | 530.888412
+max_exec_time          | 8194.170874
+mean_exec_time         | 4362.529643
+stddev_exec_time       | 3831.6412309999996
+rows                   | 40
+shared_blks_hit        | 396
+shared_blks_read       | 12218
+shared_blks_dirtied    | 0
+shared_blks_written    | 0
+local_blks_hit         | 0
+local_blks_read        | 0
+local_blks_dirtied     | 0
+local_blks_written     | 0
+temp_blks_read         | 2737
+temp_blks_written      | 10330
+blk_read_time          | 0
+blk_write_time         | 0
+temp_blk_read_time     | 0
+temp_blk_write_time    | 0
+wal_records            | 0
+wal_fpi                | 0
+wal_bytes              | 0
+jit_functions          | 0
+jit_generation_time    | 0
+jit_inlining_count     | 0
+jit_inlining_time      | 0
+jit_optimization_count | 0
+jit_optimization_time  | 0
+jit_emission_count     | 0
+jit_emission_time      | 0
+```
+Минимальное время выполнения запроса соединения с сортировкой составило 530 миллисекунд. Что оказалось быстрее соединения без сортировки на 136 миллисекунд.  
   
+<code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
+  
+--------------------------------------------------------------------------------------------------------------  
 **ОПИСАНИЕ БАЗЫ ДАННЫХ _demo_**  
 
 **Структура и содержание таблицы _aircrafts_data_:**
@@ -839,5 +937,5 @@ demo=# select* from tickets limit 10;
  0005432000996 | 1FB1E4   | 6866 920231  | POLINA ZHURAVLEVA   | {"phone": "+70639918455"}
 (10 rows)
 ```
-  
+    
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
