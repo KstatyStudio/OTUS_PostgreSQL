@@ -9,12 +9,9 @@
 ВМ (облако): Ubuntu 22.04, PostgreSQL 15,  
 база данных _demo_ (https://edu.postgrespro.ru/demo-small.zip), разархивированный скрипт (https://github.com/KstatyStudio/OTUS_PostgreSQL/blob/hw18/demo-small-20170815.sql)
 
-### Решение
-
 **Схема базы данных _demo_:**
 
-![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/ce18cc9f-6a19-4038-a624-8d9f480edd35)
-
+![image](https://github.com/KstatyStudio/OTUS_PostgreSQL/assets/157008688/3d6c1854-bb3b-47b4-a2f6-16bc6d971650)
 
 **Список таблиц базы данных _demo_:**
 ```
@@ -34,27 +31,10 @@ demo=# \dt
 ```
 Структура и содержание таблиц приведены в конце отчёта.  
 
-**1. - Прямое соединение двух или более таблиц**  
-Выведем расписание вылетов из аэропорта _Внуково_ на 25 августа 2017 года:
-```
-demo=# select* from flights f join airports_data dep on f.departure_airport=dep.airport_code where f.departure_airport='VKO' and f.scheduled_departure::date='2017-08-25' limit 10;
- flight_id | flight_no |  scheduled_departure   |   scheduled_arrival    | departure_airport | arrival_airport |  status   | aircraft_code | actual_departure | actual_arrival | airport_code |                       airport_name                       |               city               |          coordinates          |   timezone
------------+-----------+------------------------+------------------------+-------------------+-----------------+-----------+---------------+------------------+----------------+--------------+----------------------------------------------------------+----------------------------------+-------------------------------+---------------
-      3979 | PG0052    | 2017-08-25 11:50:00+00 | 2017-08-25 14:35:00+00 | VKO               | HMA             | Scheduled | CR2           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
-      3285 | PG0229    | 2017-08-25 08:50:00+00 | 2017-08-25 09:40:00+00 | VKO               | LED             | Scheduled | 321           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
-      3294 | PG0228    | 2017-08-25 08:25:00+00 | 2017-08-25 09:15:00+00 | VKO               | LED             | Scheduled | 321           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
-      3298 | PG0227    | 2017-08-25 06:45:00+00 | 2017-08-25 07:35:00+00 | VKO               | LED             | Scheduled | 321           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
-      3425 | PG0671    | 2017-08-25 10:05:00+00 | 2017-08-25 13:20:00+00 | VKO               | OMS             | Scheduled | CR2           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
-      3505 | PG0412    | 2017-08-25 08:00:00+00 | 2017-08-25 09:25:00+00 | VKO               | PEE             | Scheduled | 773           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
-      3534 | PG0396    | 2017-08-25 13:20:00+00 | 2017-08-25 14:30:00+00 | VKO               | VOG             | Scheduled | SU9           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
-      3601 | PG0414    | 2017-08-25 06:05:00+00 | 2017-08-25 08:10:00+00 | VKO               | MMK             | Scheduled | CR2           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
-      3661 | PG0050    | 2017-08-25 11:20:00+00 | 2017-08-25 12:20:00+00 | VKO               | PES             | Scheduled | CR2           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
-      3795 | PG0008    | 2017-08-25 08:45:00+00 | 2017-08-25 10:55:00+00 | VKO               | JOK             | Scheduled | CN1           |                  |                | VKO          | {"en": "Vnukovo International Airport", "ru": "Внуково"} | {"en": "Moscow", "ru": "Москва"} | (37.2615013123,55.5914993286) | Europe/Moscow
-(10 rows)
-```
-Результат содержит объединение всех столбцов из обеих таблиц - _flights_ и _airports_data_, для которых найдено соответствие по столбцу _departure_airport/airport_code_ и значение этого столбца равно _'VKO'_ (соответствует услолвию). Вывод ограничен 10 строками.
+### Решение  
 
-Выведем это же расписание, но с указанием аэропортов назначения:
+**1. - Прямое соединение двух или более таблиц**  
+Выведем расписание вылетов из аэропорта _Внуково_ на 25 августа 2017 года с указанием аэропортов назначения:
 ```
 demo=# select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airport||' '||dep.airport_name as "departure", scheduled_arrival, f.arrival_airport||' '||arr.airport_name as "arrival" from flights f join airports_data dep on f.departure_airport=dep.airport_code join airports_data arr on f.arrival_airport=arr.airport_code where f.departure_airport='VKO' and f.scheduled_departure::date='2017-08-25' limit 10;
  flight_id | flight_no |  scheduled_departure   |                          departure                           |   scheduled_arrival    |                            arrival
@@ -71,8 +51,122 @@ demo=# select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airpo
       3795 | PG0008    | 2017-08-25 08:45:00+00 | VKO {"en": "Vnukovo International Airport", "ru": "Внуково"} | 2017-08-25 10:55:00+00 | JOK {"en": "Yoshkar-Ola Airport", "ru": "Йошкар-Ола"}
 (10 rows)
 ```
-Результат содержит объединение столбцов из трёх таблиц - _flights_ и два экземпляра _airports_data_. Вывод ограничен 10 строками и перечнем столбцов.
+Результат содержит объединение столбцов из трёх таблиц - _flights_ и два экземпляра _airports_data_, для которых найдено соответствие по столбцам _departure_airport, arrival_airport, airport_code_ и значение этих столбцов равно _'VKO'_ (соответствует услолвию). Вывод ограничен 10 строками и перечнем столбцов.  
 
+План запроса:  
+```
+demo=# explain select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airport||' '||dep.airport_name as "departure", scheduled_arrival, f.arrival_airport||' '||arr.airport_name as "arrival" from flights f join airports_data dep on f.departure_airport=dep.airport_code join airports_data arr on f.arrival_airport=arr.airport_code where f.departure_airport='VKO' and f.scheduled_departure::date='2017-08-25' limit 10;
+                                                        QUERY PLAN
+--------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=5.34..981.60 rows=9 width=91)
+   ->  Hash Join  (cost=5.34..981.60 rows=9 width=91)
+         Hash Cond: (f.arrival_airport = arr.airport_code)
+         ->  Nested Loop  (cost=0.00..976.01 rows=9 width=96)
+               ->  Seq Scan on airports_data dep  (cost=0.00..4.30 rows=1 width=65)
+                     Filter: (airport_code = 'VKO'::bpchar)
+               ->  Seq Scan on flights f  (cost=0.00..971.62 rows=9 width=35)
+                     Filter: ((departure_airport = 'VKO'::bpchar) AND ((scheduled_departure)::date = '2017-08-25'::date))
+         ->  Hash  (cost=4.04..4.04 rows=104 width=65)
+               ->  Seq Scan on airports_data arr  (cost=0.00..4.04 rows=104 width=65)
+(10 rows)
+```
+
+Статистика:
+```
+demo=# select* from pg_stat_statements where query like '%select f.flight_id%' \gx
+
+-[ RECORD 1 ]----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+userid                 | 10
+dbid                   | 16388
+toplevel               | t
+queryid                | 2662642071027588672
+query                  | explain select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airport||' '||dep.airport_name as "departure", scheduled_arrival, f.arrival_airport||' '||arr.airport_name as "arrival" from flights f join airports_data dep on f.departure_airport=dep.airport_code join airports_data arr on f.arrival_airport=arr.airport_code where f.departure_airport='VKO' and f.scheduled_departure::date='2017-08-25' limit 10
+plans                  | 0
+total_plan_time        | 0
+min_plan_time          | 0
+max_plan_time          | 0
+mean_plan_time         | 0
+stddev_plan_time       | 0
+calls                  | 1
+total_exec_time        | 38.443162
+min_exec_time          | 38.443162
+max_exec_time          | 38.443162
+mean_exec_time         | 38.443162
+stddev_exec_time       | 0
+rows                   | 0
+shared_blks_hit        | 4
+shared_blks_read       | 0
+shared_blks_dirtied    | 0
+shared_blks_written    | 0
+local_blks_hit         | 0
+local_blks_read        | 0
+local_blks_dirtied     | 0
+local_blks_written     | 0
+temp_blks_read         | 0
+temp_blks_written      | 0
+blk_read_time          | 0
+blk_write_time         | 0
+temp_blk_read_time     | 0
+temp_blk_write_time    | 0
+wal_records            | 0
+wal_fpi                | 0
+wal_bytes              | 0
+jit_functions          | 0
+jit_generation_time    | 0
+jit_inlining_count     | 0
+jit_inlining_time      | 0
+jit_optimization_count | 0
+jit_optimization_time  | 0
+jit_emission_count     | 0
+jit_emission_time      | 0
+```
+```
+-[ RECORD 2 ]----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+userid                 | 10
+dbid                   | 16388
+toplevel               | t
+queryid                | -7265423808759686202
+query                  | select f.flight_id, f.flight_no, f.scheduled_departure, f.departure_airport||$1||dep.airport_name as "departure", scheduled_arrival, f.arrival_airport||$2||arr.airport_name as "arrival" from flights f join airports_data dep on f.departure_airport=dep.airport_code join airports_data arr on f.arrival_airport=arr.airport_code where f.departure_airport=$3 and f.scheduled_departure::date=$4 limit $5
+plans                  | 0
+total_plan_time        | 0
+min_plan_time          | 0
+max_plan_time          | 0
+mean_plan_time         | 0
+stddev_plan_time       | 0
+calls                  | 2
+total_exec_time        | 320.58299400000004
+min_exec_time          | 0.5183190000000001
+max_exec_time          | 320.064675
+mean_exec_time         | 160.29149700000002
+stddev_exec_time       | 159.773178
+rows                   | 20
+shared_blks_hit        | 53
+shared_blks_read       | 47
+shared_blks_dirtied    | 0
+shared_blks_written    | 0
+local_blks_hit         | 0
+local_blks_read        | 0
+local_blks_dirtied     | 0
+local_blks_written     | 0
+temp_blks_read         | 0
+temp_blks_written      | 0
+blk_read_time          | 0
+blk_write_time         | 0
+temp_blk_read_time     | 0
+temp_blk_write_time    | 0
+wal_records            | 0
+wal_fpi                | 0
+wal_bytes              | 0
+jit_functions          | 0
+jit_generation_time    | 0
+jit_inlining_count     | 0
+jit_inlining_time      | 0
+jit_optimization_count | 0
+jit_optimization_time  | 0
+jit_emission_count     | 0
+jit_emission_time      | 0
+```
+  
 **2. - Левостороннее (или правостороннее) соединение двух или более таблиц**  
 Выведем список типов самолётов и посмотрим сколько раз каждый тип самолёта вылетал из аэропорта _Владивосток_:
 ```
