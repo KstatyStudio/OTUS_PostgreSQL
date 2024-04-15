@@ -34,7 +34,7 @@ demo=# \dt+
   
 Самая большая по размеру на диске таблица - _ticket_flights_. Посмотрим статистику по этой таблице:  
 ```
-
+demo=# select* from pg_stats where tablename='ticket_flights' \gx
 ```
   
 ```
