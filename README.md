@@ -32,7 +32,30 @@ demo=# \dt+
 (8 rows)
 ```
   
-Самая большая по размеру на диске таблица - _ticket_flights_. Посмотрим статистику по этой таблице:  
+Самая большая по размеру на диске таблица - _ticket_flights_.  
+Посмотрим структуру этой таблицы:  
+```
+demo=# \d ticket_flights
+                     Table "bookings.ticket_flights"
+     Column      |         Type          | Collation | Nullable | Default
+-----------------+-----------------------+-----------+----------+---------
+ ticket_no       | character(13)         |           | not null |
+ flight_id       | integer               |           | not null |
+ fare_conditions | character varying(10) |           | not null |
+ amount          | numeric(10,2)         |           | not null |
+Indexes:
+    "ticket_flights_pkey" PRIMARY KEY, btree (ticket_no, flight_id)
+Check constraints:
+    "ticket_flights_amount_check" CHECK (amount >= 0::numeric)
+    "ticket_flights_fare_conditions_check" CHECK (fare_conditions::text = ANY (ARRAY['Economy'::character varying::text, 'Comfort'::character varying::text, 'Business'::character varying::text]))
+Foreign-key constraints:
+    "ticket_flights_flight_id_fkey" FOREIGN KEY (flight_id) REFERENCES flights(flight_id)
+    "ticket_flights_ticket_no_fkey" FOREIGN KEY (ticket_no) REFERENCES tickets(ticket_no)
+Referenced by:
+    TABLE "boarding_passes" CONSTRAINT "boarding_passes_ticket_no_fkey" FOREIGN KEY (ticket_no, flight_id) REFERENCES ticket_flights(ticket_no, flight_id)
+```
+  
+Посмотрим статистику:  
 ```
 demo=# select* from pg_stats where tablename='ticket_flights' \gx
 ```
