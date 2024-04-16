@@ -192,9 +192,143 @@ ORDER BY f.scheduled_departure;
 
 Для секционирования таблицы _ticket_flights_ создадим её копию _ticket_flights_prt:
 ```
-
+demo=# create table ticket_flights_prt (like ticket_flights including all) partition by hash (ticket_no, flight_id);
+CREATE TABLE
 ```
 
+Создадим 3 секции (объём, занимаемый таблицей на диске, не нуждается в более сильном дроблении):
+```
+demo=# create table ticket_flights_0 partition of ticket_flights_prt for values with (modulus 3, remainder 0);
+CREATE TABLE
+  
+demo=# create table ticket_flights_1 partition of ticket_flights_prt for values with (modulus 3, remainder 1);
+CREATE TABLE
+  
+demo=# create table ticket_flights_2 partition of ticket_flights_prt for values with (modulus 3, remainder 2);
+CREATE TABLE
+```
+  
+Заполним данными из _ticket_flights_:
+```
+demo=# insert into ticket_flights_prt select* from ticket_flights;
 
+demo=# analyze ticket_flights_prt;
+ANALYZE
+```
+  
+Проверяем:
+```
+demo=# SELECT   to_char(f.scheduled_departure, 'DD.MM.YYYY') as when,
+         f.departure_city || '(' || f.departure_airport || ')' as departure,
+         f.arrival_city || '(' || f.arrival_airport || ')' as arrival,
+         tf.fare_conditions as class,
+         tf.amount
+FROM     ticket_flights_prt tf
+         JOIN flights_v f ON tf.flight_id = f.flight_id
+WHERE    tf.ticket_no = '0005432661915'
+ORDER BY f.scheduled_departure;
+    when    |     departure     |      arrival      |  class   |  amount
+------------+-------------------+-------------------+----------+-----------
+ 29.07.2017 | Москва(SVO)       | Анадырь(DYR)      | Business | 185300.00
+ 01.08.2017 | Анадырь(DYR)      | Хабаровск(KHV)    | Business |  92200.00
+ 03.08.2017 | Хабаровск(KHV)    | Благовещенск(BQS) | Business |  18000.00
+ 08.08.2017 | Благовещенск(BQS) | Хабаровск(KHV)    | Business |  18000.00
+ 12.08.2017 | Хабаровск(KHV)    | Анадырь(DYR)      | Economy  |  30700.00
+ 17.08.2017 | Анадырь(DYR)      | Москва(SVO)       | Business | 185300.00
+(6 rows)
+```
 
+План запроса:
+```
+demo=# EXPLAIN ANALYZE SELECT to_char(f.scheduled_departure, 'DD.MM.YYYY') as when,
+         f.departure_city || '(' || f.departure_airport || ')' as departure,
+         f.arrival_city || '(' || f.arrival_airport || ')' as arrival,
+         tf.fare_conditions as class,
+         tf.amount
+FROM     ticket_flights_prt tf
+         JOIN flights_v f ON tf.flight_id = f.flight_id
+WHERE    tf.ticket_no = '0005432661915'
+ORDER BY f.scheduled_departure;
+                                                                                 QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=92.48..92.49 rows=6 width=118) (actual time=0.177..0.179 rows=6 loops=1)
+   Sort Key: f.scheduled_departure
+   Sort Method: quicksort  Memory: 25kB
+   ->  Nested Loop  (cost=1.87..92.40 rows=6 width=118) (actual time=0.108..0.169 rows=6 loops=1)
+         ->  Nested Loop  (cost=1.72..88.27 rows=6 width=79) (actual time=0.066..0.101 rows=6 loops=1)
+               ->  Nested Loop  (cost=1.58..87.31 rows=6 width=30) (actual time=0.062..0.088 rows=6 loops=1)
+                     ->  Merge Append  (cost=1.29..37.46 rows=6 width=18) (actual time=0.051..0.059 rows=6 loops=1)
+                           Sort Key: tf.flight_id
+                           ->  Index Scan using ticket_flights_0_pkey on ticket_flights_0 tf_1  (cost=0.42..12.45 rows=2 width=18) (actual time=0.020..0.024 rows=3 loops=1)
+                                 Index Cond: (ticket_no = '0005432661915'::bpchar)
+                           ->  Index Scan using ticket_flights_1_pkey on ticket_flights_1 tf_2  (cost=0.42..12.45 rows=2 width=18) (actual time=0.015..0.017 rows=2 loops=1)
+                                 Index Cond: (ticket_no = '0005432661915'::bpchar)
+                           ->  Index Scan using ticket_flights_2_pkey on ticket_flights_2 tf_3  (cost=0.42..12.45 rows=2 width=18) (actual time=0.015..0.015 rows=1 loops=1)
+                                 Index Cond: (ticket_no = '0005432661915'::bpchar)
+                     ->  Index Scan using flights_pkey on flights f  (cost=0.29..8.31 rows=1 width=20) (actual time=0.004..0.004 rows=1 loops=6)
+                           Index Cond: (flight_id = tf.flight_id)
+               ->  Index Scan using airports_data_pkey on airports_data ml  (cost=0.14..0.16 rows=1 width=53) (actual time=0.002..0.002 rows=1 loops=6)
+                     Index Cond: (airport_code = f.departure_airport)
+         ->  Index Scan using airports_data_pkey on airports_data ml_1  (cost=0.14..0.16 rows=1 width=53) (actual time=0.001..0.001 rows=1 loops=6)
+               Index Cond: (airport_code = f.arrival_airport)
+ Planning Time: 0.731 ms
+ Execution Time: 0.223 ms
+(22 rows)
+```
+Время выполнения запроса выросло. Сканирование выполняется по всем секциям. Секционирование по составному атрибуту в данном случае не привело к повышению производительности.
+  
+Удаляем таблицу _ticket_flights_prt_ и секционируем _ticket_flights_ по хэшу одного столбца - _ticket_no_:
+```
+demo=# drop table ticket_flights_prt;
+DROP TABLE
+
+demo=# create table ticket_flights_prt (like ticket_flights including all) partition by hash (ticket_no);
+CREATE TABLE
+demo=# create table ticket_flights_0 partition of ticket_flights_prt for values with (modulus 3, remainder 0);
+CREATE TABLE
+demo=# create table ticket_flights_1 partition of ticket_flights_prt for values with (modulus 3, remainder 1);
+CREATE TABLE
+demo=# create table ticket_flights_2 partition of ticket_flights_prt for values with (modulus 3, remainder 2);
+CREATE TABLE
+
+demo=# insert into ticket_flights_prt select* from ticket_flights;
+INSERT 0 1045726
+
+demo=# analyze ticket_flights_prt;
+ANALYZE
+```
+  
+Проверяем:
+```
+demo=# EXPLAIN ANALYZE SELECT to_char(f.scheduled_departure, 'DD.MM.YYYY') as when,
+         f.departure_city || '(' || f.departure_airport || ')' as departure,
+         f.arrival_city || '(' || f.arrival_airport || ')' as arrival,
+         tf.fare_conditions as class,
+         tf.amount
+FROM     ticket_flights_prt tf
+         JOIN flights_v f ON tf.flight_id = f.flight_id
+WHERE    tf.ticket_no = '0005432661915'
+ORDER BY f.scheduled_departure;
+                                                                             QUERY PLAN
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=43.96..43.97 rows=3 width=118) (actual time=0.133..0.135 rows=6 loops=1)
+   Sort Key: f.scheduled_departure
+   Sort Method: quicksort  Memory: 25kB
+   ->  Nested Loop  (cost=1.00..43.93 rows=3 width=118) (actual time=0.064..0.125 rows=6 loops=1)
+         ->  Nested Loop  (cost=0.85..41.87 rows=3 width=79) (actual time=0.025..0.058 rows=6 loops=1)
+               ->  Nested Loop  (cost=0.71..41.39 rows=3 width=30) (actual time=0.022..0.046 rows=6 loops=1)
+                     ->  Index Scan using ticket_flights_0_pkey on ticket_flights_0 tf  (cost=0.42..16.46 rows=3 width=18) (actual time=0.016..0.024 rows=6 loops=1)
+                           Index Cond: (ticket_no = '0005432661915'::bpchar)
+                     ->  Index Scan using flights_pkey on flights f  (cost=0.29..8.31 rows=1 width=20) (actual time=0.003..0.003 rows=1 loops=6)
+                           Index Cond: (flight_id = tf.flight_id)
+               ->  Index Scan using airports_data_pkey on airports_data ml  (cost=0.14..0.16 rows=1 width=53) (actual time=0.001..0.001 rows=1 loops=6)
+                     Index Cond: (airport_code = f.departure_airport)
+         ->  Index Scan using airports_data_pkey on airports_data ml_1  (cost=0.14..0.16 rows=1 width=53) (actual time=0.001..0.001 rows=1 loops=6)
+               Index Cond: (airport_code = f.arrival_airport)
+ Planning Time: 0.551 ms
+ Execution Time: 0.169 ms
+(16 rows)
+```
+Время выполнения запроса незначительно сократилось. Сканирование выполняется по партиции, а не по всей таблице. Возможно, при росте объёма данных будет более заметных рост производительности.
+  
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
