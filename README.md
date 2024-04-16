@@ -300,6 +300,50 @@ ANALYZE
   
 Проверяем:
 ```
+demo=# \dt+
+                                                        List of relations
+  Schema  |        Name        |       Type        |  Owner   | Persistence | Access method |  Size   |        Description
+----------+--------------------+-------------------+----------+-------------+---------------+---------+---------------------------
+ bookings | aircrafts_data     | table             | postgres | permanent   | heap          | 16 kB   | Aircrafts (internal data)
+ bookings | airports_data      | table             | postgres | permanent   | heap          | 56 kB   | Airports (internal data)
+ bookings | boarding_passes    | table             | postgres | permanent   | heap          | 33 MB   | Boarding passes
+ bookings | bookings           | table             | postgres | permanent   | heap          | 13 MB   | Bookings
+ bookings | flights            | table             | postgres | permanent   | heap          | 3168 kB | Flights
+ bookings | seats              | table             | postgres | permanent   | heap          | 96 kB   | Seats
+ bookings | ticket_flights     | table             | postgres | permanent   | heap          | 68 MB   | Flight segment
+ bookings | ticket_flights_0   | table             | postgres | permanent   | heap          | 23 MB   |
+ bookings | ticket_flights_1   | table             | postgres | permanent   | heap          | 23 MB   |
+ bookings | ticket_flights_2   | table             | postgres | permanent   | heap          | 23 MB   |
+ bookings | ticket_flights_prt | partitioned table | postgres | permanent   |               | 0 bytes |
+ bookings | tickets            | table             | postgres | permanent   | heap          | 48 MB   | Tickets
+(12 rows)
+```
+Данные из _ticket_flights_ равномерно распределились по трём секциям таблицы _ticket_flights_prt_.
+  
+Выполним тестовый запрос:   
+```
+demo=# SELECT to_char(f.scheduled_departure, 'DD.MM.YYYY') as when,
+         f.departure_city || '(' || f.departure_airport || ')' as departure,
+         f.arrival_city || '(' || f.arrival_airport || ')' as arrival,
+         tf.fare_conditions as class,
+         tf.amount
+FROM     ticket_flights_prt tf
+         JOIN flights_v f ON tf.flight_id = f.flight_id
+WHERE    tf.ticket_no = '0005432661915'
+ORDER BY f.scheduled_departure;
+    when    |     departure     |      arrival      |  class   |  amount
+------------+-------------------+-------------------+----------+-----------
+ 29.07.2017 | Москва(SVO)       | Анадырь(DYR)      | Business | 185300.00
+ 01.08.2017 | Анадырь(DYR)      | Хабаровск(KHV)    | Business |  92200.00
+ 03.08.2017 | Хабаровск(KHV)    | Благовещенск(BQS) | Business |  18000.00
+ 08.08.2017 | Благовещенск(BQS) | Хабаровск(KHV)    | Business |  18000.00
+ 12.08.2017 | Хабаровск(KHV)    | Анадырь(DYR)      | Economy  |  30700.00
+ 17.08.2017 | Анадырь(DYR)      | Москва(SVO)       | Business | 185300.00
+(6 rows)
+```
+  
+План запроса:
+```
 demo=# EXPLAIN ANALYZE SELECT to_char(f.scheduled_departure, 'DD.MM.YYYY') as when,
          f.departure_city || '(' || f.departure_airport || ')' as departure,
          f.arrival_city || '(' || f.arrival_airport || ')' as arrival,
