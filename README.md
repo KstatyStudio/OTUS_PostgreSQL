@@ -54,7 +54,8 @@ Foreign-key constraints:
 Referenced by:
     TABLE "boarding_passes" CONSTRAINT "boarding_passes_ticket_no_fkey" FOREIGN KEY (ticket_no, flight_id) REFERENCES ticket_flights(ticket_no, flight_id)
 ```
-  
+Первичный ключ таблицы составной - сочетание столбцов _ticket_no_ и _flight_id_.
+    
 Посмотрим статистику:  
 ```
 demo=# select* from pg_stats where tablename='ticket_flights' \gx
@@ -131,8 +132,68 @@ most_common_elems      |
 most_common_elem_freqs |
 elem_count_histogram   |
 ```
+Самая высокая корреляция данных - в столбце fare_conditions (0.78496206). Но распределение имеющихся трёх значений класса обслуживания очень неравномерное: {0.8812,0.10256667,0.016233332}. Секционирование по списку значений этого столбца может оказаться неэффективным. 
+Корреляция данных в столбцах _ticket_no_ и _flight_id_ довольно низкая (-0.3084747 и 0.0696742), но эти поля входят в состав первичного ключа и сочетание их значений в каждой строке уникальное. Данные можно равномерно распределить на секции по хешу первичного ключа.
 
+Предварительно выполним запрос и посмотрим какие перелеты включены в билет с номером 0005432661915:  
+```
+demo=# SELECT   to_char(f.scheduled_departure, 'DD.MM.YYYY') as when,
+         f.departure_city || '(' || f.departure_airport || ')' as departure,
+         f.arrival_city || '(' || f.arrival_airport || ')' as arrival,
+         tf.fare_conditions as class,
+         tf.amount
+FROM     ticket_flights tf
+         JOIN flights_v f ON tf.flight_id = f.flight_id
+WHERE    tf.ticket_no = '0005432661915'
+ORDER BY f.scheduled_departure;
+    when    |     departure     |      arrival      |  class   |  amount
+------------+-------------------+-------------------+----------+-----------
+ 29.07.2017 | Москва(SVO)       | Анадырь(DYR)      | Business | 185300.00
+ 01.08.2017 | Анадырь(DYR)      | Хабаровск(KHV)    | Business |  92200.00
+ 03.08.2017 | Хабаровск(KHV)    | Благовещенск(BQS) | Business |  18000.00
+ 08.08.2017 | Благовещенск(BQS) | Хабаровск(KHV)    | Business |  18000.00
+ 12.08.2017 | Хабаровск(KHV)    | Анадырь(DYR)      | Economy  |  30700.00
+ 17.08.2017 | Анадырь(DYR)      | Москва(SVO)       | Business | 185300.00
+(6 rows)
+```
+  
+План запроса:
+```
+demo=# EXPLAIN ANALYZE SELECT   to_char(f.scheduled_departure, 'DD.MM.YYYY') as when,
+         f.departure_city || '(' || f.departure_airport || ')' as departure,
+         f.arrival_city || '(' || f.arrival_airport || ')' as arrival,
+         tf.fare_conditions as class,
+         tf.amount
+FROM     ticket_flights tf
+         JOIN flights_v f ON tf.flight_id = f.flight_id
+WHERE    tf.ticket_no = '0005432661915'
+ORDER BY f.scheduled_departure;
+                                                                           QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=43.96..43.96 rows=3 width=118) (actual time=0.141..0.143 rows=6 loops=1)
+   Sort Key: f.scheduled_departure
+   Sort Method: quicksort  Memory: 25kB
+   ->  Nested Loop  (cost=1.00..43.93 rows=3 width=118) (actual time=0.074..0.133 rows=6 loops=1)
+         ->  Nested Loop  (cost=0.86..41.87 rows=3 width=79) (actual time=0.030..0.063 rows=6 loops=1)
+               ->  Nested Loop  (cost=0.71..41.39 rows=3 width=30) (actual time=0.022..0.046 rows=6 loops=1)
+                     ->  Index Scan using ticket_flights_pkey on ticket_flights tf  (cost=0.42..16.46 rows=3 width=18) (actual time=0.014..0.020 rows=6 loops=1)
+                           Index Cond: (ticket_no = '0005432661915'::bpchar)
+                     ->  Index Scan using flights_pkey on flights f  (cost=0.29..8.31 rows=1 width=20) (actual time=0.003..0.003 rows=1 loops=6)
+                           Index Cond: (flight_id = tf.flight_id)
+               ->  Index Scan using airports_data_pkey on airports_data ml  (cost=0.14..0.16 rows=1 width=53) (actual time=0.002..0.002 rows=1 loops=6)
+                     Index Cond: (airport_code = f.departure_airport)
+         ->  Index Scan using airports_data_pkey on airports_data ml_1  (cost=0.14..0.16 rows=1 width=53) (actual time=0.002..0.002 rows=1 loops=6)
+               Index Cond: (airport_code = f.arrival_airport)
+ Planning Time: 0.491 ms
+ Execution Time: 0.183 ms
+(16 rows)
+```
+Стоимость выполнения запроса 43.96, время выполнеия - 0,183 миллисекунды.
 
+Для секционирования таблицы _ticket_flights_ создадим её копию _ticket_flights_prt:
+```
+
+```
 
 
 
