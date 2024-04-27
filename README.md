@@ -229,9 +229,33 @@ testmarket=# explain analyze select* from good_sum_mart m order by m.good_name;
  Execution Time: 0.035 ms
 (6 rows)
 ```
-Аналогичные данные из витрины получены за 0,035 миллисекунд, стоимость оценивается в 33.55 единиц. Таким образом использование витрины данных вместо запроса-отчёта позволяет значительно снизит накладные расходы на получение запрашиваемых данных.  
+Аналогичные данные из витрины получены за 0,035 миллисекунд, стоимость оценивается в 33.55 единиц.  
   
-
-
-
+Стоимость выполнения операции _insert_:
+```
+testmarket=# explain INSERT INTO sales (goods_id, sales_qty) VALUES (2, 1);
+                    QUERY PLAN
+---------------------------------------------------
+ Insert on sales  (cost=0.00..0.01 rows=0 width=0)
+   ->  Result  (cost=0.00..0.01 rows=1 width=20)
+(2 rows)
+```
+  
+Стоимость выполнения операции _insert_ при отключенном триггере:
+```
+testmarket=# alter table sales disable trigger r_mart;
+ALTER TABLE
+testmarket=# explain INSERT INTO sales (goods_id, sales_qty) VALUES (2, 1);
+                    QUERY PLAN
+---------------------------------------------------
+ Insert on sales  (cost=0.00..0.01 rows=0 width=0)
+   ->  Result  (cost=0.00..0.01 rows=1 width=20)
+(2 rows)
+testmarket=# alter table sales enable trigger r_mart;
+ALTER TABLE
+```
+Стоимость вставки данных с учётом заполнения витрины практически не изменяется или увеличивается незначительно.  
+  
+Таким образом использование витрины данных вместо запроса-отчёта позволяет значительно снизить накладные расходы на получение запрашиваемых данных.  
+  
 <code><img height="30" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/postgresql.svg"></code>
