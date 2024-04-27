@@ -78,7 +78,7 @@ BEGIN
             VALUES(v_name, v_summa_ins)
             ON CONFLICT (good_name)
             DO UPDATE 
-            SET sum_sale = sum_sale + v_summa_ins;
+            SET sum_sale = good_sum_mart.sum_sale + v_summa_ins;
         
             RETURN NEW;
        
@@ -128,9 +128,23 @@ EXECUTE FUNCTION tr_mart();
 ### Решение
 
 **1.** Заполняем таблицу "Продажи" тестовыми данными после создания триггерной функции и триггера - для заполнения витрины "Суммы продаж":  
+```
+testmarket=# INSERT INTO sales (goods_id, sales_qty) VALUES (1, 10), (1, 1), (1, 120), (2, 1);
+NOTICE:  TG_OP = INSERT
+ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+CONTEXT:  SQL statement "INSERT INTO good_sum_mart (good_name, sum_sale)
+            VALUES(v_name, v_summa_ins)
+            ON CONFLICT (good_name)
+            DO UPDATE
+            SET sum_sale = good_sum_mart.sum_sale + v_summa_ins"
+PL/pgSQL function tr_mart() line 17 at SQL statement
+```
+   
+Изменяем триггерную функцию:
+```
 
-
-
+```
+  
 
 Смотрим содержание всех таблиц
 
