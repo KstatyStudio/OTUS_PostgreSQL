@@ -38,7 +38,7 @@ CREATE TABLE sales(
 INSERT INTO sales (goods_id, sales_qty) VALUES (1, 10), (1, 1), (1, 120), (2, 1);
 ```
 
-Отчёт Товар-Продажи:
+Отчёт "Товар-Продажи":
 ```
 SELECT G.good_name, sum(G.good_price * S.sales_qty)
 FROM goods G
@@ -140,14 +140,97 @@ CONTEXT:  SQL statement "INSERT INTO good_sum_mart (good_name, sum_sale)
 PL/pgSQL function tr_mart() line 17 at SQL statement
 ```
    
-Изменяем триггерную функцию:
+Изменяем таблицу - витрину "Суммы продаж" - добавляем признак уникальности _good_name_:
 ```
-
+testmarket=# alter table good_sum_mart add unique(good_name);
+ALTER TABLE
 ```
   
+Заполняем:
+```
+testmarket=# INSERT INTO sales (goods_id, sales_qty) VALUES (1, 10), (1, 1), (1, 120), (2, 1);
+NOTICE:  TG_OP = INSERT
+NOTICE:  TG_OP = INSERT
+NOTICE:  TG_OP = INSERT
+NOTICE:  TG_OP = INSERT
+INSERT 0 4
+```
+  
+Смотрим содержание всех таблиц:
+```
+testmarket=# select* from goods;
+ goods_id |        good_name         |  good_price
+----------+--------------------------+--------------
+        1 | Спички хозайственные     |         0.50
+        2 | Автомобиль Ferrari FXX K | 185000000.01
+(2 rows)
 
-Смотрим содержание всех таблиц
+testmarket=# select* from sales;
+ sales_id | goods_id |          sales_time           | sales_qty
+----------+----------+-------------------------------+-----------
+       69 |        1 | 2024-04-27 12:52:23.297787+00 |        10
+       70 |        1 | 2024-04-27 12:52:23.297787+00 |         1
+       71 |        1 | 2024-04-27 12:52:23.297787+00 |       120
+       72 |        2 | 2024-04-27 12:52:23.297787+00 |         1
+(4 rows)
 
+testmarket=# select* from good_sum_mart;
+        good_name         |   sum_sale
+--------------------------+--------------
+ Спички хозайственные     |        65.50
+ Автомобиль Ferrari FXX K | 185000000.01
+(2 rows)
+```
+  
+Формируем отчёт "Товар-Продажи" и смотрим его план выполнения запроса:
+```
+testmarket=# SELECT G.good_name, sum(G.good_price * S.sales_qty) FROM goods G INNER JOIN sales S ON S.goods_id = G.goods_id GROUP BY G.good_name;
+        good_name         |     sum
+--------------------------+--------------
+ Автомобиль Ferrari FXX K | 185000000.01
+ Спички хозайственные     |        65.50
+(2 rows)
+
+testmarket=# explain analyze SELECT G.good_name, sum(G.good_price * S.sales_qty) FROM goods G INNER JOIN sales S ON S.goods_id = G.goods_id GROUP BY G.good_name;
+                                                       QUERY PLAN
+------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=67.96..70.46 rows=200 width=176) (actual time=0.046..0.049 rows=2 loops=1)
+   Group Key: g.good_name
+   Batches: 1  Memory Usage: 40kB
+   ->  Hash Join  (cost=19.45..50.96 rows=1700 width=164) (actual time=0.030..0.032 rows=4 loops=1)
+         Hash Cond: (s.goods_id = g.goods_id)
+         ->  Seq Scan on sales s  (cost=0.00..27.00 rows=1700 width=8) (actual time=0.007..0.008 rows=4 loops=1)
+         ->  Hash  (cost=14.20..14.20 rows=420 width=164) (actual time=0.009..0.009 rows=2 loops=1)
+               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+               ->  Seq Scan on goods g  (cost=0.00..14.20 rows=420 width=164) (actual time=0.005..0.006 rows=2 loops=1)
+ Planning Time: 0.125 ms
+ Execution Time: 0.085 ms
+(11 rows)
+```
+Отчёт "Товар-Продажи" формируется за 0,085 миллисекунд и его стоимость оценивается в 70.46 единиц.
+
+Запрашиваем данные из витрины "Суммы продаж":
+```
+testmarket=# select* from good_sum_mart m order by m.good_name;
+        good_name         |   sum_sale
+--------------------------+--------------
+ Автомобиль Ferrari FXX K | 185000000.01
+ Спички хозайственные     |        65.50
+(2 rows)
+
+testmarket=# explain analyze select* from good_sum_mart m order by m.good_name;
+                                                     QUERY PLAN
+--------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=32.50..33.55 rows=420 width=162) (actual time=0.021..0.022 rows=2 loops=1)
+   Sort Key: good_name
+   Sort Method: quicksort  Memory: 25kB
+   ->  Seq Scan on good_sum_mart m  (cost=0.00..14.20 rows=420 width=162) (actual time=0.009..0.010 rows=2 loops=1)
+ Planning Time: 0.072 ms
+ Execution Time: 0.035 ms
+(6 rows)
+```
+Аналогичные данные из витрины получены за 0,035 миллисекунд, стоимость оценивается в 33.55 единиц. Таким образом использование витрины данных вместо запроса-отчёта позволяет значительно снизит накладные расходы на получение запрашиваемых данных.  
+  
 
 
 
