@@ -24,7 +24,7 @@ CREATE TABLE goods(
     good_price  numeric(12, 2) NOT NULL CHECK (good_price > 0.0));
 
 INSERT INTO goods (goods_id, good_name, good_price)
-VALUES  (1, 'Спички хозайственные', .50), (2, 'Автомобиль Ferrari FXX K', 185000000.01);
+VALUES  (1, 'Спички хозяйственные', .50), (2, 'Автомобиль Ferrari FXX K', 185000000.01);
 ```
   
 Таблица "Продажи" (_sales_):
@@ -161,7 +161,7 @@ INSERT 0 4
 testmarket=# select* from goods;
  goods_id |        good_name         |  good_price
 ----------+--------------------------+--------------
-        1 | Спички хозайственные     |         0.50
+        1 | Спички хозяйственные     |         0.50
         2 | Автомобиль Ferrari FXX K | 185000000.01
 (2 rows)
 
@@ -188,7 +188,7 @@ testmarket=# SELECT G.good_name, sum(G.good_price * S.sales_qty) FROM goods G IN
         good_name         |     sum
 --------------------------+--------------
  Автомобиль Ferrari FXX K | 185000000.01
- Спички хозайственные     |        65.50
+ Спички хозяйственные     |        65.50
 (2 rows)
 
 testmarket=# explain analyze SELECT G.good_name, sum(G.good_price * S.sales_qty) FROM goods G INNER JOIN sales S ON S.goods_id = G.goods_id GROUP BY G.good_name;
@@ -215,7 +215,7 @@ testmarket=# select* from good_sum_mart m order by m.good_name;
         good_name         |   sum_sale
 --------------------------+--------------
  Автомобиль Ferrari FXX K | 185000000.01
- Спички хозайственные     |        65.50
+ Спички хозяйственные     |        65.50
 (2 rows)
 
 testmarket=# explain analyze select* from good_sum_mart m order by m.good_name;
