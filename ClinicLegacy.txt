@@ -6,9 +6,9 @@ CREATE SCHEMA clinic_schema;
 
 SET search_path = clinic_schema, public;
 
-CREATE TABLE contingent (id_cont integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name_cont varchar(20) NOT NULL);
+CREATE TABLE contingent (id_cont integer UNIQUE NOT NULL, name_cont varchar(20) NOT NULL);
 
-CREATE TABLE reg_group (id_reg_group integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name_reg_group varchar(20) NOT NULL);
+CREATE TABLE reg_group (id_reg_group integer UNIQUE NOT NULL, name_reg_group varchar(20) NOT NULL);
 
 CREATE TABLE speciality (id_spec integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name_spec varchar(20) NOT NULL);
 
@@ -73,3 +73,28 @@ CREATE TABLE doctor (id_doctor integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 CREATE TABLE area (id_area integer PRIMARY KEY,
 					id_doctor integer REFERENCES doctor (id_doctor));
 					
+CREATE TABLE address (id_address integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+						id_area integer REFERENCES area (id_area),
+						id_street integer REFERENCES street (id_street),
+						num_dom integer NOT NULL,
+						let_dom char(1),
+						korp_dom char (4),
+						str_dom char(4));
+
+CREATE TABLE amb_card (id_card integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+						fam_patient char(15),
+						name_patient char(18),
+						otch_patient char(15),
+						b_date date,
+						pol char(1),
+						id_address integer REFERENCES address (id_address),
+						num_kv integer,
+						num_tel integer,
+						id_cont integer REFERENCES contingent (id_cont),
+						organization char(32),
+						position char(24),
+						ser_polis char(2),
+						num_polis integer,
+						id_reg_group integer REFERENCES reg_group (id_reg_group),
+						create_date date);
+

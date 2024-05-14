@@ -273,6 +273,13 @@ insert into tmp_street_list (id_street, min, max, id_area) values (	18	 , 151, 	
 insert into tmp_street_list (id_street, min, max, id_area) values (	19	 , 151, 	200	 , 	33	);
 insert into tmp_street_list (id_street, min, max, id_area) values (	20	 , 151, 	200	 , 	32	);
 
+--дополнительные улицы +43 шт.
+
+
+
+
+
+
 
 --шаблон адреса
 
@@ -314,18 +321,211 @@ end loop;
 end$$;
 
 
-;
+--список квартир из tmp_address_list
+
+create table tmp_kv_list (id_kv integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, id_street integer, id_area integer, num_dom integer, num_kv integer);
+
+
+do $$
+declare l_id_street integer;
+		l_id_area integer;
+		l_num_dom integer;
+		l_num_kv integer;
+		l_min integer;
+		l_max integer;
+jj integer =0;
+begin
+for l_id_street, l_id_area, l_num_dom in select id_street, id_area, num_dom from tmp_address_list order by id_dsa
+
+loop
+	raise notice 'Цикл 1: % % %', l_id_street, l_id_area, l_num_dom;
+	
+	jj=0;
+	l_min=1;
+	l_max=floor(random()*200+50)::integer;
+	
+	while jj<=l_max loop
+		
+		l_num_kv=l_min+jj;
+		
+		raise notice 'Цикл 2: % % % %', l_id_street, l_id_area, l_num_dom, l_num_kv;
+		
+		insert into tmp_kv_list (id_street, id_area, num_dom, num_kv) values (l_id_street, l_id_area, l_num_dom, l_num_kv);
+		
+		jj=jj+1;	
+		
+	end loop;
+		
+end loop;
+end$$;
+
+
+--список квартир из address
+
+drop table tmp_kv_list;
+
+create table tmp_kv_list (id_kv integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, id_address integer, id_area integer, id_street integer, num_dom integer, num_kv integer);
+
+do $$
+declare l_id_street integer;
+		l_id_area integer;
+		l_num_dom integer;
+		l_num_kv integer;
+		l_id_address integer;
+		l_min integer;
+		l_max integer;
+jj integer =0;
+begin
+for l_id_address, l_id_area, l_id_street, l_num_dom in select id_address, id_area, id_street, num_dom from address order by id_address
+
+loop
+	raise notice 'Цикл 1: % % % %', l_id_address,  l_id_area, l_id_street, l_num_dom;
+	
+	jj=0;
+	l_min=1;
+	l_max=floor(random()*200+50)::integer;
+	
+	while jj<=l_max loop
+		
+		l_num_kv=l_min+jj;
+		
+		raise notice 'Цикл 2: % % % % %', l_id_address, l_id_area, l_id_street, l_num_dom, l_num_kv;
+		
+		insert into tmp_kv_list (id_address, id_area, id_street, num_dom, num_kv) values (l_id_address, l_id_area, l_id_street, l_num_dom, l_num_kv);
+		
+		jj=jj+1;	
+		
+	end loop;
+		
+end loop;
+end$$;
 
 
 
+--группы учёта
+insert into reg_group (id_reg_group, name_reg_group) values (1, '1 группа здоровья'), (2, '2 группа здоровья'), (3, '3 группа здоровья');
+
+
+--контингент
+insert into contingent (id_cont, name_cont) values (1, '1'), (2, '2'), (3, '3'), (4, '4');
+
+
+--места работы пациентов
+create table tmp_organization (id_org integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name_org char (32));
+
+insert into tmp_organization (name_org) values ('North Antelope Rochelle'),
+							('Black Thunder'),
+							('Antelope'),
+							('Cordero Rojo'),
+							('Eagle Butte'),
+							('Belle Ayr'),
+							('Spring Creek'),
+							('Rawhide'),
+							('Freedom');
+
+
+--должности пациентов
+create table tmp_position (id_pos integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name_pos char (24));
+
+insert into tmp_position (name_pos) values ('директор'),
+											('горный инженер'),
+											('бухгалтер'),
+											('экономист'),
+											('взрывник'),
+											('машинист бульдозера'),
+											('водитель самосвала'),
+											('машинист экскаватора'),
+											('машинист тепловоза'),
+											('техник'),
+											('инженер'),
+											('разнорабочий');
 
 
 
+--амбулаторные карты
 
 
 
+--date create 
+select '2014-01-01'::date + ((random() *356 +1)*floor(random()*9+1))::integer from generate_series (1, 50);
+
+--b_date
+select '1944-01-01'::date + ((random() *356 +1)*floor(random()*80+1))::integer from generate_series (1, 50);
 
 
+do $$
+declare l_fam char(18);
+		l_id_fam integer;
+		l_name char(15);
+		l_id_name integer;
+		l_otch char(18);
+		l_id_otch integer;
+		l_b_date date;
+		l_pol char(1);
+		l_id_address integer;
+		l_num_kv integer;
+		l_num_tel integer;
+		l_id_cont integer;
+		l_organization char(32);
+		l_id_org integer;
+		l_position char(24);
+		l_id_pos integer;
+		l_ser_polis char(2);
+		l_num_polis integer;
+		l_id_reg_group integer;
+		l_create_date date;
+		l_cnt integer;
+jj integer =0;
+begin
+for l_id_address, l_num_kv in select a.id_address, a.num_kv from tmp_kv_list a order by 1, 2
+loop
+	select (random() *6 +1)::integer into l_cnt;
+	select floor(random()*160+1)::integer into l_id_fam;
+	
+	select floor(random()*899999+100000)::integer into l_num_tel;
+			
+	jj=0;
+	
+	while jj < l_cnt loop
+		select floor(random()*120+74)::integer into l_id_name;
+		select n.str_name, n.pol from tmp_name_list n where n.id_name=l_id_name into l_name, l_pol;
+		select floor(random()*90+1)::integer into l_id_otch;
+		case l_pol
+		when 'ж' then select f.str_fam_f from tmp_fam_list f where f.id_fam=l_id_fam into l_fam;
+					select o.str_otch_f from tmp_otch_list o where o.id_otch=l_id_otch into l_otch;
+		else select f.str_fam_m from tmp_fam_list f where f.id_fam=l_id_fam into l_fam;
+			select o.str_otch_m from tmp_otch_list o where o.id_otch=l_id_otch into l_otch;
+		end case;
+		
+		select '1944-01-01'::date + ((random() *356 +1)*floor(random()*80+1))::integer into l_b_date;
+		
+		select floor(random()*4+1)::integer into l_id_cont;
+		
+		select floor(random()*9+1)::integer into l_id_org;
+		select torg.name_org from tmp_organization torg where torg.id_org=l_id_org into l_organization;
+		
+		select floor(random()*12+1)::integer into l_id_pos;
+		select tp.name_pos from tmp_position tp where tp.id_pos=l_id_pos into l_position;
+		
+		
+		select left(gen_random_uuid()::text, 2) into l_ser_polis;
+		select floor(random()*899999+100000)::integer into l_num_polis;
+		
+		select floor(random()*3+1)::integer into l_id_reg_group;
+		
+		select '2014-01-01'::date + ((random() *356 +1)*floor(random()*9+1))::integer into l_create_date;
+		
+		
+		raise notice '% % % % % % % % % % % % % % %', l_fam, l_name, l_otch, l_b_date, l_pol, l_id_address, l_num_kv, l_num_tel, l_id_cont, l_organization, l_position, l_ser_polis, l_num_polis, l_id_reg_group, l_create_date;   
+		
+		insert into amb_card (fam_patient, name_patient, otch_patient, b_date, pol, id_address, num_kv, num_tel, id_cont, organization, position, ser_polis, num_polis, id_reg_group, create_date) values (l_fam, l_name, l_otch, l_b_date, l_pol, l_id_address, l_num_kv, l_num_tel, l_id_cont, l_organization, l_position, l_ser_polis, l_num_polis, l_id_reg_group, l_create_date);
+		
+		jj=jj+1;		
+				
+	end loop;
+end loop;
+
+end$$;
 
 
 
