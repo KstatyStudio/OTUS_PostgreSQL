@@ -82,6 +82,7 @@ CREATE TABLE address (id_address integer GENERATED ALWAYS AS IDENTITY PRIMARY KE
 						korp_dom char (4),
 						str_dom char(4));
 
+--3
 CREATE TABLE amb_card (id_card integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 						fam_patient char(15),
 						name_patient char(18),
@@ -104,7 +105,18 @@ CREATE TABLE talon (id_talon integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 					id_target integer REFERENCES target_spo (id_target),
 					type_spo integer,
 					spo integer,
+					open_date date,
 					close_date date);
 
+--4
 
+CREATE TABLE visit (id_visit integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+					id_talon integer REFERENCES talon (id_talon),
+					visit_date date,
+					id_visit_type integer REFERENCES visit_type (id_visit_type),
+					id_zab_type integer REFERENCES zab_type (id_zab_type),
+					id_doctor integer REFERENCES doctor (id_doctor),
+					id_mkb char(3) REFERENCES mkb (id_mkb),
+					next_date date
+);
 
