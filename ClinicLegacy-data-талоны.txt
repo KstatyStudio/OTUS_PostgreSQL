@@ -1,0 +1,114 @@
+\c clinic_db
+
+SET search_path = clinic_schema, public;
+
+
+--
+create table tmp_mkb (id_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+						id_mkb char(3),
+						id_spec integer,
+						type_spec boolean 
+);
+
+do $$
+declare l_id_mkb char(3);
+		l_id_spec integer;
+		l_type_spec boolean;
+begin
+for l_id_mkb, l_id_spec, l_type_spec in select m.id_mkb, m.id_spec, s.type_spec from mkb m left join speciality s on m.id_spec=s.id_spec order by 1
+loop
+	raise notice '% % %', l_id_mkb, l_id_spec, l_type_spec;
+	
+	insert into tmp_mkb (id_mkb, id_spec, type_spec) values (l_id_mkb, l_id_spec, l_type_spec);
+	
+end loop;
+end$$;
+
+
+
+--TALON + 1 VISIT
+
+do $$
+declare l_id_card integer;
+		l_id_target integer;
+		l_type_spo integer;
+		l_spo integer;
+		l_close_date date;
+		l_date date;
+		l_begin date;
+		l_end date;
+		l_year integer;
+		l_cnt integer;
+		--
+		l_type_visit integer;
+		l_id_zab_type integer;
+		l_id_doctor integer;
+		l_id_spec integer;
+		l_type_spec boolean;
+		l_id_mkb char(3);
+		l_date_next date;
+		
+		
+ii integer =0;
+jj integer =0;
+begin
+for l_id_card in select a.id_card from amb_card a 
+loop
+	l_year=2016;
+	ii=0;
+	
+	while ii<9 loop
+		jj=0;
+		l_begin=(''||l_year||'-01-01')::date;
+		l_end=(''||l_year+1||'-01-01')::date;
+		
+		select (random() *12 +1)::integer into l_cnt;
+	
+		while jj<l_cnt loop
+			select l_begin::date + (random() *356 +1)::integer into l_date;
+			select floor(random()*6+1)::integer into l_id_target;
+			select floor(random()*2+1)::integer into l_type_spo;
+			
+			case l_id_target
+			when 1 then select floor(random()*2+1)::integer into l_spo;
+			else l_spo=1;
+			end case;
+			
+			if l_spo=1 then l_close_date=l_date;
+			else l_close_date=null;
+			end if;
+			
+			raise notice '% % % % % %', l_id_card, l_id_target, l_type_spo, l_spo, l_date date, l_close_date;
+			
+			--insert into talon (id_card, id_target, type_spo, spo, close_date) values (l_id_card, l_id_target, l_type_spo, l_spo, l_close_date);
+			
+			
+			
+			select floor(random()*2+1)::integer into l_type_visit;
+			select floor(random()*4+1)::integer into l_id_zab_type;
+			select floor(random()*50+1)::integer into l_id_doctor;
+			select d.id_spec from doctor d where d.id_doctor=l_id_doctor into l_id_spec;
+			select s.type_spec from speciality s where s.id_spec=l_id_spec into l_type_spec;
+			select m.id_mkb from tmp_mkb m where m.id_spec=l_id_spec order by random() limit 1 into l_id_mkb;
+						
+			case l_spo
+			when 2 then l_date_next=l_date+4;
+			else l_date_next=null;
+			end case;
+			
+			raise notice 'VISIT: % % % % % % %', l_type_visit, l_id_zab_type, l_id_doctor, l_id_spec, l_type_spec, l_id_mkb, l_date_next;
+			
+			--insert into visit (ID_TALON!!!!!!!!) values ();
+			
+			jj=jj+1;
+			
+		end loop;
+	
+		l_year=l_year+1;
+		ii=ii+1;
+	end loop;	
+
+end loop;
+
+end$$;
+

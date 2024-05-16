@@ -6,11 +6,11 @@ CREATE SCHEMA clinic_schema;
 
 SET search_path = clinic_schema, public;
 
-CREATE TABLE contingent (id_cont integer UNIQUE NOT NULL, name_cont varchar(20) NOT NULL);
+CREATE TABLE contingent (id_cont integer UNIQUE NOT NULL, name_cont varchar(40) NOT NULL);
 
 CREATE TABLE reg_group (id_reg_group integer UNIQUE NOT NULL, name_reg_group varchar(20) NOT NULL);
 
-CREATE TABLE speciality (id_spec integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name_spec varchar(20) NOT NULL);
+CREATE TABLE speciality (id_spec integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name_spec varchar(20) NOT NULL, type_spec boolean);
 
 CREATE TABLE staff (id_staff integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 					fam_doctor varchar(15) NOT NULL,
@@ -26,22 +26,23 @@ CREATE TABLE street (id_street integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 					type_street varchar(4) NOT NULL,
 					name_street varchar(18) NOT NULL);
 					
-CREATE TABLE visit_type (id_visit_type integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name_visit_type varchar(20) NOT NULL);
+CREATE TABLE visit_type (id_visit_type integer PRIMARY KEY, name_visit_type varchar(20) NOT NULL);
 
 CREATE TABLE period_list (id_period integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-					name_period varchar(20) NOT NULL,
+					name_period varchar(64) NOT NULL,
 					begin_period date NOT NULL,
 					end_period date);
 
-CREATE TABLE target_spo (id_target integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-					name_target varchar(20) NOT NULL);
+CREATE TABLE target_spo (id_target integer PRIMARY KEY,
+					name_target varchar(64) NOT NULL);
 					
-CREATE TABLE zab_type (id_zab_type integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-					name_zab_type varchar(20) NOT NULL);
+CREATE TABLE zab_type (id_zab_type integer PRIMARY KEY,
+					name_zab_type varchar(64) NOT NULL);
 					
 CREATE TABLE age_group (id_age_group integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 					from_age integer NOT NULL,
-					to_age integer NOT NULL);
+					to_age integer NOT NULL,
+					name_age_group char(64));
 					
 CREATE TABLE hospital_list (id_hospital integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 					type_hospital varchar(20) NOT NULL);
@@ -97,4 +98,13 @@ CREATE TABLE amb_card (id_card integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 						num_polis integer,
 						id_reg_group integer REFERENCES reg_group (id_reg_group),
 						create_date date);
+
+CREATE TABLE talon (id_talon integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+					id_card integer REFERENCES amb_card (id_card),
+					id_target integer REFERENCES target_spo (id_target),
+					type_spo integer,
+					spo integer,
+					close_date date);
+
+
 

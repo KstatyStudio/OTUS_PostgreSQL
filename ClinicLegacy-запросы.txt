@@ -137,6 +137,11 @@ end$$;
 
 select count(*) from amb_card where extract(year from age(b_date))<=10;
 
+select extract(year from age(b_date)), count(id_card) from amb_card group by 1;
+
+select extract(year from age(b_date)), count(id_card) from amb_card where extract(year from age(b_date))>90 group by 1;
+
+
 
 do $$
 declare l_0_10 integer;
@@ -175,23 +180,24 @@ l_min=110;
 l_max=0;
 
 for l_b_date in select ac.b_date from amb_card ac loop
-	l_old=(l_now-l_b_date)/355;
+	--l_old=(l_now-l_b_date)/355;
+	l_old=extract(year from age(l_b_date));
 	
 	if l_old<l_min then l_min=l_old; end if;
 	if l_old>l_max then l_max=l_old; end if;
 	
 	case 
-	when l_old<=10 then l_0_10=l_0_10+1;
-	when l_old<=18 then l_11_18=l_0_10+1;
-	when l_old<=20 then l_19_20=l_0_10+1;
-	when l_old<=30 then l_21_30=l_0_10+1;
-	when l_old<=40 then l_31_40=l_0_10+1;
-	when l_old<=50 then l_41_50=l_0_10+1;
-	when l_old<=60 then l_51_60=l_0_10+1;
-	when l_old<=70 then l_61_70=l_0_10+1;
-	when l_old<=80 then l_71_80=l_0_10+1;
-	when l_old<=90 then l_81_90=l_0_10+1;
-	when l_old<=100 then l_91_100=l_0_10+1;
+	when l_old<11 then l_0_10=l_0_10+1;
+	when l_old<19 then l_11_18=l_11_18+1;
+	when l_old<21 then l_19_20=l_19_20+1;
+	when l_old<31 then l_21_30=l_21_30+1;
+	when l_old<41 then l_31_40=l_31_40+1;
+	when l_old<51 then l_41_50=l_41_50+1;
+	when l_old<61 then l_51_60=l_51_60+1;
+	when l_old<71 then l_61_70=l_61_70+1;
+	when l_old<81 then l_71_80=l_71_80+1;
+	when l_old<91 then l_81_90=l_81_90+1;
+	when l_old<101 then l_91_100=l_91_100+1;
 	else l_101=l_101+1;
 	end case;
 end loop;
@@ -212,6 +218,95 @@ raise notice 'min: %', l_min;
 raise notice 'max: %', l_max; 
 
 end$$;
+
+
+--по группам статистики
+
+do $$
+declare l_0_17 integer;
+		l_18_44 integer;
+		l_45_59 integer;
+		l_60_74 integer;
+		l_75_90 integer;
+		l_91 integer;
+		l_min integer;
+		l_max integer;
+		l_b_date date;
+		l_now date;
+		l_old integer;
+ii integer =0;
+begin
+select now()::date into l_now;
+l_0_17=0;
+l_18_44=0;
+l_45_59=0;
+l_60_74=0;
+l_75_90=0;
+l_91=0;
+l_min=110;
+l_max=0;
+
+for l_b_date in select ac.b_date from amb_card ac loop
+	--l_old=(l_now-l_b_date)/355;
+	l_old=extract(year from age(l_b_date));
+	
+	if l_old<l_min then l_min=l_old; end if;
+	if l_old>l_max then l_max=l_old; end if;
+	
+	case 
+	when l_old<18 then l_0_17=l_0_17+1;
+	when l_old<45 then l_18_44=l_18_44+1;
+	when l_old<60 then l_45_59=l_45_59+1;
+	when l_old<75 then l_60_74=l_60_74+1;
+	when l_old<91 then l_75_90=l_75_90+1;
+	else l_91=l_91+1;
+	end case;
+end loop;
+
+raise notice '00-17: %', l_0_17;
+raise notice '18-44: %', l_18_44;
+raise notice '45-59: %', l_45_59;
+raise notice '60-74: %', l_60_74;
+raise notice '75-90: %', l_75_90;
+raise notice '>90: %', l_91;
+raise notice 'min: %', l_min;
+raise notice 'max: %', l_max; 
+
+end$$;
+
+
+
+
+
+--контингенты
+select id_cont, count(id_card) from amb_card group by 1;
+
+select id_cont, extract(year from age(b_date)), count(id_card) from amb_card group by 1, 2;
+
+
+--полис (дубли)
+
+--select distinct ser_polis||' '||num_polis, count(*) from amb_card group by 1 order by 2;
+
+do $$
+declare l_polis text;
+		l_cnt integer;
+begin
+for l_polis, l_cnt in select distinct ser_polis||' '||num_polis, count(*) from amb_card group by 1
+loop
+	if l_cnt>1 then 
+		raise notice '% %', l_cnt, l_polis;
+	end if;	
+end loop;
+end$$;
+
+
+--
+
+
+
+
+
 
 
 
