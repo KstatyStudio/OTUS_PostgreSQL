@@ -53,7 +53,166 @@ declare l_id_card integer;
 ii integer =0;
 jj integer =0;
 begin
-for l_id_card in select a.id_card from amb_card a 
+for l_id_card in select a.id_card from amb_card a
+loop
+	l_year=2016;
+	ii=0;
+	
+	while ii<9 loop
+		jj=0;
+		l_begin=(''||l_year||'-01-01')::date;
+		l_end=(''||l_year+1||'-01-01')::date;
+		
+		select (random() *12 +1)::integer into l_cnt;
+	
+		while jj<l_cnt loop
+			select l_begin::date + (random() *356 +1)::integer into l_date;
+			select floor(random()*6+1)::integer into l_id_target;
+			select floor(random()*2+1)::integer into l_type_spo;
+			
+			case l_id_target
+			when 1 then select floor(random()*2+1)::integer into l_spo;
+			else l_spo=1;
+			end case;
+			
+			if l_spo=1 then l_close_date=l_date;
+			else l_close_date=null;
+			end if;
+			
+			raise notice '% % % % % % %', l_id_card, l_id_target, l_type_spo, l_spo, l_date date, l_close_date, l_date;
+			
+			insert into talon (id_card, id_target, type_spo, spo, close_date, open_date) values (l_id_card, l_id_target, l_type_spo, l_spo, l_close_date, l_date) returning id_talon into l_id_talon;
+			--commit;
+			
+			
+			select floor(random()*2+1)::integer into l_id_visit_type;
+			select floor(random()*4+1)::integer into l_id_zab_type;
+			select floor(random()*50+1)::integer into l_id_doctor;
+			select d.id_spec from doctor d where d.id_doctor=l_id_doctor into l_id_spec;
+			select s.type_spec from speciality s where s.id_spec=l_id_spec into l_type_spec;
+			select m.id_mkb from tmp_mkb m where m.id_spec=l_id_spec order by random() limit 1 into l_id_mkb;
+						
+			case l_spo
+			when 2 then l_next_date=l_date+4;
+			else l_next_date=null;
+			end case;
+			
+			raise notice 'VISIT: % *** % % % % % % %', l_id_talon, l_id_visit_type, l_id_zab_type, l_id_doctor, l_id_spec, l_type_spec, l_id_mkb, l_next_date;
+			
+			insert into visit (id_talon, visit_date, id_visit_type, id_zab_type, id_doctor, id_mkb, next_date) values (l_id_talon, l_date, l_id_visit_type, l_id_zab_type, l_id_doctor, l_id_mkb, l_next_date) returning id_visit into l_id_visit;
+			--commit;
+			
+			
+			jj=jj+1;
+			
+		end loop;
+	
+		l_year=l_year+1;
+		ii=ii+1;
+	end loop;	
+
+end loop;
+end$$;
+
+--корректировка дат > 17-05-2024 (2024 - 2028) - 9 лет 3294
+
+do $$
+declare l_id_talon integer;
+		l_close_date date;
+		l_date date;
+		--
+		l_id_visit integer;
+		l_next_date date;
+begin
+for l_id_talon, l_close_date, l_date in select t.id_talon, t.close_date, t.open_date from talon t where t.open_date>'2024-05-17'::date
+loop
+	l_date=l_date-3294;
+	l_close_date=l_close_date-3294;
+	
+	--update talon nt set nt.close_date=l_close_date, nt.open_date=l_date where nt.id_talon=l_id_talon;
+	--commit;
+	
+	raise notice '% % %', l_id_talon, l_date, l_close_date;
+	
+	for l_id_visit, l_next_date in select v.id_visit, v.next_date from visit v where v.id_talon=l_id_talon
+	loop
+		if l_next_date<> null then l_next_date=l_next_date-3294;
+		end if;
+			
+		--update visit nv set nv.visit_date=l_date, nv.next_date=l_next_date;
+		--commit;
+		
+		raise notice '% % % %', l_id_talon, l_id_visit, l_date, l_next_date;
+
+	end loop;
+end loop;
+end$$;
+
+
+--
+
+update talon set open_date=open_date-3294 where open_date>'2024-05-17'::date;
+
+update talon set close_date=close_date-3294 where close_date>'2024-05-17'::date;
+
+select* from talon t where t.close_date-t.open_date>30;
+
+update talon set open_date=open_date-3294, close_date=close_date-3294  where open_date>'2024-05-17'::date;
+
+update visit set visit_date=visit_date-3294 where visit_date>'2024-05-17'::date;
+update visit set next_date=next_date-3294 where next_date>'2024-05-20'::date;
+
+select* from visit v where v.next_date-v.visit_date>10;
+
+
+-- удаление куска 2015 года
+
+delete from visit v where v.visit_date<'2016-01-01'::date;
+delete from talon t where t.open_date<'2016-01-01'::date;
+
+do $$
+declare l_id_talon integer;
+		l_date date;
+begin
+for l_id_talon, l_date in select t.id_talon, t.open_date from talon t where t.open_date<'2016-01-01'::date 
+loop 
+	delete from talon tt where tt.id_talon=l_id_talon;
+	commit;
+	
+	raise notice '% %', l_id_talon, l_date;
+		
+end loop;
+end$$;
+
+
+--ДОЗАПОЛНЕНИЕ TALON + 1 VISIT
+
+do $$
+declare l_id_card integer;
+		l_id_target integer;
+		l_type_spo integer;
+		l_spo integer;
+		l_close_date date;
+		l_date date;
+		l_begin date;
+		l_end date;
+		l_year integer;
+		l_cnt integer;
+		l_id_talon integer;
+		--
+		l_id_visit_type integer;
+		l_id_zab_type integer;
+		l_id_doctor integer;
+		l_id_spec integer;
+		l_type_spec boolean;
+		l_id_mkb char(3);
+		l_next_date date;
+		l_id_visit integer;
+		
+ii integer =0;
+jj integer =0;
+begin
+for l_id_card in select a.id_card from amb_card a where not exists (select tt.id_card from talon tt where tt.id_card=a.id_card)
 loop
 	l_year=2016;
 	ii=0;
@@ -115,6 +274,99 @@ end loop;
 end$$;
 
 
+
+--
+--НОВОЕ ЗАПОЛНЕНИЕ TALON + 1 VISIT
+
+do $$
+declare l_id_card integer;
+		l_id_target integer;
+		l_type_spo integer;
+		l_spo integer;
+		l_close_date date;
+		l_date date;
+		l_begin date;
+		l_end date;
+		l_year integer;
+		l_cnt integer;
+		l_id_talon integer;
+		--
+		l_id_visit_type integer;
+		l_id_zab_type integer;
+		l_id_doctor integer;
+		l_id_spec integer;
+		l_type_spec boolean;
+		l_id_mkb char(3);
+		l_next_date date;
+		l_id_visit integer;
+		
+ii integer =0;
+jj integer =0;
+begin
+for l_id_card in select a.id_card from amb_card a order by a.id_card
+loop
+	l_year=2020;
+	ii=0;
+	
+	while ii<4 loop
+		jj=0;
+		l_begin=(''||l_year||'-01-01')::date;
+		l_end=(''||l_year+1||'-01-01')::date;
+		
+		select (random() *6 +1)::integer into l_cnt;
+	
+		while jj<l_cnt loop
+			select l_begin::date + (random() *356 +1)::integer into l_date;
+			select floor(random()*6+1)::integer into l_id_target;
+			select floor(random()*2+1)::integer into l_type_spo;
+			
+			case l_id_target
+			when 1 then select floor(random()*2+1)::integer into l_spo;
+			else l_spo=1;
+			end case;
+			
+			if l_spo=1 then l_close_date=l_date;
+			else l_close_date=null;
+			end if;
+			
+			raise notice '% % % % % % %', l_id_card, l_id_target, l_type_spo, l_spo, l_date date, l_close_date, l_date;
+			
+			insert into talon (id_card, id_target, type_spo, spo, close_date, open_date) values (l_id_card, l_id_target, l_type_spo, l_spo, l_close_date, l_date) returning id_talon into l_id_talon;
+			--commit;
+			
+			
+			select floor(random()*2+1)::integer into l_id_visit_type;
+			select floor(random()*4+1)::integer into l_id_zab_type;
+			select floor(random()*50+1)::integer into l_id_doctor;
+			select d.id_spec from doctor d where d.id_doctor=l_id_doctor into l_id_spec;
+			select s.type_spec from speciality s where s.id_spec=l_id_spec into l_type_spec;
+			select m.id_mkb from tmp_mkb m where m.id_spec=l_id_spec order by random() limit 1 into l_id_mkb;
+						
+			case l_spo
+			when 2 then l_next_date=l_date+4;
+			else l_next_date=null;
+			end case;
+			
+			raise notice 'VISIT: % *** % % % % % % %', l_id_talon, l_id_visit_type, l_id_zab_type, l_id_doctor, l_id_spec, l_type_spec, l_id_mkb, l_next_date;
+			
+			insert into visit (id_talon, visit_date, id_visit_type, id_zab_type, id_doctor, id_mkb, next_date) values (l_id_talon, l_date, l_id_visit_type, l_id_zab_type, l_id_doctor, l_id_mkb, l_next_date) returning id_visit into l_id_visit;
+			--commit;
+			
+			
+			jj=jj+1;
+			
+		end loop;
+	
+		l_year=l_year+1;
+		ii=ii+1;
+	end loop;	
+
+end loop;
+end$$;
+
+
+
+
 -- 2 VISIT
 
 do $$
@@ -147,5 +399,13 @@ end loop;
 end$$;
 
 
+--
+do $$
+declare l_id_card integer;
+begin
+for l_id_card in select a.id_card from amb_card a where a.id_card not in (select t.id_card from talon t)
+loop
+	raise notice '%', l_id_card;
 
-
+end loop;
+end$$;

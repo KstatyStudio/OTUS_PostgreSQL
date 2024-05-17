@@ -120,3 +120,26 @@ CREATE TABLE visit (id_visit integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 					next_date date
 );
 
+--5
+
+CREATE TABLE diagnos (id_card integer PRIMARY KEY REFERENCES amb_card (id_card),
+						id_mkb char(3) REFERENCES mkb (id_mkb),
+						det_date date);
+
+
+CREATE TABLE document (id_talon integer PRIMARY KEY REFERENCES talon (id_talon),
+						id_doc_type integer,
+						begin_doc date,
+						close_doc date);
+
+CREATE TABLE hospital (id_talon integer PRIMARY KEY REFERENCES talon (id_talon),
+						id_hospital integer REFERENCES hospital_list (id_hospital),
+						begin_hospital date,
+						end_hospital date);
+
+
+CREATE TABLE soput_ds (id_visit integer PRIMARY KEY REFERENCES visit (id_visit),
+						id_zab_type integer REFERENCES zab_type (id_zab_type),
+						id_mkb char(3) REFERENCES mkb (id_mkb));
+
+
