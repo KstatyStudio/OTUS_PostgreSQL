@@ -143,3 +143,30 @@ CREATE TABLE soput_ds (id_visit integer PRIMARY KEY REFERENCES visit (id_visit),
 						id_mkb char(3) REFERENCES mkb (id_mkb));
 
 
+CREATE TABLE report_spo (id_doctor integer REFERENCES doctor (id_doctor),
+							id_target integer REFERENCES target_spo (id_target),
+							id_period integer REFERENCES period_list (id_period),
+							cnt_service integer,
+							cnt_home integer,
+							primary_z integer,
+							primary_n integer,
+							repeated_z integer,
+							repeated_n integer,
+							PRIMARY KEY (id_doctor, id_target, id_period)
+);
+
+
+CREATE TABLE report_zab (id_period integer REFERENCES period_list (id_period),
+							id_age_group integer REFERENCES age_group (id_age_group),
+							id_mkb char(3) REFERENCES mkb (id_mkb),
+							pol_patient char(1),
+							acute_zab integer,
+							primary_zab integer,
+							chronic_zab integer,
+							repeated_zab integer,
+							cnt_register integer,
+							days_zab integer,
+							cnt_zab integer,
+							PRIMARY KEY(id_period, id_age_group, id_mkb, pol_patient)
+);
+
