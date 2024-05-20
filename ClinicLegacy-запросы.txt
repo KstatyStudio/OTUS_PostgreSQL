@@ -301,11 +301,19 @@ end loop;
 end$$;
 
 
-
+--
+select distinct extract(year from t.open_date), count(t.id_card) from talon t group by 1;
 
 
 --
+select distinct (case when t.type_spo=1 then 'первичный' when t.type_spo=2 then 'повторный' end) as type_spo,
+                (case when t.spo=1 then 'законченный' when t.spo=2 then 'незаконченный' end) as spo,
+				count(t.id_talon)
+from talon t where t.open_date>'2023-12-31' group by 1, 2;
 
+
+---
+select distinct extract(year from t.open_date), count(distinct t.id_card) from talon t group by 1;
 
 
 
