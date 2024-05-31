@@ -69,6 +69,10 @@ $Error.Clear()
 # Настраиваем остановку работы скрипта при ошибке
 $ErrorActionPreference = 'Stop'
 
+#
+Set-Service -Name seclogon -StartupType Automatic
+Start-Service -Name seclogon
+
 ### создаём временную папку
 if (-Not(Test-Path -Path $dirTemp))
 {
@@ -118,8 +122,8 @@ else
 
 ### устанавливаем PostgreSQL 14 (на стандартный порт 5432!)
 try {
-    Set-Service -Name seclogon -StartupType Automatic
-    Start-Service -Name seclogon
+    #Set-Service -Name seclogon -StartupType Automatic
+    #Start-Service -Name seclogon
    
     #$pathInstaller
     #$pathLogPG
@@ -131,25 +135,25 @@ try {
     #}
 
 
-    #$msiArguments =@(
-    #    "/i"
-    #    $pathInstaller
-    #    "/quiet"
-    #    "/norestart"
-    #    "/L*v"
-    #    $pathLogPG
-    #)
-
     $msiArguments =@(
         "/i"
         $pathInstaller
+        "/quiet"
+        "/norestart"
         "/L*v"
         $pathLogPG
     )
 
+    #$msiArguments =@(
+    #    "/i"
+    #    $pathInstaller
+    #    "/L*v"
+    #    $pathLogPG
+    #)
 
-    Start-Process "msiexec.exe" -ArgumentList $msiArguments -Wait -NoNewWindow
-    #Start-Process msiexec "/i $pathInstaller /quiet /norestart /l*v $pathLogPG" -Wait -NoNewWindow
+
+    #Start-Process "msiexec.exe" -ArgumentList $msiArguments -Wait -NoNewWindow
+    Start-Process msiexec "/i $pathInstaller /quiet /norestart /l*v $pathLogPG" -Wait -NoNewWindow
 }
 catch {
     WriteLog "Установка PostgreSQL 14 не выполнена"
@@ -208,12 +212,11 @@ WriteLog "Завершение"
 #$ErrorActionPreference = $aep
 
 
-
 # SIG # Begin signature block
 # MIIFZQYJKoZIhvcNAQcCoIIFVjCCBVICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQURPm9HTpds6zgqFHfqBg+PLGW
-# 5BugggMJMIIDBTCCAe2gAwIBAgIQJoTcjL4GsLhIi0YMEQBZ+TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUoCUYon6wo9afBXmJB1fmeVQD
+# mFSgggMJMIIDBTCCAe2gAwIBAgIQJoTcjL4GsLhIi0YMEQBZ+TANBgkqhkiG9w0B
 # AQsFADARMQ8wDQYDVQQDDAZwc1Rlc3QwHhcNMjQwNTI3MTEyMTMyWhcNMjUwNTI3
 # MTE0MTMyWjARMQ8wDQYDVQQDDAZwc1Rlc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IB
 # DwAwggEKAoIBAQChwDuhp4kzhJV/Y0o+BxTKZu1D93N3tMquLTTt/gYGI0sSjil4
@@ -232,11 +235,11 @@ WriteLog "Завершение"
 # Ow51h+57IrQ1TqI7lJS4MYIBxjCCAcICAQEwJTARMQ8wDQYDVQQDDAZwc1Rlc3QC
 # ECaE3Iy+BrC4SItGDBEAWfkwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFNtjp/WJXxFMbOCUfspc
-# nBDKyEN9MA0GCSqGSIb3DQEBAQUABIIBAHT/oIXP49ReumSAsZSVOUto3wJlWXCm
-# /zw+R8EebDfdkV+9dKd2dbaRgswMmED4d2tlTvqPGW/MobOpvzwhlAh19NpYL+7+
-# PLcCYVtt/VUG94+3xTrWl7NxfUBGM6PJSRo802yIveDcO03JI2bbqtNsN3Oa6ZjM
-# iOQOz3ALMbWHG0K9hPA95hE3Qug9p0MtjHSXAomrPXcN+vRejcHIiLeeF/obQB3E
-# PfbRRPntioEHSzQNnfbGaWUi4w5QxrZMqBdbci4z2a70B2NxSyg6Zx0XFgWj9Yad
-# ThLaIIsHSQHcd1Yq8gwLmu3/H9o5Pml7ugsaWlkFFB0XzegCu4pND10=
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFFcNNUOnhOKisS22B58S
+# kNn4fTGkMA0GCSqGSIb3DQEBAQUABIIBAG61xWeC3Cq7N4iRcCz+G9GpL4wcz5hN
+# Blvm90ZNTmf/1otaq4yFWqOL0LtTsYx+k5nslXg2CwfVOFJdNyCcg1Ao+tGYNUNo
+# wlM81cvayG6ytnnfKLKMTFT/Mxn5n7ag04G6j2An+Fpx03Gwz7QUSMzeR9bPWFxx
+# xcxpZzZJ6rgCqc8He5sL+RDNxTowSiNhZ2Briun8uwlEiV1spbWYaBSUc3ZsI46m
+# BQi78KxuxiFMAPU37FaLKMuIn4+NDEe9aXtLBuqYezBTxghxpzTMbxKestQEeun0
+# cOAf7ebT9badOWNECq7fa3Sw8vww+zRoCEdn/WmX2Ohiw8Aabo7XwkY=
 # SIG # End signature block
