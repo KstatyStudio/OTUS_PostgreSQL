@@ -34,9 +34,9 @@ $srvPG14 = 'pgsql-14.11-3.1C-x64'
 $dirInstaller = $MyInvocation.MyCommand.Path | split-path -parent
 $pathInstaller = $dirInstaller + '\installer\postgresql-14.11-3.1C(x64).msi'
 # !!! указать путь к папке с логами
-$dirLog = 'C:/testPG'
-$pathLog = $dirLog  + '/' + ($env:computername) + '--' + $Stamp + '.log'
-$pathLogPG = $dirLog  + '/' + ($env:computername) + '--' + $Stamp + '--PG.log'
+$dirLog = 'C:\testPG'
+$pathLog = $dirLog  + '\' + ($env:computername) + '--' + $Stamp + '.log'
+$pathLogPG = $dirLog  + '\' + ($env:computername) + '--' + $Stamp + '--PG.log'
 $strErr = ''
 #$eap = $ErrorActionPreference
 
@@ -49,19 +49,25 @@ $msgLog = "$Stamp : $strLog"
 Add-Content -Path $pathLog -Value $msgLog
 }
 
-# Выполнение от имени администратора
+### Логи
+WriteLog ("Начало обновления PostgreSQL версии 9.6 до версии 14 на комппьютере " +  ($env:computername))
+
+# Проверка выполнения от имени администратора
 If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 {   
-    $arguments = "& '" + $myinvocation.mycommand.definition + "'"
-    Start-Process powershell -Verb runAs -ArgumentList $arguments
-    Break
+    #$arguments = "& '" + $myinvocation.mycommand.definition + "'"
+    #Start-Process powershell -Verb runAs -ArgumentList $arguments
+    #Break
+
+    WriteLog "Требуется выполнение от имени администратора"
+    Exit
 }
+
+# Ошибки
+$Error.Clear()
 
 # Настраиваем остановку работы скрипта при ошибке
 $ErrorActionPreference = 'Stop'
-
-### создаём файл лога
-WriteLog ("Начало обновления PostgreSQL версии 9.6 до версии 14 на комппьютере " +  ($env:computername))
 
 ### создаём временную папку
 if (-Not(Test-Path -Path $dirTemp))
@@ -114,21 +120,34 @@ else
 try {
     Set-Service -Name seclogon -StartupType Automatic
     Start-Service -Name seclogon
-    $pathInstaller
-    $pathLogPG
-    msiexec /i $pathInstaller /lime $pathLogPG
-    #msiexec /i $pathInstaller /quiet /lime $pathLogPG
+    #$pathInstaller
+    #$pathLogPG
+    #msiexec.exe /i $pathInstaller /lime $pathLogPG
+    #msiexec.exe /i $pathInstaller /quiet /lime $pathLogPG
     #msiexec /i $pathInstaller /quiet /qn /lime $pathLogPG
-    while (Get-Process -Name 'msiexec' -ErrorAction SilentlyContinue) {
-        Start-sleep -Seconds 5
-    }
+    #while (Get-Process -Name 'msiexec' -ErrorAction SilentlyContinue) {
+    #    Start-sleep -Seconds 5
+    #}
+
+
+    $msiArguments =@(
+        "/i"
+        ('"{0}"' -f $pathInstaller)
+        "/quiet"
+        "/norestart"
+        "/L*v"
+        $pathLogPG
+    )
+    #Start-Process "msiexec.exe" -ArgumentList $msiArguments -Wait -NoNewWindow
+    Start-Process msiexec "/i $pathInstaller /quiet /l*v $pathLogPG" -Wait -NoNewWindow
 }
 catch {
+    WriteLog "Установка PostgreSQL 14 не выполнена"
+    WriteLog $_
     WriteLog $PSItem
+    WriteLog $Error
 }
-finally {
-    WriteLog "Установка PostgreSQL 14 (на стандартный порт 5432!)"
-}
+WriteLog "Установка PostgreSQL 14 (на стандартный порт 5432!)"
 
 #### перезаписываем переменные среды
 #$Env:PGPORT = "5432"
@@ -179,34 +198,3 @@ WriteLog "Завершение"
 #$ErrorActionPreference = $aep
 
 
-# SIG # Begin signature block
-# MIIFZQYJKoZIhvcNAQcCoIIFVjCCBVICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
-# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUwE9wOGa4z7BhwYIZTVb0kFMU
-# 1wWgggMJMIIDBTCCAe2gAwIBAgIQJoTcjL4GsLhIi0YMEQBZ+TANBgkqhkiG9w0B
-# AQsFADARMQ8wDQYDVQQDDAZwc1Rlc3QwHhcNMjQwNTI3MTEyMTMyWhcNMjUwNTI3
-# MTE0MTMyWjARMQ8wDQYDVQQDDAZwc1Rlc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IB
-# DwAwggEKAoIBAQChwDuhp4kzhJV/Y0o+BxTKZu1D93N3tMquLTTt/gYGI0sSjil4
-# WfVwRXl0Z67LGDS7ecrekuTzHt2X8qqwaqPLbWfQkAHc7BEe7OdmBPrTmLvuxV1Y
-# ve9AYkYgybmoVlcDW4GedzS/CdLXzJEWzbI4TJpl8px1uI7TZMIKFvlvJ6nqLovI
-# pm+dx7ub4+5XLJgs26Jw1dLDFXC9kmAZu0CAQpONd3PVtkRj/Dscrp4bcLvhuoU1
-# b5F2frND7fMpccYp8Ast0nVOV1I86fiSr3NWDX5ZJP6aEmNryp15UboLQHBumshd
-# Mp91EtYWlTQZGwFh/gx139kxcdaQWda2Tw2RAgMBAAGjWTBXMA4GA1UdDwEB/wQE
-# AwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzARBgNVHREECjAIggZwc1Rlc3QwHQYD
-# VR0OBBYEFDhwx9RlHc4BeF/TOGVKOBn2wTr8MA0GCSqGSIb3DQEBCwUAA4IBAQCa
-# 27rhSZ2sv+V9dhNLfFMI9mM46gDkVGL4EUoJvXdWsqqq/J9kA62s4HFWOzrZLoZs
-# vkE3/e1PZLmpmCr+8tQX5O4I6lsJ+atO+tZk8iGndnvhUjhXSgIuGynDrzy4W42S
-# tcV7Z0h6KF7nNC7QgHS1XzuIPL73cM+u1T82ml0aV9h3FTR6yLA0VGboONWRK5Vo
-# 3x6NV+ZWf/H7zG02+e7CRIkKYRAkFU1OPNJe7SB9gqmDLSDOx6f2Y4NZ0ckNLIWM
-# mg4zx7rgRdLOMemiUlAft3HHf0iz037Jidqq11mBg4rKwR3VUs7Ae6ekGaw09S+K
-# Ow51h+57IrQ1TqI7lJS4MYIBxjCCAcICAQEwJTARMQ8wDQYDVQQDDAZwc1Rlc3QC
-# ECaE3Iy+BrC4SItGDBEAWfkwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
-# oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFHnU8Xi3ibMHWoTbX90t
-# rAyRnGfDMA0GCSqGSIb3DQEBAQUABIIBAKFJBEnSfO4ZN25JgMcPxHHEgK3AnkWH
-# CDTY2i0Ldd6P3MMyFiDCGesDnZJTJaY4vYP2JvjDUH1gAuL+xL/He5ebebNtnBfN
-# l1DOXvl9SyErPds/hFvKHm4X2KJFYRetE+pwoCIUUMLVtRcS2LBbDiqiMmZFmma3
-# PnfOM4zAQtnmQrQYx2dPQe654oX7LY4soAexyBQOspa5qdzUiK7il/bNTjQoazfO
-# ThyZvFIC7/PXRbNvN9/trkJhO4erh3Rdou4hQzTl8xx4xYkDIcX44oz8VclEOyKh
-# ZqzvLgEEmYROXt4Ho88Rft+m481qPprvxveMUhp2SAAsPVezHJMqvc4=
-# SIG # End signature block
