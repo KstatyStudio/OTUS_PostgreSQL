@@ -170,3 +170,5 @@ CREATE TABLE report_zab (id_period integer REFERENCES period_list (id_period),
 							PRIMARY KEY(id_period, id_age_group, id_mkb, pol_patient)
 );
 
+--6
+

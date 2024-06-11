@@ -781,7 +781,13 @@ select pg_size_pretty(pg_database_size('clinic_db'));
 
 select count(*) from talon;
 
-select extract(year from open_date), count(id_card) from talon group by 1;
+select extract(year from open_date), count(distinct id_card) from talon group by 1;
+
+select extract(year from open_date), count(id_talon) from talon group by 1;
+
+select extract(year from open_date), count(t.id_talon) from talon t left join visit v on v.id_talon=t.id_talon where t.id_talon is null group by 1;
+
+
 
 
 
