@@ -1,6 +1,0 @@
-
-   PSParentPath: Microsoft.PowerShell.Security\Certificate::LocalMachine\MY
-
-Thumbprint                                Subject
-----------                                -------
-3A137F4CB2506F67458ABC76D02BAF83251080EC  CN=psTest
