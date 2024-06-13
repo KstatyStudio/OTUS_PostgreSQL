@@ -932,10 +932,6 @@ end loop;
 end$$;
 
 
---- diagnos
-
-insert into diagnos (id_card, id_mkb, det_date) select distinct t.id_card, v.id_mkb, min(v.visit_date) from visit v join talon t on t.id_talon=v.id_talon group by 1, 2;
-
 
 
 

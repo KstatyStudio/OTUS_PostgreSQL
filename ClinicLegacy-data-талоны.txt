@@ -455,12 +455,59 @@ end loop;
 end$$;
 
 
+--- 2024-06-14 - 2024-12-31 >>> -6month
+
+do $$
+declare l_id_talon integer;
+        l_open_date date;
+		l_close_date date;
+		l_id_visit integer;
+		l_visit_date date;
+		l_next_date date;
+begin
+	for l_id_talon, l_open_date, l_close_date 
+		in select t.id_talon, t.open_date, t.close_date
+		from talon t where t.open_date > '2024-06-13'::date and t.open_date < '2025-01-01'::date
+	loop
+		l_open_date = l_open_date - INTERVAL '6 month';
+		if l_close_date is not null then l_close_date = l_close_date - INTERVAL '6 month'; end if;
+
+		select v.id_visit, v.visit_date, v.next_date
+		from visit v
+		where v.id_talon = l_id_talon
+		into l_id_visit, l_visit_date, l_next_date;
+
+		l_visit_date = l_visit_date - INTERVAL '6 month';
+		l_next_date = l_next_date - INTERVAL '6 month';
+
+		update talon set open_date=l_open_date, close_date=l_close_date where id_talon=l_id_talon;
+		update visit set visit_date=l_visit_date, next_date=l_next_date where id_visit=l_id_visit;
+		commit;
+
+		raise notice '% %', l_id_talon, l_open_date;
+	end loop;
+end$$;
+
+
+
+
 
 
 -- 2 VISIT
 
 do $$
-declare l_id_card integer;
+declare l_id_talon integer;
+        l_id_visit_1st integer;
+		l_date_visit_1st date;
+		l_type_visit_1st integer;
+		
+		
+		l_id_visit integer;
+		
+
+
+
+l_id_card integer;
 		l_spo integer;
 		l_close_date date;
 		l_date date;
@@ -501,4 +548,9 @@ end loop;
 end$$;
 
 --
+
+
+--- diagnos
+
+insert into diagnos (id_card, id_mkb, det_date) select distinct t.id_card, v.id_mkb, min(v.visit_date) from visit v join talon t on t.id_talon=v.id_talon group by 1, 2;
 

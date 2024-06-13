@@ -787,9 +787,12 @@ select extract(year from open_date), count(id_talon) from talon group by 1;
 
 select extract(year from open_date), count(t.id_talon) from talon t left join visit v on v.id_talon=t.id_talon where t.id_talon is null group by 1;
 
+---
+select extract(year from open_date), extract(month from open_date), count(id_talon) from talon group by 1, 2;
 
+select extract(year from open_date), extract(month from open_date), count(id_talon) from talon where open_date < '01.01.2022'::date group by 1, 2;
 
-
+select t.open_date, to_char(t.open_date - INTERVAL '6 month', 'YYYY-MM-DD') from talon t where t.open_date > '2024-06-13'::date limit 10;
 
 
 
