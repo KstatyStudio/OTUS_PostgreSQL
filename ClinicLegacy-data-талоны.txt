@@ -496,10 +496,18 @@ end$$;
 -- 2 VISIT
 
 do $$
-declare l_id_talon integer;
-        l_id_visit_1st integer;
-		l_date_visit_1st date;
-		l_type_visit_1st integer;
+declare l_id_talon_1st integer;
+		l_id_card_1st integer;
+		l_id_target_1st integer;
+		l_spo_type_1st integer;
+		l_spo_1st integer;
+		l_open_date_1st date;
+		l_close_date_1st date;
+		--
+		l_id_visit_1st integer;
+		l_visit_date_1st date;
+		l_visit_type_1st integer;
+		
 		
 		
 		l_id_visit integer;
