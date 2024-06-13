@@ -511,20 +511,28 @@ declare l_id_talon integer;
 		--
 		l_id_visit_1st integer;
 		l_visit_date_1st date;
-		l_visit_type_1st integer;
+		l_id_visit_type_1st integer;
 		l_id_zab_type_1st integer;
 		l_id_doctor_1st integer;
 		l_id_mkb_1st char(3);
 		l_next_date_1st date;
 		--
+		l_id_visit integer;
 begin
-for l_id_talon, 
+for l_id_talon, l_id_visit_1st, l_visit_date_1st, l_id_visit_type_1st, l_id_zab_type_1st, l_id_doctor_1st, l_next_date_1st
+	in select id_talon, id_visit, visit_date, id_visit_type, id_zab_type, id_doctor, next_date
+	from visit
+	where (visit_date between '2020-01-01' and '2021-01-01') and next_date is null
+loop	
+	insert into visit (id_talon, visit_date, id_visit_type, id_zab_type, id_doctor)
+	values (l_id_talon, l_next_date_1st, 1, l_id_zab_type_1st, l_id_doctor_1st)
+	returning id_visit into l_id_visit;
 
-in select v.id_visit, v.id_talon, v.id_mkb, v.next_date from visit v where v.next_date not null
-loop
+	update talon set close_date = l_next_date_1st where id_talon=l_id_talon;
 	
-
-
+	commit;
+	
+	raise notice '% % %', l_id_talon, l_id_visit_1st, l_id_visit;
 end loop;
 end$$;
 
