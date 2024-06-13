@@ -801,6 +801,8 @@ select count(*) from talon where close_date=open_date and (open_date between '20
 select extract(year from open_date), id_target, count(id_talon) from talon group by 1, 2;
 select extract(year from open_date), id_target, count(id_talon) from talon where open_date between '2020-01-01' and '2021-01-01' group by 1, 2;
 
+select count(*) from visit where (visit_date between '2020-01-01' and '2021-01-01') and (next_date is not null);
+
 
 
 
