@@ -103,7 +103,7 @@ CREATE TABLE amb_card (id_card integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 CREATE TABLE talon (id_talon integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 					id_card integer REFERENCES amb_card (id_card),
 					id_target integer REFERENCES target_spo (id_target),
-					type_spo integer,
+					spo_type integer,
 					spo integer,
 					open_date date,
 					close_date date);

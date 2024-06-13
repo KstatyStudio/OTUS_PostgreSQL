@@ -489,6 +489,11 @@ begin
 end$$;
 
 
+--- close_date<>open_date
+update talon set close_date=(close_date + INTERVAL '4 day') where close_date=open_date and id_target=1 and (open_date between '2020-01-01' and '2021-01-01'); 
+
+
+
 
 
 
@@ -496,46 +501,26 @@ end$$;
 -- 2 VISIT
 
 do $$
-declare l_id_talon_1st integer;
-		l_id_card_1st integer;
-		l_id_target_1st integer;
-		l_spo_type_1st integer;
-		l_spo_1st integer;
-		l_open_date_1st date;
-		l_close_date_1st date;
+declare l_id_talon integer;
+		l_id_card integer;
+		l_id_target integer;
+		l_spo_type integer;
+		l_spo integer;
+		l_open_date date;
+		l_close_date date;
 		--
 		l_id_visit_1st integer;
 		l_visit_date_1st date;
 		l_visit_type_1st integer;
-		
-		
-		
-		l_id_visit integer;
-		
-
-
-
-l_id_card integer;
-		l_spo integer;
-		l_close_date date;
-		l_date date;
-		l_cnt integer;
-		l_id_talon integer;
+		l_id_zab_type_1st integer;
+		l_id_doctor_1st integer;
+		l_id_mkb_1st char(3);
+		l_next_date_1st date;
 		--
-		l_id_visit_type integer;
-		l_id_zab_type integer;
-		l_id_doctor integer;
-		l_id_spec integer;
-		l_type_spec boolean;
-		l_id_mkb char(3);
-		
-		l_next_date date;
-		l_id_visit integer;
-		
-ii integer =0;
-jj integer =0;
 begin
-for l_id_visit, l_id_talon, l_id_mkd, l_next_date in select v.id_visit, v.id_talon, v.id_mkb, v.next_date from visit v where v.next_date not null
+for l_id_talon, 
+
+in select v.id_visit, v.id_talon, v.id_mkb, v.next_date from visit v where v.next_date not null
 loop
 	
 

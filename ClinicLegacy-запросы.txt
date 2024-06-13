@@ -796,5 +796,13 @@ select t.open_date, to_char(t.open_date - INTERVAL '6 month', 'YYYY-MM-DD') from
 
 
 
+select count(*) from talon where close_date=open_date and (open_date between '2020-01-01' and '2021-01-01');
+
+select extract(year from open_date), id_target, count(id_talon) from talon group by 1, 2;
+select extract(year from open_date), id_target, count(id_talon) from talon where open_date between '2020-01-01' and '2021-01-01' group by 1, 2;
+
+
+
+
 
 
