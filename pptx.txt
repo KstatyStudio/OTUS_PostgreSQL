@@ -1,0 +1,439 @@
+\c clinic_db
+
+set search_path=clinic_schema, public;
+
+select pg_size_pretty(pg_database_size('clinic_db'));
+
+
+
+-- Заболеваемость (расчёт)
+select ag.from_age as "с",
+        ag.to_age as "до",
+        left(ag.name_age_group, 18) as "Возрастная группа",
+        left(cls.name_mkb_class, 32) as "Заболевание",
+        ac.pol as "Пол",
+        sum(case when v.id_zab_type=1 then 1 else 0 end) as "Острых",
+        sum(case when v.id_zab_type=2 then 1 else 0 end) as "Впервые уст.",
+        sum(case when v.id_zab_type=3 then 1 else 0 end) as "Изв. ранее хр.",
+        sum(case when v.id_zab_type=4 then 1 else 0 end) as "Обострение хр.",
+        sum(case when ac.id_reg_group>1 then 0 else 1 end) as "Состоит на ДУ",
+        sum(case when d.id_talon is null then 0 else (d.close_doc - d.begin_doc +1) end) as "Дней нетр.",
+        sum(case when d.id_talon is null then 0 else 1 end) as "Случаев нетр."
+from talon t
+join period_list p on p.begin_period=date_trunc('month', t.open_date)::date and p.id_period between 858 and 870
+join amb_card ac on ac.id_card=t.id_card
+join age_group ag on date_part('year', age(t.open_date, ac.b_date)) between ag.from_age and ag.to_age
+join visit v on v.id_talon=t.id_talon
+join mkb m on m.id_mkb=v.id_mkb
+join mkb_class cls on cls.id_mkb_int=m.id_mkb_int
+left join document d on d.id_talon=t.id_talon
+group by 1, 2, 3, 4, 5
+order by 1, 2, 3, 4, 5;
+
+
+-- Заболеваемость (витрина)
+select ag.from_age as "с",
+	ag.to_age as "до",
+	left(ag.name_age_group, 18) as "Возрастная группа",
+	left(cls.name_mkb_class, 32) as "Заболевание",
+	rz.pol_patient as "Пол",
+	sum(rz.acute_zab) as "Острых",
+	sum(rz.primary_zab) as "Впервые уст.",
+	sum(rz.chronic_zab) as "Изв. ранее хр.",
+	sum(rz.repeated_zab) as "Обострение хр.",
+	sum(rz.cnt_register) as "Состоит на ДУ",
+	sum(rz.days_zab) as "Дней нетр.",
+	sum(rz.cnt_zab) as "Случаев нетр."
+from report_zab rz
+join period_list p on p.id_period=rz.id_period and p.id_period between 858 and 870
+join age_group ag on ag.id_age_group=rz.id_age_group
+join mkb m on m.id_mkb=rz.id_mkb
+join mkb_class cls on cls.id_mkb_int=m.id_mkb_int
+group by 1, 2, 3, 4, 5
+order by 1, 2, 3, 4, 5;
+
+
+--СПИСОК ВРАЧЕЙ СО СПЕЦИАЛЬНОСТЯМИ И УЧАСТКАМИ
+
+ select d.id_doctor, s.fam_doctor, s.name_doctor, s.otch_doctor, sp.name_spec, a.id_area from doctor d left join staff s on d.id_staff=s.id_staff left join speciality sp on d.id_spec=sp.id_spec left join area a on d.id_doctor=a.id_doctor order by s.fam_doctor, s.name_doctor, s.otch_doctor;
+
+------------------------------------------------------------------------------------------------------
+-- Для презентации
+------------------------------------------------------------------------------------------------------
+
+
+                                              List of relations
+    Schema     |        Name        | Type  |  Owner   | Persistence | Access method |    Size    
+---------------+--------------------+-------+----------+-------------+---------------+-------------
+ clinic_schema | address            | table | postgres | permanent   | heap          | 464 kB     |
+ clinic_schema | age_group          | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | amb_card           | table | postgres | permanent   | heap          | 1377 MB    |
+ clinic_schema | area               | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | contingent         | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | department         | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | diagnos            | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | doc_type_list      | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | doctor             | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | document           | table | postgres | permanent   | heap          | 218 MB     |
+ clinic_schema | hospital           | table | postgres | permanent   | heap          | 0 bytes    |
+ clinic_schema | hospital_list      | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | mkb                | table | postgres | permanent   | heap          | 32 kB      |
+ clinic_schema | mkb_class          | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | period_list        | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | period_type_list   | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | reg_group          | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | report_spo         | table | postgres | permanent   | heap          | 1080 kB    |
+ clinic_schema | report_zab         | table | postgres | permanent   | heap          | 9656 kB    |
+ clinic_schema | soput_ds           | table | postgres | permanent   | heap          | 0 bytes    |
+ clinic_schema | speciality         | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | staff              | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | street             | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | talon              | table | postgres | permanent   | heap          | 3311 MB    |
+ clinic_schema | target_spo         | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | visit              | table | postgres | permanent   | heap          | 3609 MB    |
+ clinic_schema | visit_type         | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | zab_type           | table | postgres | permanent   | heap          | 8192 bytes |
+(28 rows)
+
+
+
+
+ с  | до  | Возрастная группа  |           Заболевание            | Пол | Острых | Впервые уст. | Изв. ранее хр. | Обострение хр. | Состоит на ДУ | Дней нетр. | Случаев нетр.
+----+-----+--------------------+----------------------------------+-----+--------+--------------+----------------+----------------+---------------+------------+---------------
+  0 |  17 | дети и подростки   | Болезни глаза и его придаточного | ж   |     28 |           32 |             29 |             31 |            22 |         65 |            13
+  0 |  17 | дети и подростки   | Болезни глаза и его придаточного | м   |     73 |           77 |             74 |             85 |            69 |        165 |            33
+  0 |  17 | дети и подростки   | Болезни костно-мышечной системы  | ж   |     17 |           23 |             25 |             28 |            13 |         25 |             5
+  0 |  17 | дети и подростки   | Болезни костно-мышечной системы  | м   |     56 |           76 |             74 |             77 |            59 |        105 |            21
+  0 |  17 | дети и подростки   | Болезни мочеполовой системы      | ж   |     30 |           27 |             22 |             29 |            28 |         35 |             7
+  0 |  17 | дети и подростки   | Болезни мочеполовой системы      | м   |     90 |           73 |             79 |             79 |            72 |         85 |            17
+  0 |  17 | дети и подростки   | Болезни органов дыхания          | ж   |   1164 |         1255 |           1249 |           1275 |          1083 |       2155 |           431
+  0 |  17 | дети и подростки   | Болезни органов дыхания          | м   |   3560 |         3567 |           3564 |           3772 |          2849 |       5465 |          1093
+  0 |  17 | дети и подростки   | Болезни органов пищеварения      | ж   |     88 |           76 |             68 |             86 |            63 |        115 |            23
+  0 |  17 | дети и подростки   | Болезни органов пищеварения      | м   |    272 |          225 |            235 |            237 |           199 |        255 |            51
+  0 |  17 | дети и подростки   | Болезни системы кровообращения   | ж   |     25 |           23 |             24 |             25 |            15 |         40 |             8
+  0 |  17 | дети и подростки   | Болезни системы кровообращения   | м   |     64 |           80 |             82 |             78 |            51 |        100 |            20
+  0 |  17 | дети и подростки   | Болезни уха и сосцевидного отрос | ж   |     31 |           22 |             22 |             27 |            28 |         45 |             9
+  0 |  17 | дети и подростки   | Болезни уха и сосцевидного отрос | м   |     79 |           91 |             78 |             73 |            64 |        125 |            25
+  0 |  17 | дети и подростки   | Болезни эндокринной системы, рас | ж   |     78 |           80 |             66 |             92 |            59 |        145 |            29
+  0 |  17 | дети и подростки   | Болезни эндокринной системы, рас | м   |    219 |          213 |            211 |            240 |           182 |        310 |            62
+  0 |  17 | дети и подростки   | Травмы, отравления и некоторые д | ж   |    346 |          321 |            340 |            314 |           272 |       1295 |           259
+  0 |  17 | дети и подростки   | Травмы, отравления и некоторые д | м   |    999 |          908 |            985 |            991 |           753 |       3405 |           681
+ 18 |  44 | молодой возраст    | Болезни глаза и его придаточного | ж   |   1644 |         1565 |           1613 |           1532 |          1257 |       2110 |           422
+ 18 |  44 | молодой возраст    | Болезни глаза и его придаточного | м   |   4821 |         4848 |           4773 |           4753 |          3925 |       6350 |          1270
+ 18 |  44 | молодой возраст    | Болезни костно-мышечной системы  | ж   |   1633 |         1675 |           1618 |           1577 |          1290 |       2370 |           474
+ 18 |  44 | молодой возраст    | Болезни костно-мышечной системы  | м   |   4809 |         4938 |           4970 |           4828 |          3993 |       6695 |          1339
+ 18 |  44 | молодой возраст    | Болезни мочеполовой системы      | ж   |   1687 |         1664 |           1624 |           1580 |          1297 |       2310 |           462
+ 18 |  44 | молодой возраст    | Болезни мочеполовой системы      | м   |   5041 |         4821 |           4772 |           4841 |          3980 |       6465 |          1293
+ 18 |  44 | молодой возраст    | Болезни органов дыхания          | ж   |  79152 |        79481 |          79246 |          79071 |         63292 |     113810 |         22762
+ 18 |  44 | молодой возраст    | Болезни органов дыхания          | м   | 237155 |       236804 |         237189 |         236472 |        189627 |     338245 |         67649
+ 18 |  44 | молодой возраст    | Болезни органов пищеварения      | ж   |   4858 |         4879 |           4978 |           4919 |          3939 |       6230 |          1246
+ 18 |  44 | молодой возраст    | Болезни органов пищеварения      | м   |  14702 |        14681 |          14390 |          14562 |         11487 |      20445 |          4089
+ 18 |  44 | молодой возраст    | Болезни системы кровообращения   | ж   |   1638 |         1601 |           1690 |           1601 |          1323 |       2240 |           448
+ 18 |  44 | молодой возраст    | Болезни системы кровообращения   | м   |   4917 |         4949 |           4922 |           4847 |          3904 |       6865 |          1373
+ 18 |  44 | молодой возраст    | Болезни уха и сосцевидного отрос | ж   |   1611 |         1550 |           1687 |           1624 |          1321 |       2240 |           448
+ 18 |  44 | молодой возраст    | Болезни уха и сосцевидного отрос | м   |   4886 |         4795 |           4828 |           4881 |          3776 |       6950 |          1390
+ 18 |  44 | молодой возраст    | Болезни эндокринной системы, рас | ж   |   4929 |         4925 |           4951 |           4906 |          3917 |       6470 |          1294
+ 18 |  44 | молодой возраст    | Болезни эндокринной системы, рас | м   |  14484 |        14688 |          14472 |          14635 |         11842 |      19900 |          3980
+ 18 |  44 | молодой возраст    | Травмы, отравления и некоторые д | ж   |  21101 |        20658 |          20950 |          21206 |         16887 |      69935 |         13987
+ 18 |  44 | молодой возраст    | Травмы, отравления и некоторые д | м   |  62518 |        62698 |          62611 |          62725 |         50555 |     209495 |         41899
+ 45 |  59 | средний возраст    | Болезни глаза и его придаточного | ж   |   1359 |         1367 |           1389 |           1394 |          1120 |       1900 |           380
+ 45 |  59 | средний возраст    | Болезни глаза и его придаточного | м   |   4121 |         4129 |           4079 |           4231 |          3308 |       6030 |          1206
+ 45 |  59 | средний возраст    | Болезни костно-мышечной системы  | ж   |   1350 |         1368 |           1365 |           1374 |          1086 |       1695 |           339
+ 45 |  59 | средний возраст    | Болезни костно-мышечной системы  | м   |   4175 |         4195 |           4162 |           4157 |          3446 |       5740 |          1148
+ 45 |  59 | средний возраст    | Болезни мочеполовой системы      | ж   |   1440 |         1334 |           1352 |           1377 |          1099 |       1825 |           365
+ 45 |  59 | средний возраст    | Болезни мочеполовой системы      | м   |   4126 |         4277 |           4167 |           4079 |          3307 |       5675 |          1135
+ 45 |  59 | средний возраст    | Болезни органов дыхания          | ж   |  66664 |        67049 |          66627 |          67087 |         53036 |      97520 |         19504
+ 45 |  59 | средний возраст    | Болезни органов дыхания          | м   | 199689 |       200119 |         199872 |         199435 |        159486 |     287140 |         57428
+ 45 |  59 | средний возраст    | Болезни органов пищеварения      | ж   |   4212 |         4097 |           3971 |           4097 |          3332 |       5660 |          1132
+ 45 |  59 | средний возраст    | Болезни органов пищеварения      | м   |  12466 |        12400 |          12291 |          12458 |         10084 |      16865 |          3373
+
+
+
+
+
+select ag.from_age as "с",
+        ag.to_age as "до",
+        left(ag.name_age_group, 18) as "Возрастная группа",
+        left(cls.name_mkb_class, 32) as "Заболевание",
+        ac.pol as "Пол",
+        sum(case when v.id_zab_type=1 then 1 else 0 end) as "Острых",
+        sum(case when v.id_zab_type=2 then 1 else 0 end) as "Впервые уст.",
+        sum(case when v.id_zab_type=3 then 1 else 0 end) as "Изв. ранее хр.",
+        sum(case when v.id_zab_type=4 then 1 else 0 end) as "Обострение хр.",
+        sum(case when ac.id_reg_group>1 then 0 else 1 end) as "Состоит на ДУ",
+        sum(case when d.id_talon is null then 0 else (d.close_doc - d.begin_doc +1) end) as "Дней нетр.",
+        sum(case when d.id_talon is null then 0 else 1 end) as "Случаев нетр."
+from talon t
+join period_list p on p.begin_period=date_trunc('month', t.open_date)::date and p.id_period between 858 and 870
+join amb_card ac on ac.id_card=t.id_card
+join age_group ag on date_part('year', age(t.open_date, ac.b_date)) between ag.from_age and ag.to_age
+join visit v on v.id_talon=t.id_talon
+join mkb m on m.id_mkb=v.id_mkb
+join mkb_class cls on cls.id_mkb_int=m.id_mkb_int
+left join document d on d.id_talon=t.id_talon
+group by 1, 2, 3, 4, 5
+order by 1, 2, 3, 4, 5;
+
+
+---AS IS CONFIG
+                                                                                            QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3939658.18..3939658.84 rows=264 width=131) (actual time=511682.500..512144.069 rows=108 loops=1)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3939642.94..3939647.56 rows=264 width=131) (actual time=511682.115..512143.717 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Nested Loop  (cost=1292425.69..3819141.48 rows=2536873 width=95) (actual time=484250.159..510002.166 rows=4445018 loops=1)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND
+                            (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Gather  (cost=1292425.69..2829760.06 rows=3805309 width=127) (actual time=484248.392..485755.962 rows=4445018 loops=1)
+                     Workers Planned: 2
+                     Workers Launched: 2
+                     ->  Hash Join  (cost=1291425.69..2448229.16 rows=1585545 width=127) (actual time=484331.403..491314.796 rows=1481673 loops=3)
+                           Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                           ->  Parallel Hash Join  (cost=1291414.95..2425917.60 rows=1718761 width=35) (actual time=483273.050..489709.704 rows=1481673 loops=3)
+                                 Hash Cond: (v.id_talon = t.id_talon)
+                                 ->  Parallel Seq Scan on visit v  (cost=0.00..726227.77 rows=26442477 width=12) (actual time=3.480..229585.387 rows=20806005 loops=3)
+                                 ->  Parallel Hash  (cost=1261226.57..1261226.57 rows=1561230 width=31) (actual time=247751.542..247751.554 rows=1377502 loops=3)
+                                       Buckets: 131072  Batches: 64  Memory Usage: 4640kB
+                                       ->  Parallel Hash Left Join  (cost=336172.66..1261226.57 rows=1561230 width=31) (actual time=241956.007..247426.721 rows=1377502 loops=3)
+                                             Hash Cond: (t.id_talon = d.id_talon)
+                                             ->  Parallel Hash Join  (cost=249452.35..1141619.04 rows=1561230 width=19) (actual time=227088.658..233382.640 rows=1377502 loops=3)
+                                                   Hash Cond: (t.id_card = ac.id_card)
+                                                   ->  Hash Join  (cost=2.06..859760.52 rows=1561230 width=12) (actual time=1.455..128949.466 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664004.23 rows=24018923 width=12) (actual time=1.324..122333.411 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.055..0.056 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.041..0.044 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                                   ->  Parallel Hash  (cost=202952.02..202952.02 rows=2674902 width=15) (actual time=97599.600..97599.601 rows=2139946 loops=3)
+                                                         Buckets: 262144  Batches: 64  Memory Usage: 6816kB
+                                                         ->  Parallel Seq Scan on amb_card ac  (cost=0.00..202952.02 rows=2674902 width=15) (actual time=0.875..96885.136 rows=2139946 loops=3)
+                                             ->  Parallel Hash  (cost=49366.58..49366.58 rows=2148858 width=12) (actual time=8082.563..8082.564 rows=1719121 loops=3)
+                                                   Buckets: 262144  Batches: 64  Memory Usage: 5888kB
+                                                   ->  Parallel Seq Scan on document d  (cost=0.00..49366.58 rows=2148858 width=12) (actual time=3.209..7742.759 rows=1719121 loops=3)
+                           ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=1058.206..1058.208 rows=205 loops=3)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                 ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=1057.456..1058.148 rows=205 loops=3)
+                                       Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                       ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.403..1.043 rows=205 loops=3)
+                                       ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=1057.004..1057.005 rows=22 loops=3)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                             ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=1056.961..1056.970 rows=22 loops=3)
+               ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                     ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=1.714..1.717 rows=6 loops=1)
+ Planning Time: 148.589 ms
+ JIT:
+   Functions: 170
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 26.388 ms, Inlining 428.206 ms, Optimization 1904.219 ms, Emission 838.198 ms, Total 3197.011 ms
+ Execution Time: 512174.448 ms
+(53 rows)
+
+
+
+
+
+
+
+---OPTIMIZATION CONFIG
+
+
+
+#------------------------------------------------------------------------------
+# OTUS PROJECT OPTIMIZATION
+#------------------------------------------------------------------------------
+max_connections = 40
+shared_buffers = 3GB
+effective_cache_size = 3GB
+maintenance_work_mem = 512MB
+wal_buffers = 64MB
+default_statistics_target = 500
+effective_io_concurrency = 2
+work_mem = 256MB
+min_wal_size = 4GB
+max_wal_size = 16GB
+
+
+
+
+--explain
+
+                                                                                        QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3034569.35..3034570.01 rows=264 width=131)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   ->  HashAggregate  (cost=3034554.11..3034558.73 rows=264 width=131)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         ->  Hash Join  (cost=1281259.86..2914052.65 rows=2536873 width=95)
+               Hash Cond: (t.id_card = ac.id_card)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND
+                            (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               ->  Nested Loop  (cost=960612.17..2514444.79 rows=22831856 width=206)
+                     ->  Gather  (cost=960612.17..2229045.54 rows=3805309 width=120)
+                           Workers Planned: 2
+                           ->  Hash Join  (cost=959612.17..1847514.64 rows=1585545 width=120)
+                                 Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                 ->  Parallel Hash Join  (cost=959601.43..1825203.08 rows=1718761 width=28)
+                                       Hash Cond: (v.id_talon = t.id_talon)
+                                       ->  Parallel Seq Scan on visit v  (cost=0.00..726227.77 rows=26442477 width=12)
+                                       ->  Parallel Hash  (cost=940086.05..940086.05 rows=1561230 width=24)
+                                             ->  Parallel Hash Left Join  (cost=76229.37..940086.05 rows=1561230 width=24)
+                                                   Hash Cond: (t.id_talon = d.id_talon)
+                                                   ->  Hash Join  (cost=2.06..859760.52 rows=1561230 width=12)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664004.23 rows=24018923 width=12)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4)
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                   ->  Parallel Hash  (cost=49366.58..49366.58 rows=2148858 width=12)
+                                                         ->  Parallel Seq Scan on document d  (cost=0.00..49366.58 rows=2148858 width=12)
+                                 ->  Hash  (cost=8.18..8.18 rows=205 width=100)
+                                       ->  Hash Join  (cost=1.50..8.18 rows=205 width=100)
+                                             Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                             ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8)
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=100)
+                                                   ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100)
+                     ->  Materialize  (cost=0.00..1.09 rows=6 width=86)
+                           ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86)
+               ->  Hash  (cost=240400.64..240400.64 rows=6419764 width=15)
+                     ->  Seq Scan on amb_card ac  (cost=0.00..240400.64 rows=6419764 width=15)
+ JIT:
+   Functions: 62
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+(39 rows)
+
+
+--explain analyze
+
+                                                                                          QUERY PLAN
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3034569.35..3034570.01 rows=264 width=131) (actual time=377472.304..377562.350 rows=108 loops=1)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3034554.11..3034558.73 rows=264 width=131) (actual time=377471.941..377562.027 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Hash Join  (cost=1281259.86..2914052.65 rows=2536873 width=95) (actual time=193060.647..375769.014 rows=4445018 loops=1)
+               Hash Cond: (t.id_card = ac.id_card)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND
+                            (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Nested Loop  (cost=960612.17..2514444.79 rows=22831856 width=206) (actual time=106558.405..267967.618 rows=26670108 loops=1)
+                     ->  Gather  (cost=960612.17..2229045.54 rows=3805309 width=120) (actual time=106558.385..263242.396 rows=4445018 loops=1)
+                           Workers Planned: 2
+                           Workers Launched: 2
+                           ->  Hash Join  (cost=959612.17..1847514.64 rows=1585545 width=120) (actual time=106502.838..273925.999 rows=1481673 loops=3)
+                                 Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                 ->  Parallel Hash Join  (cost=959601.43..1825203.08 rows=1718761 width=28) (actual time=105909.608..272863.921 rows=1481673 loops=3)
+                                       Hash Cond: (v.id_talon = t.id_talon)
+                                       ->  Parallel Seq Scan on visit v  (cost=0.00..726227.77 rows=26442477 width=12) (actual time=0.020..158768.794 rows=20806005 loops=3)
+                                       ->  Parallel Hash  (cost=940086.05..940086.05 rows=1561230 width=24) (actual time=105429.275..105433.743 rows=1377502 loops=3)
+                                             Buckets: 4194304  Batches: 1  Memory Usage: 228640kB
+                                             ->  Parallel Hash Left Join  (cost=76229.37..940086.05 rows=1561230 width=24) (actual time=1462.122..104774.768 rows=1377502 loops=3)
+                                                   Hash Cond: (t.id_talon = d.id_talon)
+                                                   ->  Hash Join  (cost=2.06..859760.52 rows=1561230 width=12) (actual time=1.167..102660.448 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664004.23 rows=24018923 width=12) (actual time=1.025..95195.824 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.056..0.057 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.045..0.048 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                                   ->  Parallel Hash  (cost=49366.58..49366.58 rows=2148858 width=12) (actual time=1441.927..1441.928 rows=1719121 loops=3)
+                                                         Buckets: 8388608  Batches: 1  Memory Usage: 307552kB
+                                                         ->  Parallel Seq Scan on document d  (cost=0.00..49366.58 rows=2148858 width=12) (actual time=0.029..372.491 rows=1719121 loops=3)
+                                 ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=593.039..593.042 rows=205 loops=3)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                       ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=592.879..592.974 rows=205 loops=3)
+                                             Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                             ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.016..0.055 rows=205 loops=3)
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=592.820..592.820 rows=22 loops=3)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                   ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=592.790..592.796 rows=22 loops=3)
+                     ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                           ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=0.011..0.013 rows=6 loops=1)
+               ->  Hash  (cost=240400.64..240400.64 rows=6419764 width=15) (actual time=86474.212..86474.214 rows=6419837 loops=1)
+                     Buckets: 8388608  Batches: 1  Memory Usage: 366466kB
+                     ->  Seq Scan on amb_card ac  (cost=0.00..240400.64 rows=6419764 width=15) (actual time=620.977..84476.111 rows=6419837 loops=1)
+ Planning Time: 1.653 ms
+ JIT:
+   Functions: 157
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 16.725 ms, Inlining 390.120 ms, Optimization 1265.699 ms, Emission 743.813 ms, Total 2416.356 ms
+ Execution Time: 377570.447 ms
+(53 rows)
+
+
+--ВИТРИНА
+
+select ag.from_age as "с",
+	ag.to_age as "до",
+	left(ag.name_age_group, 18) as "Возрастная группа",
+	left(cls.name_mkb_class, 32) as "Заболевание",
+	rz.pol_patient as "Пол",
+	sum(rz.acute_zab) as "Острых",
+	sum(rz.primary_zab) as "Впервые уст.",
+	sum(rz.chronic_zab) as "Изв. ранее хр.",
+	sum(rz.repeated_zab) as "Обострение хр.",
+	sum(rz.cnt_register) as "Состоит на ДУ",
+	sum(rz.days_zab) as "Дней нетр.",
+	sum(rz.cnt_zab) as "Случаев нетр."
+from report_zab rz
+join period_list p on p.id_period=rz.id_period and p.id_period between 858 and 870
+join age_group ag on ag.id_age_group=rz.id_age_group
+join mkb m on m.id_mkb=rz.id_mkb
+join mkb_class cls on cls.id_mkb_int=m.id_mkb_int
+group by 1, 2, 3, 4, 5
+order by 1, 2, 3, 4, 5;
+
+
+
+                                                                              QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize GroupAggregate  (cost=4116.34..4159.24 rows=264 width=131) (actual time=122.004..125.604 rows=108 loops=1)
+   Group Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), rz.pol_patient
+   ->  Gather Merge  (cost=4116.34..4146.70 rows=264 width=131) (actual time=121.990..125.482 rows=108 loops=1)
+         Workers Planned: 1
+         Workers Launched: 1
+         ->  Sort  (cost=3116.33..3116.99 rows=264 width=131) (actual time=58.475..58.485 rows=54 loops=2)
+               Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), rz.pol_patient
+               Sort Method: quicksort  Memory: 45kB
+               Worker 0:  Sort Method: quicksort  Memory: 25kB
+               ->  Partial HashAggregate  (cost=3101.09..3105.71 rows=264 width=131) (actual time=58.354..58.370 rows=54 loops=2)
+                     Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), rz.pol_patient
+                     Batches: 1  Memory Usage: 61kB
+                     Worker 0:  Batches: 1  Memory Usage: 37kB
+                     ->  Hash Join  (cost=13.94..2608.94 rows=16405 width=103) (actual time=0.532..54.599 rows=8346 loops=2)
+                           Hash Cond: (rz.id_age_group = ag.id_age_group)
+                           ->  Hash Join  (cost=12.81..2411.29 rows=16405 width=131) (actual time=0.495..44.703 rows=8346 loops=2)
+                                 Hash Cond: (rz.id_mkb = (m.id_mkb)::bpchar)
+                                 ->  Hash Join  (cost=2.06..2174.98 rows=16405 width=39) (actual time=0.407..42.471 rows=8346 loops=2)
+                                       Hash Cond: (rz.id_period = p.id_period)
+                                       ->  Parallel Seq Scan on report_zab rz  (cost=0.00..1960.13 rows=75713 width=43) (actual time=0.392..35.638 rows=64356 loops=2)
+                                       ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.021..0.022 rows=13 loops=1)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                             ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.014..0.016 rows=13 loops=1)
+                                                   Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                   Rows Removed by Filter: 47
+                                 ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=0.167..0.169 rows=205 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                       ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=0.028..0.118 rows=205 loops=1)
+                                             Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                             ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.005..0.031 rows=205 loops=1)
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=0.017..0.018 rows=22 loops=1)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                   ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=0.004..0.008 rows=22 loops=1)
+                           ->  Hash  (cost=1.06..1.06 rows=6 width=90) (actual time=0.022..0.022 rows=6 loops=2)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                 ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=90) (actual time=0.009..0.010 rows=6 loops=2)
+ Planning Time: 8.985 ms
+ Execution Time: 125.712 ms
+(38 rows)
+
+
+
