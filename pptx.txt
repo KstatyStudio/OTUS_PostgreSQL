@@ -5,6 +5,343 @@ set search_path=clinic_schema, public;
 select pg_size_pretty(pg_database_size('clinic_db'));
 
 
+\dt+
+
+                                               List of relations
+    Schema     |        Name        | Type  |  Owner   | Persistence | Access method |    Size    | Description
+---------------+--------------------+-------+----------+-------------+---------------+------------+-------------
+ clinic_schema | address            | table | postgres | permanent   | heap          | 464 kB     |
+ clinic_schema | age_group          | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | amb_card           | table | postgres | permanent   | heap          | 1377 MB    |
+ clinic_schema | area               | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | contingent         | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | department         | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | diagnos            | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | doc_type_list      | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | doctor             | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | document           | table | postgres | permanent   | heap          | 218 MB     |
+ clinic_schema | hospital           | table | postgres | permanent   | heap          | 0 bytes    |
+ clinic_schema | hospital_list      | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | mkb                | table | postgres | permanent   | heap          | 32 kB      |
+ clinic_schema | mkb_class          | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | period_list        | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | period_type_list   | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | reg_group          | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | report_spo         | table | postgres | permanent   | heap          | 1080 kB    |
+ clinic_schema | report_zab         | table | postgres | permanent   | heap          | 9624 kB    |
+ clinic_schema | soput_ds           | table | postgres | permanent   | heap          | 0 bytes    |
+ clinic_schema | speciality         | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | staff              | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | street             | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | talon              | table | postgres | permanent   | heap          | 3311 MB    |
+ clinic_schema | target_spo         | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | tmp_address_list   | table | postgres | permanent   | heap          | 464 kB     |
+ clinic_schema | tmp_fam_list       | table | postgres | permanent   | heap          | 16 kB      |
+ clinic_schema | tmp_full_name_list | table | postgres | permanent   | heap          | 0 bytes    |
+ clinic_schema | tmp_kv_list        | table | postgres | permanent   | heap          | 80 MB      |
+ clinic_schema | tmp_mkb            | table | postgres | permanent   | heap          | 16 kB      |
+ clinic_schema | tmp_name_list      | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | tmp_organization   | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | tmp_otch_list      | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | tmp_position       | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | tmp_street_list    | table | postgres | permanent   | heap          | 16 kB      |
+ clinic_schema | visit              | table | postgres | permanent   | heap          | 3586 MB    |
+ clinic_schema | visit_type         | table | postgres | permanent   | heap          | 8192 bytes |
+ clinic_schema | zab_type           | table | postgres | permanent   | heap          | 8192 bytes |
+(38 rows)
+
+
+tmp_* - таблицы для генераторов данных
+
+
+
+--Типы посещений
+
+select* from visit_type;
+
+ id_visit_type | name_visit_type
+---------------+-----------------
+             1 | в ЛПУ
+             2 | на дому
+(2 rows)
+
+
+
+--Типы заболеваний
+
+select* from zab_type;
+
+ id_zab_type |                 name_zab_type
+-------------+------------------------------------------------
+           1 | острое заболевание
+           2 | впервые в жизни зарегистрированное хроническое
+           3 | известное ранее хроническое
+           4 | обострение хронического заболевания
+(4 rows)
+
+
+--Возрастные группы
+
+select* from age_group;
+
+ id_age_group | from_age | to_age |                          name_age_group
+--------------+----------+--------+------------------------------------------------------------------
+            1 |       18 |     44 | молодой возраст
+            2 |       45 |     59 | средний возраст
+            3 |       60 |     74 | пожилой возраст
+            4 |       75 |     90 | старческий возраст
+            5 |       91 |    900 | долголетие
+            6 |        0 |     17 | дети и подростки
+(6 rows)
+
+
+--Контингент
+
+select* from contingent;
+
+ id_cont |                name_cont
+---------+------------------------------------------
+       1 | пенсионер
+       2 | инвалид ВОВ
+       3 | участник ВОВ
+       4 | вдова участника ВОВ
+       5 | блокадник
+       6 | награждённый орденами и медалями
+       7 | инвалид труда
+       8 | ребёнок-инвалид
+       9 | участник боевых действий
+      10 | член семьи погибшего
+      11 | подвергшийся радиационному облучению
+      12 | реабилитированный
+      13 | подросток
+      14 | призывник
+      15 | ребёнок до года
+      16 | прочие
+(16 rows)
+
+
+--Список врачей со специальностями и участками
+
+select d.id_doctor, s.fam_doctor, s.name_doctor, s.otch_doctor, sp.name_spec, a.id_area from doctor d left join staff s on d.id_staff=s.id_staff left join speciality sp on d.id_spec=sp.id_spec left join area a on d.id_doctor=a.id_doctor order by s.fam_doctor, s.name_doctor, s.otch_doctor;
+ id_doctor |  fam_doctor   | name_doctor |  otch_doctor  |  name_spec  | id_area
+-----------+---------------+-------------+---------------+-------------+---------
+         5 | Ависов        | Эллиот      | Эдвинович     | терапевт    |       5
+        10 | Байденова     | Элис        | Чэдовна       | терапевт    |      10
+         7 | Беллов        | Себастиан   | Андерсонович  | терапевт    |       7
+        35 | Болдуинов     | Теренс      | Скоттович     | терапевт    |      35
+        29 | Борденов      | Себастиан   | Вилфредович   | терапевт    |      29
+         2 | Бридлавин     | Йен         | Эдвинович     | терапевт    |       2
+        31 | Бушов         | Дуглас      | Мартинович    | терапевт    |      31
+        26 | Бьюкененов    | Эвард       | Дугласович    | терапевт    |      26
+        45 | Вудвордин     | Самуэль     | Абрахамович   | травматолог |
+         1 | Генрин        | Кори        | Эвардович     | терапевт    |       1
+         8 | Грабин        | Винсент     | Альбертович   | терапевт    |       8
+        13 | Джейкобсин    | Эвард       | Арнольдович   | терапевт    |      13
+        20 | Джонсонов     | Велентайн   | Тимотивич     | терапевт    |      20
+        24 | Картеров      | Нейтен      | Винсентович   | терапевт    |      24
+        44 | Картрайтов    | Клиффорд    | Коривич       | травматолог |
+        32 | Кейсин        | Вилфред     | Генривич      | терапевт    |      32
+        12 | Кларков       | Джошуа      | Томасович     | терапевт    |      12
+        11 | Кларкова      | Джульет     | Остиновна     | терапевт    |      11
+        39 | Колинова      | Валери      | Дэвидовна     | хирург      |
+        38 | Кортнин       | Тревис      | Лукасович     | хирург      |
+        48 | Крисов        | Дэвид       | Якобович      | травматолог |
+        41 | Крисов        | Эдвин       | Джасперович   | хирург      |
+        19 | Крузин        | Кевин       | Тревисович    | терапевт    |      19
+        40 | Кубриков      | Энтони      | Лоуренсович   | хирург      |
+         9 | Кулиджин      | Адриан      | Франклинович  | терапевт    |       9
+        43 | Лавкрафтов    | Оскар       | Кристоферович | хирург      |
+        50 | Ларамина      | Агнес       | Бенджаминовна | травматолог |
+        14 | Мелодинов     | Уильям      | Джасперович   | терапевт    |      14
+        22 | Мерсеров      | Себастиан   | Уильямович    | терапевт    |      22
+         3 | Моссова       | Габриэль    | Сигмундовна   | терапевт    |       3
+        25 | Моэмов        | Даррен      | Себастианович | терапевт    |      25
+        21 | Мурманова     | Грэйс       | Андерсоновна  | терапевт    |      21
+        42 | Мэдисонова    | Ариэль      | Тобиасовна    | хирург      |
+         4 | Мэрионов      | Нил         | Хубертович    | терапевт    |       4
+        17 | Найтлин       | Винсент     | Гарольдович   | терапевт    |      17
+        23 | Нотлин        | Феликс      | Франклинович  | терапевт    |      23
+        37 | Ноэльнин      | Теренс      | Бернардович   | хирург      |
+        46 | Пальмерстонов | Оливер      | Стивенович    | травматолог |
+        33 | Пауэрсов      | Кевин       | Эрлович       | терапевт    |      33
+        34 | Пиннерин      | Винстон     | Эрлович       | терапевт    |      34
+        28 | Пиннерин      | Мартин      | Вилфредович   | терапевт    |      28
+         6 | Прайорина     | Джоан       | Эндрювна      | терапевт    |       6
+        27 | Принсов       | Якоб        | Майклович     | терапевт    |      27
+        36 | Рандолфин     | Тристан     | Арнольдович   | хирург      |
+        15 | Реднаппов     | Винсент     | Томасович     | терапевт    |      15
+        47 | Реднаппов     | Дональд     | Гарольдович   | травматолог |
+        16 | Рендольфов    | Бернард     | Вейнович      | терапевт    |      16
+        18 | Ридин         | Винсент     | Лестерович    | терапевт    |      18
+        30 | Ридов         | Лестер      | Себастианович | терапевт    |      30
+        49 | Рунин         | Эндрю       | Эдгарович     | травматолог |
+(50 rows)
+
+
+
+-- Классы заболеваний
+
+ select* from mkb_class limit 10;
+
+ id_mkb_int | id_mkb_class |                                      name_mkb_class
+------------+--------------+------------------------------------------------------------------------------------------
+          1 | I            | Некоторые инфекционные и паразитарные болезни
+          2 | II           | Новообразования
+          3 | III          | Болезни крови, кроветворных органов и отдельные нарушения, вовлекающие иммунный механизм
+          4 | IV           | Болезни эндокринной системы, расстройства питания и нарушения обмена веществ
+          5 | V            | Психические расстройства и расстройства поведения
+          6 | VI           | Болезни нервной системы
+          7 | VII          | Болезни глаза и его придаточного аппарата
+          8 | VIII         | Болезни уха и сосцевидного отростка
+          9 | IX           | Болезни системы кровообращения
+         10 | X            | Болезни органов дыхания
+(10 rows)
+
+
+--Заболевания
+
+select* from mkb limit 10;
+
+ id_mkb |                                         ds                                         | id_mkb_int | id_spec
+--------+------------------------------------------------------------------------------------+------------+---------
+ J01    | Острый синусит                                                                     |         10 |       1
+ J02    | Острый фарингит                                                                    |         10 |       1
+ J03    | Острый тонзиллит                                                                   |         10 |       1
+ J04    | Острый ларингит и трахеит                                                          |         10 |       1
+ J06    | Острые инфекции верхних дыхательных путей множественной и неуточненной локализации |         10 |       1
+ J09    | Грипп, вызванный выявленным вирусом зоонозного или пандемического гриппа           |         10 |       1
+ J10    | Грипп, вызванный идентифицированным вирусом сезонного гриппа                       |         10 |       1
+ J11    | Грипп, вирус не идентифицирован                                                    |         10 |       1
+ J12    | Вирусная пневмония, не классифицированная в других рубриках                        |         10 |       1
+ J13    | Пневмония, вызванная Streptococcus pneumoniae                                      |         10 |       1
+(10 rows)
+
+
+--Адреса
+
+select* from address a join street s on s.id_street=a.id_street limit 10;
+ id_address | id_area | id_street | num_dom | let_dom | korp_dom | str_dom | id_street | type_street | name_street
+------------+---------+-----------+---------+---------+----------+---------+-----------+-------------+-------------
+          1 |       1 |         1 |       1 |         |          |         |         1 | ул.         | Авангардная
+          2 |       1 |         1 |       2 |         |          |         |         1 | ул.         | Авангардная
+          3 |       1 |         1 |       3 |         |          |         |         1 | ул.         | Авангардная
+          4 |       1 |         1 |       4 |         |          |         |         1 | ул.         | Авангардная
+          5 |       1 |         1 |       5 |         |          |         |         1 | ул.         | Авангардная
+          6 |       1 |         1 |       6 |         |          |         |         1 | ул.         | Авангардная
+          7 |       1 |         1 |       7 |         |          |         |         1 | ул.         | Авангардная
+          8 |       1 |         1 |       8 |         |          |         |         1 | ул.         | Авангардная
+          9 |       1 |         1 |       9 |         |          |         |         1 | ул.         | Авангардная
+         10 |       1 |         1 |      10 |         |          |         |         1 | ул.         | Авангардная
+(10 rows)
+
+clinic_db=# select* from street limit 10;
+ id_street | type_street | name_street
+-----------+-------------+-------------
+         1 | ул.         | Авангардная
+         2 | ул.         | Автоматики
+         3 | ул.         | Авиационная
+         4 | ул.         | Автономная
+         5 | ул.         | Агатовая
+         6 | ул.         | Базальтовая
+         7 | ул.         | Берёзовая
+         8 | ул.         | Береговая
+         9 | ул.         | Верстовая
+        10 | ул.         | Вокзальная
+(10 rows)
+
+
+-- Амбулаторные карты
+
+select* from amb_card limit 10;
+
+ id_card |   fam_patient   |    name_patient    |  otch_patient   |   b_date   | pol | id_address | num_kv | num_tel | id_cont |           organization           |         position         | ser_polis | num_polis | id_reg_group | create_date
+---------+-----------------+--------------------+-----------------+------------+-----+------------+--------+---------+---------+----------------------------------+--------------------------+-----------+-----------+--------------+-------------
+ 6655242 | Аддисонов       | Дэрек              | Эдгарович       | 1976-10-14 | м   |        401 |     70 |  732012 |      16 | Rawhide                          | машинист экскаватора     | 71        |    726085 |            1 | 2019-08-20
+ 6655212 | Вудвордин       | Йен                | Кеннетович      | 1988-01-24 | м   |        401 |     62 |  589152 |      16 | Rawhide                          | машинист тепловоза       | 72        |    362883 |            1 | 2017-11-24
+ 6655217 | Беннетин        | Метью              | Эрнестович      | 1968-07-25 | м   |        401 |     64 |  899368 |      16 | Cordero Rojo                     | директор                 | 61        |    681435 |            1 | 2014-03-04
+ 6655238 | Аддисонов       | Кори               | Энтонивич       | 1992-11-30 | м   |        401 |     70 |  732012 |      16 | Black Thunder                    | горный инженер           | e6        |    884490 |            2 | 2018-10-18
+ 6655231 | Лорансов        | Велентайн          | Дугласович      | 1985-05-12 | м   |        401 |     68 |  615345 |      16 | Freedom                          | горный инженер           | e9        |    790791 |            3 | 2014-06-15
+ 6655190 | Джиллеттова     | Агнес              | Дэвидовна       | 1947-05-01 | ж   |        401 |     57 |  729671 |       1 | Antelope                         | бухгалтер                | 94        |    549726 |            2 | 2014-08-24
+ 6655248 | Бонемова        | Дебра              | Дэвидовна       | 1966-07-21 | ж   |        401 |     72 |  382952 |      16 | Belle Ayr                        | разнорабочий             | 49        |    991575 |            5 | 2017-04-30
+ 6655236 | Моттин          | Артур              | Кевинович       | 1967-10-30 | м   |        401 |     69 |  255164 |       9 | North Antelope Rochelle          | машинист тепловоза       | 8a        |    983670 |            2 | 2014-10-01
+ 6655184 | Кроулин         | Винстон            | Нейтенович      | 2001-02-28 | м   |        401 |     56 |  932790 |      14 | Rawhide                          | техник                   | 41        |    801893 |            3 | 2015-11-07
+ 6655240 | Аддисонов       | Лукас              | Джошуавич       | 1980-04-08 | м   |        401 |     70 |  732012 |      10 | Black Thunder                    | горный инженер           | aa        |    921029 |            4 | 2014-06-17
+(10 rows)
+
+
+
+--Талоны
+
+select* from talon limit 10;
+
+ id_talon | id_card | id_target | spo_type | spo | close_date | open_date
+----------+---------+-----------+----------+-----+------------+------------
+ 97333129 | 6422008 |         6 |        2 |   1 | 2021-07-02 | 2021-07-02
+ 97333130 | 6422008 |         4 |        2 |   1 | 2021-05-31 | 2021-05-31
+ 97333131 | 6422008 |         4 |        1 |   1 | 2022-02-06 | 2022-02-06
+ 97333132 | 6422008 |         3 |        2 |   1 | 2022-02-23 | 2022-02-23
+ 97333133 | 6422008 |         5 |        2 |   1 | 2022-04-17 | 2022-04-17
+ 97333134 | 6422008 |         2 |        2 |   1 | 2022-08-02 | 2022-08-02
+ 97333136 | 6422008 |         3 |        1 |   1 | 2023-03-12 | 2023-03-12
+ 97333137 | 6422008 |         3 |        2 |   1 | 2023-11-06 | 2023-11-06
+ 97333138 | 6422008 |         3 |        2 |   1 | 2023-01-08 | 2023-01-08
+ 97333139 | 6422008 |         5 |        1 |   1 | 2024-01-21 | 2024-01-21
+(10 rows)
+
+
+select extract('year' from open_date), count(id_talon) from talon group by 1;
+
+ extract |  count
+---------+----------
+    2020 |  1926135
+    2021 |  1925289
+    2022 | 25678669
+    2023 | 25678419
+    2024 |  2436509
+(5 rows)
+
+
+--Посещения
+
+select* from visit limit 10;
+
+ id_visit | id_talon | visit_date | id_visit_type | id_zab_type | id_doctor | id_mkb | next_date
+----------+----------+------------+---------------+-------------+-----------+--------+-----------
+ 97333120 | 97333126 | 2020-06-12 |             1 |           3 |         2 | J70    |
+ 97333121 | 97333127 | 2020-10-01 |             1 |           2 |         6 | J90    |
+ 97333122 | 97333128 | 2020-01-07 |             1 |           4 |        16 | J10    |
+ 97333123 | 97333129 | 2021-07-02 |             1 |           2 |        30 | J47    |
+ 97333124 | 97333130 | 2021-05-31 |             2 |           3 |        33 | J09    |
+ 97333125 | 97333131 | 2022-02-06 |             1 |           3 |         9 | J46    |
+ 97333126 | 97333132 | 2022-02-23 |             1 |           1 |        47 | S80    |
+ 97333127 | 97333133 | 2022-04-17 |             1 |           3 |         4 | J47    |
+ 97333128 | 97333134 | 2022-08-02 |             2 |           2 |        46 | S76    |
+ 97333129 | 97333135 | 2023-04-27 |             2 |           3 |        33 | J01    |
+(10 rows)
+
+
+select extract('year' from visit_date), count(id_visit) from visit group by 1;
+
+ extract |  count
+---------+----------
+    2020 |  2086849
+    2021 |  2086128
+    2022 | 27818195
+    2023 | 27817562
+    2024 |  2609282
+(5 rows)
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------
+--ОТЧЁТ ДЛЯ ТЕСТИРОВАНИЯ
+---------------------------------------------------------------------------------------------------------------------------
 
 -- Заболеваемость (расчёт)
 select ag.from_age as "с",
@@ -30,7 +367,6 @@ left join document d on d.id_talon=t.id_talon
 group by 1, 2, 3, 4, 5
 order by 1, 2, 3, 4, 5;
 
-
 -- Заболеваемость (витрина)
 select ag.from_age as "с",
 	ag.to_age as "до",
@@ -53,50 +389,13 @@ group by 1, 2, 3, 4, 5
 order by 1, 2, 3, 4, 5;
 
 
---СПИСОК ВРАЧЕЙ СО СПЕЦИАЛЬНОСТЯМИ И УЧАСТКАМИ
 
- select d.id_doctor, s.fam_doctor, s.name_doctor, s.otch_doctor, sp.name_spec, a.id_area from doctor d left join staff s on d.id_staff=s.id_staff left join speciality sp on d.id_spec=sp.id_spec left join area a on d.id_doctor=a.id_doctor order by s.fam_doctor, s.name_doctor, s.otch_doctor;
 
 ------------------------------------------------------------------------------------------------------
 -- Для презентации
 ------------------------------------------------------------------------------------------------------
 
-
-                                              List of relations
-    Schema     |        Name        | Type  |  Owner   | Persistence | Access method |    Size    
----------------+--------------------+-------+----------+-------------+---------------+-------------
- clinic_schema | address            | table | postgres | permanent   | heap          | 464 kB     |
- clinic_schema | age_group          | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | amb_card           | table | postgres | permanent   | heap          | 1377 MB    |
- clinic_schema | area               | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | contingent         | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | department         | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | diagnos            | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | doc_type_list      | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | doctor             | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | document           | table | postgres | permanent   | heap          | 218 MB     |
- clinic_schema | hospital           | table | postgres | permanent   | heap          | 0 bytes    |
- clinic_schema | hospital_list      | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | mkb                | table | postgres | permanent   | heap          | 32 kB      |
- clinic_schema | mkb_class          | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | period_list        | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | period_type_list   | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | reg_group          | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | report_spo         | table | postgres | permanent   | heap          | 1080 kB    |
- clinic_schema | report_zab         | table | postgres | permanent   | heap          | 9656 kB    |
- clinic_schema | soput_ds           | table | postgres | permanent   | heap          | 0 bytes    |
- clinic_schema | speciality         | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | staff              | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | street             | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | talon              | table | postgres | permanent   | heap          | 3311 MB    |
- clinic_schema | target_spo         | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | visit              | table | postgres | permanent   | heap          | 3609 MB    |
- clinic_schema | visit_type         | table | postgres | permanent   | heap          | 8192 bytes |
- clinic_schema | zab_type           | table | postgres | permanent   | heap          | 8192 bytes |
-(28 rows)
-
-
-
+-- Отчёт о заболеваемости за 2023 год (одинаковый результат расчёта и витрины)
 
  с  | до  | Возрастная группа  |           Заболевание            | Пол | Острых | Впервые уст. | Изв. ранее хр. | Обострение хр. | Состоит на ДУ | Дней нетр. | Случаев нетр.
 ----+-----+--------------------+----------------------------------+-----+--------+--------------+----------------+----------------+---------------+------------+---------------
