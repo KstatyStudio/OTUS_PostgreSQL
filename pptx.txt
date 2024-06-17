@@ -236,6 +236,132 @@ order by 1, 2, 3, 4, 5;
 
 
 
+                                                                                                                                                             QUERY PLAN
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3939658.18..3939658.84 rows=264 width=131) (actual time=460310.774..460759.175 rows=108 loops=1)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3939642.94..3939647.56 rows=264 width=131) (actual time=460310.437..460758.874 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Nested Loop  (cost=1292425.69..3819141.48 rows=2536873 width=95) (actual time=427986.041..458440.224 rows=4445018 loops=1)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Gather  (cost=1292425.69..2829760.06 rows=3805309 width=127) (actual time=427985.997..431552.309 rows=4445018 loops=1)
+                     Workers Planned: 2
+                     Workers Launched: 2
+                     ->  Hash Join  (cost=1291425.69..2448229.16 rows=1585545 width=127) (actual time=427901.083..437257.413 rows=1481673 loops=3)
+                           Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                           ->  Parallel Hash Join  (cost=1291414.95..2425917.60 rows=1718761 width=35) (actual time=426661.762..435406.777 rows=1481673 loops=3)
+                                 Hash Cond: (v.id_talon = t.id_talon)
+                                 ->  Parallel Seq Scan on visit v  (cost=0.00..726227.77 rows=26442477 width=12) (actual time=17.199..214972.141 rows=20806005 loops=3)
+                                 ->  Parallel Hash  (cost=1261226.57..1261226.57 rows=1561230 width=31) (actual time=204811.912..204812.069 rows=1377502 loops=3)
+                                       Buckets: 131072  Batches: 64  Memory Usage: 4640kB
+                                       ->  Parallel Hash Left Join  (cost=336172.66..1261226.57 rows=1561230 width=31) (actual time=201853.341..204234.906 rows=1377502 loops=3)
+                                             Hash Cond: (t.id_talon = d.id_talon)
+                                             ->  Parallel Hash Join  (cost=249452.35..1141619.04 rows=1561230 width=19) (actual time=191530.486..193023.202 rows=1377502 loops=3)
+                                                   Hash Cond: (t.id_card = ac.id_card)
+                                                   ->  Hash Join  (cost=2.06..859760.52 rows=1561230 width=12) (actual time=0.798..129737.543 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664004.23 rows=24018923 width=12) (actual time=0.645..122605.928 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.061..0.062 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.051..0.053 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                                   ->  Parallel Hash  (cost=202952.02..202952.02 rows=2674902 width=15) (actual time=61380.051..61380.052 rows=2139946 loops=3)
+                                                         Buckets: 262144  Batches: 64  Memory Usage: 6816kB
+                                                         ->  Parallel Seq Scan on amb_card ac  (cost=0.00..202952.02 rows=2674902 width=15) (actual time=7.448..60804.818 rows=2139946 loops=3)
+                                             ->  Parallel Hash  (cost=49366.58..49366.58 rows=2148858 width=12) (actual time=8104.135..8104.136 rows=1719121 loops=3)
+                                                   Buckets: 262144  Batches: 64  Memory Usage: 5888kB
+                                                   ->  Parallel Seq Scan on document d  (cost=0.00..49366.58 rows=2148858 width=12) (actual time=0.692..7745.204 rows=1719121 loops=3)
+                           ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=1239.144..1239.147 rows=205 loops=3)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                 ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=1238.994..1239.082 rows=205 loops=3)
+                                       Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                       ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.026..0.058 rows=205 loops=3)
+                                       ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=1238.918..1238.919 rows=22 loops=3)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                             ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=1238.872..1238.882 rows=22 loops=3)
+               ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                     ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=0.015..0.017 rows=6 loops=1)
+ Planning Time: 2.010 ms
+ JIT:
+   Functions: 170
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 20.178 ms, Inlining 384.120 ms, Optimization 2016.462 ms, Emission 1316.712 ms, Total 3737.472 ms
+ Execution Time: 460763.011 ms
+(53 rows)
+
+
+
+
+
+
+                                                                                         QUERY PLAN
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3939658.18..3939658.84 rows=264 width=131) (actual time=345625.136..349114.700 rows=108 loops=1)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3939642.94..3939647.56 rows=264 width=131) (actual time=345624.727..349114.334 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Nested Loop  (cost=1292425.69..3819141.48 rows=2536873 width=95) (actual time=308958.596..346801.220 rows=4445018 loops=1)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND
+                            (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Gather  (cost=1292425.69..2829760.06 rows=3805309 width=127) (actual time=308950.733..319920.523 rows=4445018 loops=1)
+                     Workers Planned: 2
+                     Workers Launched: 2
+                     ->  Hash Join  (cost=1291425.69..2448229.16 rows=1585545 width=127) (actual time=308916.319..323174.079 rows=1481673 loops=3)
+                           Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                           ->  Parallel Hash Join  (cost=1291414.95..2425917.60 rows=1718761 width=35) (actual time=307662.446..321302.421 rows=1481673 loops=3)
+                                 Hash Cond: (v.id_talon = t.id_talon)
+                                 ->  Parallel Seq Scan on visit v  (cost=0.00..726227.77 rows=26442477 width=12) (actual time=1.250..86605.408 rows=20806005 loops=3)
+                                 ->  Parallel Hash  (cost=1261226.57..1261226.57 rows=1561230 width=31) (actual time=212619.356..212619.485 rows=1377502 loops=3)
+                                       Buckets: 131072  Batches: 64  Memory Usage: 4640kB
+                                       ->  Parallel Hash Left Join  (cost=336172.66..1261226.57 rows=1561230 width=31) (actual time=206761.869..212234.439 rows=1377502 loops=3)
+                                             Hash Cond: (t.id_talon = d.id_talon)
+                                             ->  Parallel Hash Join  (cost=249452.35..1141619.04 rows=1561230 width=19) (actual time=192363.450..198269.848 rows=1377502 loops=3)
+                                                   Hash Cond: (t.id_card = ac.id_card)
+                                                   ->  Hash Join  (cost=2.06..859760.52 rows=1561230 width=12) (actual time=0.753..127599.246 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664004.23 rows=24018923 width=12) (actual time=0.624..120383.636 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.050..0.052 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.042..0.044 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                                   ->  Parallel Hash  (cost=202952.02..202952.02 rows=2674902 width=15) (actual time=64188.920..64188.921 rows=2139946 loops=3)
+                                                         Buckets: 262144  Batches: 64  Memory Usage: 6816kB
+                                                         ->  Parallel Seq Scan on amb_card ac  (cost=0.00..202952.02 rows=2674902 width=15) (actual time=5.234..63421.999 rows=2139946 loops=3)
+                                             ->  Parallel Hash  (cost=49366.58..49366.58 rows=2148858 width=12) (actual time=8026.892..8026.893 rows=1719121 loops=3)
+                                                   Buckets: 262144  Batches: 64  Memory Usage: 5888kB
+                                                   ->  Parallel Seq Scan on document d  (cost=0.00..49366.58 rows=2148858 width=12) (actual time=2.614..7616.308 rows=1719121 loops=3)
+                           ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=1251.021..1251.023 rows=205 loops=3)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                 ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=1248.920..1250.945 rows=205 loops=3)
+                                       Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                       ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.265..2.225 rows=205 loops=3)
+                                       ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=1248.601..1248.601 rows=22 loops=3)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                             ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=1248.549..1248.560 rows=22 loops=3)
+               ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                     ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=7.794..7.797 rows=6 loops=1)
+ Planning Time: 45.943 ms
+ JIT:
+   Functions: 170
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 19.025 ms, Inlining 472.520 ms, Optimization 2028.152 ms, Emission 1244.693 ms, Total 3764.390 ms
+ Execution Time: 349181.264 ms
+(53 rows)
+
+
+
+
+
 
 
 
@@ -369,6 +495,625 @@ max_wal_size = 16GB
 (53 rows)
 
 
+
+
+
+
+
+                                                                                                 QUERY PLAN
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3034569.35..3034570.01 rows=264 width=131) (actual time=310503.357..310559.338 rows=108 loops=1)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3034554.11..3034558.73 rows=264 width=131) (actual time=310503.136..310559.145 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Hash Join  (cost=1281259.86..2914052.65 rows=2536873 width=95) (actual time=173483.588..308607.943 rows=4445018 loops=1)
+               Hash Cond: (t.id_card = ac.id_card)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND
+                            (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Nested Loop  (cost=960612.17..2514444.79 rows=22831856 width=206) (actual time=123898.408..236161.269 rows=26670108 loops=1)
+                     ->  Gather  (cost=960612.17..2229045.54 rows=3805309 width=120) (actual time=123898.388..231018.889 rows=4445018 loops=1)
+                           Workers Planned: 2
+                           Workers Launched: 2
+                           ->  Hash Join  (cost=959612.17..1847514.64 rows=1585545 width=120) (actual time=123665.830..242190.156 rows=1481673 loops=3)
+                                 Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                 ->  Parallel Hash Join  (cost=959601.43..1825203.08 rows=1718761 width=28) (actual time=123026.223..241026.506 rows=1481673 loops=3)
+                                       Hash Cond: (v.id_talon = t.id_talon)
+                                       ->  Parallel Seq Scan on visit v  (cost=0.00..726227.77 rows=26442477 width=12) (actual time=2.056..108882.600 rows=20806005 loops=3)
+                                       ->  Parallel Hash  (cost=940086.05..940086.05 rows=1561230 width=24) (actual time=123015.605..123015.609 rows=1377502 loops=3)
+                                             Buckets: 4194304  Batches: 1  Memory Usage: 228640kB
+                                             ->  Parallel Hash Left Join  (cost=76229.37..940086.05 rows=1561230 width=24) (actual time=1493.725..122351.353 rows=1377502 loops=3)
+                                                   Hash Cond: (t.id_talon = d.id_talon)
+                                                   ->  Hash Join  (cost=2.06..859760.52 rows=1561230 width=12) (actual time=1.136..120162.605 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664004.23 rows=24018923 width=12) (actual time=1.002..112765.293 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.051..0.052 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.041..0.043 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                                   ->  Parallel Hash  (cost=49366.58..49366.58 rows=2148858 width=12) (actual time=1477.239..1477.240 rows=1719121 loops=3)
+                                                         Buckets: 8388608  Batches: 1  Memory Usage: 307584kB
+                                                         ->  Parallel Seq Scan on document d  (cost=0.00..49366.58 rows=2148858 width=12) (actual time=0.029..394.412 rows=1719121 loops=3)
+                                 ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=639.432..639.434 rows=205 loops=3)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                       ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=639.266..639.363 rows=205 loops=3)
+                                             Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                             ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.019..0.059 rows=205 loops=3)
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=636.346..636.347 rows=22 loops=3)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                   ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=636.312..636.318 rows=22 loops=3)
+                     ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                           ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=0.011..0.013 rows=6 loops=1)
+               ->  Hash  (cost=240400.64..240400.64 rows=6419764 width=15) (actual time=49555.085..49555.087 rows=6419837 loops=1)
+                     Buckets: 8388608  Batches: 1  Memory Usage: 366466kB
+                     ->  Seq Scan on amb_card ac  (cost=0.00..240400.64 rows=6419764 width=15) (actual time=648.475..47484.949 rows=6419837 loops=1)
+ Planning Time: 1.982 ms
+ JIT:
+   Functions: 157
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 20.899 ms, Inlining 386.583 ms, Optimization 1309.914 ms, Emission 859.853 ms, Total 2577.248 ms
+ Execution Time: 310582.768 ms
+(53 rows)
+
+
+
+
+
+
+
+                                                                                                 QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3034569.35..3034570.01 rows=264 width=131) (actual time=266710.120..266771.479 rows=108 loops=1)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3034554.11..3034558.73 rows=264 width=131) (actual time=266709.849..266771.238 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Hash Join  (cost=1281259.86..2914052.65 rows=2536873 width=95) (actual time=179967.487..264607.445 rows=4445018 loops=1)
+               Hash Cond: (t.id_card = ac.id_card)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND
+                            (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Nested Loop  (cost=960612.17..2514444.79 rows=22831856 width=206) (actual time=130348.603..189339.820 rows=26670108 loops=1)
+                     ->  Gather  (cost=960612.17..2229045.54 rows=3805309 width=120) (actual time=130347.736..183369.667 rows=4445018 loops=1)
+                           Workers Planned: 2
+                           Workers Launched: 2
+                           ->  Hash Join  (cost=959612.17..1847514.64 rows=1585545 width=120) (actual time=130307.948..194629.208 rows=1481673 loops=3)
+                                 Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                 ->  Parallel Hash Join  (cost=959601.43..1825203.08 rows=1718761 width=28) (actual time=129734.133..193478.383 rows=1481673 loops=3)
+                                       Hash Cond: (v.id_talon = t.id_talon)
+                                       ->  Parallel Seq Scan on visit v  (cost=0.00..726227.77 rows=26442477 width=12) (actual time=20.575..52710.785 rows=20806005 loops=3)
+                                       ->  Parallel Hash  (cost=940086.05..940086.05 rows=1561230 width=24) (actual time=129700.714..129700.719 rows=1377502 loops=3)
+                                             Buckets: 4194304  Batches: 1  Memory Usage: 228608kB
+                                             ->  Parallel Hash Left Join  (cost=76229.37..940086.05 rows=1561230 width=24) (actual time=8372.405..129008.313 rows=1377502 loops=3)
+                                                   Hash Cond: (t.id_talon = d.id_talon)
+                                                   ->  Hash Join  (cost=2.06..859760.52 rows=1561230 width=12) (actual time=0.639..119951.828 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664004.23 rows=24018923 width=12) (actual time=0.506..112532.009 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.049..0.050 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.037..0.039 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                                   ->  Parallel Hash  (cost=49366.58..49366.58 rows=2148858 width=12) (actual time=8350.713..8350.714 rows=1719121 loops=3)
+                                                         Buckets: 8388608  Batches: 1  Memory Usage: 307584kB
+                                                         ->  Parallel Seq Scan on document d  (cost=0.00..49366.58 rows=2148858 width=12) (actual time=1.698..7566.618 rows=1719121 loops=3)
+                                 ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=573.615..573.618 rows=205 loops=3)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                       ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=573.134..573.543 rows=205 loops=3)
+                                             Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                             ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.279..0.627 rows=205 loops=3)
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=572.809..572.810 rows=22 loops=3)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                   ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=572.769..572.777 rows=22 loops=3)
+                     ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                           ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=0.856..0.858 rows=6 loops=1)
+               ->  Hash  (cost=240400.64..240400.64 rows=6419764 width=15) (actual time=49587.541..49587.543 rows=6419837 loops=1)
+                     Buckets: 8388608  Batches: 1  Memory Usage: 366466kB
+                     ->  Seq Scan on amb_card ac  (cost=0.00..240400.64 rows=6419764 width=15) (actual time=700.642..47530.664 rows=6419837 loops=1)
+ Planning Time: 103.116 ms
+ JIT:
+   Functions: 157
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 18.010 ms, Inlining 416.321 ms, Optimization 1185.297 ms, Emission 815.661 ms, Total 2435.289 ms
+ Execution Time: 266864.171 ms
+(53 rows)
+
+
+--ИНДЕКСЫ
+
+create index talon_open_date_idx on talon(open_date);
+create index visit_visit_date_idx on visit(visit_date);
+
+
+
+
+                                                                                                                                                             QUERY PLAN
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3013304.36..3013308.98 rows=264 width=131) (actual time=272787.443..272864.791 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Hash Join  (cost=1277161.11..2894785.11 rows=2495142 width=95) (actual time=120903.263..270759.496 rows=4445018 loops=1)
+               Hash Cond: (t.id_card = ac.id_card)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Nested Loop  (cost=956511.77..2496474.49 rows=22456277 width=206) (actual time=116952.228..242913.043 rows=26670108 loops=1)
+                     ->  Gather  (cost=956511.77..2215769.94 rows=3742713 width=120) (actual time=116952.207..237545.898 rows=4445018 loops=1)
+                           Workers Planned: 2
+                           Workers Launched: 2
+                           ->  Parallel Hash Left Join  (cost=955511.77..1840498.64 rows=1559464 width=120) (actual time=116893.602..249989.007 rows=1481673 loops=3)
+                                 Hash Cond: (t.id_talon = d.id_talon)
+                                 ->  Hash Join  (cost=879283.50..1760176.78 rows=1559464 width=112) (actual time=114617.494..246879.213 rows=1481673 loops=3)
+                                       Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                       ->  Parallel Hash Join  (cost=879272.76..1738232.06 rows=1690488 width=20) (actual time=114617.189..246353.634 rows=1481673 loops=3)
+                                             Hash Cond: (v.id_talon = t.id_talon)
+                                             ->  Parallel Seq Scan on visit v  (cost=0.00..721878.07 rows=26007507 width=12) (actual time=0.581..122261.250 rows=20806005 loops=3)
+                                             ->  Parallel Hash  (cost=859757.52..859757.52 rows=1561219 width=12) (actual time=114598.055..114598.058 rows=1377502 loops=3)
+                                                   Buckets: 4194304  Batches: 1  Memory Usage: 226720kB
+                                                   ->  Hash Join  (cost=2.06..859757.52 rows=1561219 width=12) (actual time=0.842..113859.743 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664002.58 rows=24018758 width=12) (actual time=0.694..103602.296 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.060..0.061 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.046..0.049 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                       ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=0.231..0.233 rows=205 loops=3)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                             ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=0.083..0.165 rows=205 loops=3)
+                                                   Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                                   ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.021..0.048 rows=205 loops=3)
+                                                   ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=0.046..0.047 rows=22 loops=3)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                         ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=0.028..0.032 rows=22 loops=3)
+                                 ->  Parallel Hash  (cost=49367.01..49367.01 rows=2148901 width=12) (actual time=2255.119..2255.119 rows=1719121 loops=3)
+                                       Buckets: 8388608  Batches: 1  Memory Usage: 307584kB
+                                       ->  Parallel Seq Scan on document d  (cost=0.00..49367.01 rows=2148901 width=12) (actual time=618.162..1050.807 rows=1719121 loops=3)
+                     ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                           ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=0.011..0.012 rows=6 loops=1)
+               ->  Hash  (cost=240401.37..240401.37 rows=6419837 width=15) (actual time=3945.037..3945.039 rows=6419837 loops=1)
+                     Buckets: 8388608  Batches: 1  Memory Usage: 366466kB
+                     ->  Seq Scan on amb_card ac  (cost=0.00..240401.37 rows=6419837 width=15) (actual time=1049.357..2299.087 rows=6419837 loops=1)
+ Planning Time: 19.238 ms
+ JIT:
+   Functions: 157
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 30.690 ms, Inlining 426.955 ms, Optimization 1391.563 ms, Emission 1085.631 ms, Total 2934.839 ms
+ Execution Time: 272885.749 ms
+(53 rows)
+
+
+
+
+--!!!!!!!!!!!!!
+set enable_seqscan = off;
+
+
+
+                                                                                                                                                                   QUERY PLAN
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------
+ Finalize GroupAggregate  (cost=30070267345.56..30070319413.69 rows=264 width=131) (actual time=415240.947..415986.589 rows=108 loops=1)
+   Group Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   ->  Gather Merge  (cost=30070267345.56..30070319393.23 rows=528 width=131) (actual time=415240.814..415986.252 rows=324 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         ->  Partial GroupAggregate  (cost=30070266345.54..30070318332.26 rows=264 width=131) (actual time=413818.555..414582.313 rows=108 loops=3)
+               Group Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+               ->  Sort  (cost=30070266345.54..30070268944.64 rows=1039642 width=95) (actual time=413818.479..414060.164 rows=1481673 loops=3)
+                     Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+                     Sort Method: quicksort  Memory: 255192kB
+                     Worker 0:  Sort Method: quicksort  Memory: 252694kB
+                     Worker 1:  Sort Method: quicksort  Memory: 251588kB
+                     ->  Merge Join  (cost=30053185830.97..30070162445.51 rows=1039642 width=95) (actual time=317608.545..410306.899 rows=1481673 loops=3)
+                           Merge Cond: (t.id_card = ac.id_card)
+                           Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+                           Rows Removed by Join Filter: 7408363
+                           ->  Sort  (cost=20053185830.38..20053189729.04 rows=1559464 width=120) (actual time=317594.980..317882.048 rows=1481673 loops=3)
+                                 Sort Key: t.id_card
+                                 Sort Method: quicksort  Memory: 229261kB
+                                 Worker 0:  Sort Method: quicksort  Memory: 226781kB
+                                 Worker 1:  Sort Method: quicksort  Memory: 226359kB
+                                 ->  Hash Join  (cost=20052144525.82..20053025419.09 rows=1559464 width=120) (actual time=176028.557..316809.007 rows=1481673 loops=3)
+                                       Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                       ->  Parallel Hash Join  (cost=10052144503.83..10053003463.13 rows=1690488 width=28) (actual time=174212.382..314604.066 rows=1481673 loops=3)
+                                             Hash Cond: (v.id_talon = t.id_talon)
+                                             ->  Parallel Seq Scan on visit v  (cost=10000000000.00..10000721878.07 rows=26007507 width=12) (actual time=11.795..131199.306 rows=20806005 loops=3)
+                                             ->  Parallel Hash  (cost=52124988.59..52124988.59 rows=1561219 width=24) (actual time=174179.145..174179.149 rows=1377502 loops=3)
+                                                   Buckets: 4194304  Batches: 1  Memory Usage: 228672kB
+                                                   ->  Nested Loop Left Join  (cost=9.56..52124988.59 rows=1561219 width=24) (actual time=0.241..173197.806 rows=1377502 loops=3)
+                                                         ->  Hash Join  (cost=9.13..43381778.50 rows=1561219 width=12) (actual time=0.211..168176.398 rows=1377502 loops=3)
+                                                               Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                               ->  Parallel Index Scan using talon_pkey on talon t  (cost=0.56..43186017.06 rows=24018758 width=12) (actual time=0.048..154701.051 rows=19215007 loops=3)
+                                                               ->  Hash  (cost=8.40..8.40 rows=13 width=4) (actual time=0.044..0.045 rows=13 loops=3)
+                                                                     Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                                     ->  Index Scan using period_list_pkey on period_list p  (cost=0.14..8.40 rows=13 width=4) (actual time=0.029..0.035 rows=13 loops=3)
+                                                                           Index Cond: ((id_period >= 858) AND (id_period <= 870))
+                                                         ->  Index Scan using document_pkey on document d  (cost=0.43..5.60 rows=1 width=12) (actual time=0.003..0.003 rows=0 loops=4132507)
+                                                               Index Cond: (id_talon = t.id_talon)
+                                       ->  Hash  (cost=10000000019.43..10000000019.43 rows=205 width=100) (actual time=1816.130..1816.132 rows=205 loops=3)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                             ->  Hash Join  (cost=10000000012.74..10000000019.43 rows=205 width=100) (actual time=1815.963..1816.058 rows=205 loops=3)
+                                                   Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                                   ->  Seq Scan on mkb m  (cost=10000000000.00..10000000006.05 rows=205 width=8) (actual time=0.032..0.064 rows=205 loops=3)
+                                                   ->  Hash  (cost=12.47..12.47 rows=22 width=100) (actual time=1815.891..1815.892 rows=22 loops=3)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                         ->  Index Scan using mkb_class_pkey on mkb_class cls  (cost=0.14..12.47 rows=22 width=100) (actual time=1815.839..1815.853 rows=22 loops=3)
+                           ->  Materialize  (cost=10000000000.43..10016490451.73 rows=38519022 width=101) (actual time=3.575..65423.885 rows=42044536 loops=3)
+                                 ->  Nested Loop  (cost=10000000000.43..10016394154.18 rows=38519022 width=101) (actual time=3.569..29381.619 rows=38518921 loops=3)
+                                       ->  Index Scan using amb_card_pkey on amb_card ac  (cost=0.43..15912665.33 rows=6419837 width=15) (actual time=3.244..10713.667 rows=6419821 loops=3)
+                                       ->  Materialize  (cost=10000000000.00..10000000001.09 rows=6 width=86) (actual time=0.000..0.001 rows=6 loops=19259462)
+                                             ->  Seq Scan on age_group ag  (cost=10000000000.00..10000000001.06 rows=6 width=86) (actual time=0.314..0.315 rows=6 loops=3)
+ Planning Time: 2.157 ms
+ JIT:
+   Functions: 192
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 47.380 ms, Inlining 498.628 ms, Optimization 2854.110 ms, Emission 2092.816 ms, Total 5492.934 ms
+ Execution Time: 416014.042 ms
+(57 rows)
+
+
+
+                                                                                                                                                                   QUERY PLAN
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------
+ Finalize GroupAggregate  (cost=30070267345.56..30070319413.69 rows=264 width=131) (actual time=422893.327..423564.965 rows=108 loops=1)
+   Group Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   ->  Gather Merge  (cost=30070267345.56..30070319393.23 rows=528 width=131) (actual time=422893.195..423564.682 rows=324 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         ->  Partial GroupAggregate  (cost=30070266345.54..30070318332.26 rows=264 width=131) (actual time=421605.698..422432.636 rows=108 loops=3)
+               Group Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+               ->  Sort  (cost=30070266345.54..30070268944.64 rows=1039642 width=95) (actual time=421605.617..421859.063 rows=1481673 loops=3)
+                     Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+                     Sort Method: quicksort  Memory: 254949kB
+                     Worker 0:  Sort Method: quicksort  Memory: 251513kB
+                     Worker 1:  Sort Method: quicksort  Memory: 253014kB
+                     ->  Merge Join  (cost=30053185830.97..30070162445.51 rows=1039642 width=95) (actual time=324826.883..417810.410 rows=1481673 loops=3)
+                           Merge Cond: (t.id_card = ac.id_card)
+                           Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+                           Rows Removed by Join Filter: 7408363
+                           ->  Sort  (cost=20053185830.38..20053189729.04 rows=1559464 width=120) (actual time=324823.160..325149.371 rows=1481673 loops=3)
+                                 Sort Key: t.id_card
+                                 Sort Method: quicksort  Memory: 229921kB
+                                 Worker 0:  Sort Method: quicksort  Memory: 225606kB
+                                 Worker 1:  Sort Method: quicksort  Memory: 226874kB
+                                 ->  Hash Join  (cost=20052144525.82..20053025419.09 rows=1559464 width=120) (actual time=185322.911..324034.824 rows=1481673 loops=3)
+                                       Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                       ->  Parallel Hash Join  (cost=10052144503.83..10053003463.13 rows=1690488 width=28) (actual time=183623.849..321947.072 rows=1481673 loops=3)
+                                             Hash Cond: (v.id_talon = t.id_talon)
+                                             ->  Parallel Seq Scan on visit v  (cost=10000000000.00..10000721878.07 rows=26007507 width=12) (actual time=2.167..129105.329 rows=20806005 loops=3)
+                                             ->  Parallel Hash  (cost=52124988.59..52124988.59 rows=1561219 width=24) (actual time=183603.943..183603.947 rows=1377502 loops=3)
+                                                   Buckets: 4194304  Batches: 1  Memory Usage: 228672kB
+                                                   ->  Nested Loop Left Join  (cost=9.56..52124988.59 rows=1561219 width=24) (actual time=3.638..182636.573 rows=1377502 loops=3)
+                                                         ->  Hash Join  (cost=9.13..43381778.50 rows=1561219 width=12) (actual time=0.551..176400.805 rows=1377502 loops=3)
+                                                               Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                               ->  Parallel Index Scan using talon_pkey on talon t  (cost=0.56..43186017.06 rows=24018758 width=12) (actual time=0.078..162771.782 rows=19215007 loops=3)
+                                                               ->  Hash  (cost=8.40..8.40 rows=13 width=4) (actual time=0.363..0.365 rows=13 loops=3)
+                                                                     Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                                     ->  Index Scan using period_list_pkey on period_list p  (cost=0.14..8.40 rows=13 width=4) (actual time=0.350..0.355 rows=13 loops=3)
+                                                                           Index Cond: ((id_period >= 858) AND (id_period <= 870))
+                                                         ->  Index Scan using document_pkey on document d  (cost=0.43..5.60 rows=1 width=12) (actual time=0.004..0.004 rows=0 loops=4132507)
+                                                               Index Cond: (id_talon = t.id_talon)
+                                       ->  Hash  (cost=10000000019.43..10000000019.43 rows=205 width=100) (actual time=1698.492..1698.494 rows=205 loops=3)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                             ->  Hash Join  (cost=10000000012.74..10000000019.43 rows=205 width=100) (actual time=1697.826..1698.426 rows=205 loops=3)
+                                                   Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                                   ->  Seq Scan on mkb m  (cost=10000000000.00..10000000006.05 rows=205 width=8) (actual time=3.197..3.740 rows=205 loops=3)
+                                                   ->  Hash  (cost=12.47..12.47 rows=22 width=100) (actual time=1694.577..1694.578 rows=22 loops=3)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                         ->  Index Scan using mkb_class_pkey on mkb_class cls  (cost=0.14..12.47 rows=22 width=100) (actual time=1694.528..1694.542 rows=22 loops=3)
+                           ->  Materialize  (cost=10000000000.43..10016490451.73 rows=38519022 width=101) (actual time=3.612..65600.172 rows=42038138 loops=3)
+                                 ->  Nested Loop  (cost=10000000000.43..10016394154.18 rows=38519022 width=101) (actual time=3.607..29812.058 rows=38518971 loops=3)
+                                       ->  Index Scan using amb_card_pkey on amb_card ac  (cost=0.43..15912665.33 rows=6419837 width=15) (actual time=2.865..11243.674 rows=6419829 loops=3)
+                                       ->  Materialize  (cost=10000000000.00..10000000001.09 rows=6 width=86) (actual time=0.000..0.001 rows=6 loops=19259487)
+                                             ->  Seq Scan on age_group ag  (cost=10000000000.00..10000000001.06 rows=6 width=86) (actual time=0.732..0.734 rows=6 loops=3)
+ Planning Time: 24.684 ms
+ JIT:
+   Functions: 192
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 52.057 ms, Inlining 514.153 ms, Optimization 2717.167 ms, Emission 1844.825 ms, Total 5128.201 ms
+ Execution Time: 423589.059 ms
+(57 rows)
+
+
+
+
+--!!!!!!!!!!!!!
+set enable_seqscan = on;
+
+drop index talon_open_date_idx;
+drop index visit_visit_date_idx;
+
+
+
+                                                                                                   QUERY PLAN
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3086112.60..3086113.26 rows=264 width=131) (actual time=223199.745..223318.372 rows=108 loops=1)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3086097.36..3086101.98 rows=264 width=131) (actual time=223199.381..223318.050 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Hash Join  (cost=1281262.89..2957623.97 rows=2704703 width=95) (actual time=85588.035..221250.279 rows=4445018 loops=1)
+               Hash Cond: (t.id_card = ac.id_card)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND
+			    (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Nested Loop  (cost=960611.33..2552788.52 rows=24342329 width=206) (actual time=82068.165..193558.929 rows=26670108 loops=1)
+                     ->  Gather  (cost=960611.33..2248508.32 rows=4057055 width=120) (actual time=82068.139..188162.277 rows=4445018 loops=1)
+                           Workers Planned: 2
+                           Workers Launched: 2
+                           ->  Hash Join  (cost=959611.33..1841802.82 rows=1690440 width=120) (actual time=81951.310..200172.499 rows=1481673 loops=3)
+                                 Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                 ->  Parallel Hash Join  (cost=959600.58..1818548.53 rows=1690440 width=28) (actual time=81268.474..198928.921 rows=1481673 loops=3)
+                                       Hash Cond: (v.id_talon = t.id_talon)
+                                       ->  Parallel Seq Scan on visit v  (cost=0.00..721870.63 rows=26006763 width=12) (actual time=5.602..107987.936 rows=20806005 loops=3)
+                                       ->  Parallel Hash  (cost=940085.28..940085.28 rows=1561224 width=24) (actual time=81250.574..81250.580 rows=1377502 loops=3)
+                                             Buckets: 4194304  Batches: 1  Memory Usage: 228640kB
+                                             ->  Parallel Hash Left Join  (cost=76230.33..940085.28 rows=1561224 width=24) (actual time=1646.942..80392.571 rows=1377502 loops=3)
+                                                   Hash Cond: (t.id_talon = d.id_talon)
+                                                   ->  Hash Join  (cost=2.06..859758.80 rows=1561224 width=12) (actual time=1.075..77930.694 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664003.28 rows=24018828 width=12) (actual time=0.940..65178.179 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.053..0.054 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.041..0.044 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                                   ->  Parallel Hash  (cost=49367.01..49367.01 rows=2148901 width=12) (actual time=1628.472..1628.473 rows=1719121 loops=3)
+                                                         Buckets: 8388608  Batches: 1  Memory Usage: 307584kB
+                                                         ->  Parallel Seq Scan on document d  (cost=0.00..49367.01 rows=2148901 width=12) (actual time=0.041..496.546 rows=1719121 loops=3)
+                                 ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=682.657..682.660 rows=205 loops=3)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                       ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=682.479..682.588 rows=205 loops=3)
+                                             Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                             ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.024..0.074 rows=205 loops=3)
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=682.408..682.409 rows=22 loops=3)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                   ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=682.370..682.376 rows=22 loops=3)
+                     ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                           ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=0.012..0.014 rows=6 loops=1)
+               ->  Hash  (cost=240402.36..240402.36 rows=6419936 width=15) (actual time=3514.145..3514.147 rows=6419837 loops=1)
+                     Buckets: 8388608  Batches: 1  Memory Usage: 366466kB
+                     ->  Seq Scan on amb_card ac  (cost=0.00..240402.36 rows=6419936 width=15) (actual time=634.053..1890.934 rows=6419837 loops=1)
+ Planning Time: 32.105 ms
+ JIT:
+   Functions: 157
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 33.933 ms, Inlining 446.013 ms, Optimization 1266.181 ms, Emission 969.305 ms, Total 2715.432 ms
+ Execution Time: 223328.806 ms
+(53 rows)
+
+
+
+
+?reindex
+
+
+
+                                                                                                                                                             QUERY PLAN
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3086149.68..3086150.34 rows=264 width=131) (actual time=234245.628..234393.910 rows=108 loops=1)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3086134.44..3086139.06 rows=264 width=131) (actual time=234245.407..234393.720 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Hash Join  (cost=1281261.53..2957657.34 rows=2704781 width=95) (actual time=92867.736..232406.839 rows=4445018 loops=1)
+               Hash Cond: (t.id_card = ac.id_card)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Nested Loop  (cost=960609.97..2552819.49 rows=24343024 width=206) (actual time=89156.440..205571.908 rows=26670108 loops=1)
+                     ->  Gather  (cost=960609.97..2248530.59 rows=4057171 width=120) (actual time=89156.418..200390.742 rows=4445018 loops=1)
+                           Workers Planned: 2
+                           Workers Launched: 2
+                           ->  Hash Join  (cost=959609.97..1841813.49 rows=1690488 width=120) (actual time=88921.340..211486.881 rows=1481673 loops=3)
+                                 Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                 ->  Parallel Hash Join  (cost=959599.23..1818558.53 rows=1690488 width=28) (actual time=88242.564..210278.340 rows=1481673 loops=3)
+                                       Hash Cond: (v.id_talon = t.id_talon)
+                                       ->  Parallel Seq Scan on visit v  (cost=0.00..721878.07 rows=26007507 width=12) (actual time=1.309..112552.555 rows=20806005 loops=3)
+                                       ->  Parallel Hash  (cost=940083.99..940083.99 rows=1561219 width=24) (actual time=88232.382..88232.387 rows=1377502 loops=3)
+                                             Buckets: 4194304  Batches: 1  Memory Usage: 228640kB
+                                             ->  Parallel Hash Left Join  (cost=76230.33..940083.99 rows=1561219 width=24) (actual time=1475.013..87397.707 rows=1377502 loops=3)
+                                                   Hash Cond: (t.id_talon = d.id_talon)
+                                                   ->  Hash Join  (cost=2.06..859757.52 rows=1561219 width=12) (actual time=1.171..85133.581 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664002.58 rows=24018758 width=12) (actual time=1.040..72808.010 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.055..0.056 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.042..0.044 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                                   ->  Parallel Hash  (cost=49367.01..49367.01 rows=2148901 width=12) (actual time=1458.129..1458.130 rows=1719121 loops=3)
+                                                         Buckets: 8388608  Batches: 1  Memory Usage: 307552kB
+                                                         ->  Parallel Seq Scan on document d  (cost=0.00..49367.01 rows=2148901 width=12) (actual time=0.036..377.889 rows=1719121 loops=3)
+                                 ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=678.542..678.544 rows=205 loops=3)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                       ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=678.367..678.473 rows=205 loops=3)
+                                             Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                             ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.020..0.064 rows=205 loops=3)
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=678.302..678.302 rows=22 loops=3)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                   ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=678.267..678.273 rows=22 loops=3)
+                     ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                           ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=0.010..0.012 rows=6 loops=1)
+               ->  Hash  (cost=240402.36..240402.36 rows=6419936 width=15) (actual time=3705.537..3705.540 rows=6419837 loops=1)
+                     Buckets: 8388608  Batches: 1  Memory Usage: 366466kB
+                     ->  Seq Scan on amb_card ac  (cost=0.00..240402.36 rows=6419936 width=15) (actual time=817.901..2081.043 rows=6419837 loops=1)
+ Planning Time: 8.503 ms
+ JIT:
+   Functions: 157
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 34.235 ms, Inlining 428.455 ms, Optimization 1421.839 ms, Emission 1002.741 ms, Total 2887.269 ms
+ Execution Time: 234422.890 ms
+(53 rows)
+
+
+
+
+--OPTIMIZATION QUERY
+
+select ag.from_age as "с",
+        ag.to_age as "до",
+        left(ag.name_age_group, 18) as "Возрастная группа",
+        left(cls.name_mkb_class, 32) as "Заболевание",
+        ac.pol as "Пол",
+        sum(case when v.id_zab_type=1 then 1 else 0 end) as "Острых",
+        sum(case when v.id_zab_type=2 then 1 else 0 end) as "Впервые уст.",
+        sum(case when v.id_zab_type=3 then 1 else 0 end) as "Изв. ранее хр.",
+        sum(case when v.id_zab_type=4 then 1 else 0 end) as "Обострение хр.",
+        sum(case when ac.id_reg_group>1 then 0 else 1 end) as "Состоит на ДУ",
+        sum(case when d.id_talon is null then 0 else (d.close_doc - d.begin_doc +1) end) as "Дней нетр.",
+        sum(case when d.id_talon is null then 0 else 1 end) as "Случаев нетр."
+from talon t
+join amb_card ac on ac.id_card=t.id_card
+join age_group ag on date_part('year', age(t.open_date, ac.b_date)) between ag.from_age and ag.to_age
+join visit v on v.id_talon=t.id_talon
+join mkb m on m.id_mkb=v.id_mkb
+join mkb_class cls on cls.id_mkb_int=m.id_mkb_int
+join period_list p on p.begin_period=date_trunc('month', t.open_date)::date and p.id_period between 858 and 870
+left join document d on d.id_talon=t.id_talon
+group by 1, 2, 3, 4, 5
+order by 1, 2, 3, 4, 5;
+
+
+cost=3086149.68..3086150.34
+Execution Time: 230874.824 ms
+                                                                                                                                                             QUERY PLAN
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3086149.68..3086150.34 rows=264 width=131) (actual time=233808.436..233918.809 rows=108 loops=1)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3086134.44..3086139.06 rows=264 width=131) (actual time=233808.089..233918.505 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Hash Join  (cost=1281261.53..2957657.35 rows=2704781 width=95) (actual time=92924.641..231918.389 rows=4445018 loops=1)
+               Hash Cond: (t.id_card = ac.id_card)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Nested Loop  (cost=960609.97..2552819.49 rows=24343026 width=206) (actual time=89358.924..205185.349 rows=26670108 loops=1)
+                     ->  Gather  (cost=960609.97..2248530.59 rows=4057171 width=120) (actual time=89358.901..200019.151 rows=4445018 loops=1)
+                           Workers Planned: 2
+                           Workers Launched: 2
+                           ->  Hash Join  (cost=959609.97..1841813.49 rows=1690488 width=120) (actual time=89201.370..211720.436 rows=1481673 loops=3)
+                                 Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                 ->  Parallel Hash Join  (cost=959599.23..1818558.53 rows=1690488 width=28) (actual time=88536.954..210523.669 rows=1481673 loops=3)
+                                       Hash Cond: (v.id_talon = t.id_talon)
+                                       ->  Parallel Seq Scan on visit v  (cost=0.00..721878.07 rows=26007507 width=12) (actual time=9.623..112546.786 rows=20806005 loops=3)
+                                       ->  Parallel Hash  (cost=940083.99..940083.99 rows=1561219 width=24) (actual time=88518.561..88518.566 rows=1377502 loops=3)
+                                             Buckets: 4194304  Batches: 1  Memory Usage: 228672kB
+                                             ->  Parallel Hash Left Join  (cost=76230.33..940083.99 rows=1561219 width=24) (actual time=1574.075..87706.822 rows=1377502 loops=3)
+                                                   Hash Cond: (t.id_talon = d.id_talon)
+                                                   ->  Hash Join  (cost=2.06..859757.52 rows=1561219 width=12) (actual time=0.977..85331.645 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664002.58 rows=24018758 width=12) (actual time=0.837..72858.888 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.058..0.060 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.046..0.049 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                                   ->  Parallel Hash  (cost=49367.01..49367.01 rows=2148901 width=12) (actual time=1556.424..1556.425 rows=1719121 loops=3)
+                                                         Buckets: 8388608  Batches: 1  Memory Usage: 307552kB
+                                                         ->  Parallel Seq Scan on document d  (cost=0.00..49367.01 rows=2148901 width=12) (actual time=0.043..439.714 rows=1719121 loops=3)
+                                 ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=660.137..660.140 rows=205 loops=3)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                       ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=659.964..660.068 rows=205 loops=3)
+                                             Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                             ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.024..0.070 rows=205 loops=3)
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=659.890..659.890 rows=22 loops=3)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                   ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=659.852..659.860 rows=22 loops=3)
+                     ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                           ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=0.011..0.013 rows=6 loops=1)
+               ->  Hash  (cost=240402.36..240402.36 rows=6419936 width=15) (actual time=3560.013..3560.015 rows=6419837 loops=1)
+                     Buckets: 8388608  Batches: 1  Memory Usage: 366466kB
+                     ->  Seq Scan on amb_card ac  (cost=0.00..240402.36 rows=6419936 width=15) (actual time=654.946..1928.291 rows=6419837 loops=1)
+ Planning Time: 2.030 ms
+ JIT:
+   Functions: 157
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 11.056 ms, Inlining 396.382 ms, Optimization 1348.033 ms, Emission 890.417 ms, Total 2645.887 ms
+ Execution Time: 233930.462 ms
+(53 rows)
+
+
+
+
+
+                                                                                                                                                             QUERY PLAN                                                                   
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3086149.68..3086150.34 rows=264 width=131) (actual time=230760.126..230862.388 rows=108 loops=1)
+   Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), ac.pol
+   Sort Method: quicksort  Memory: 45kB
+   ->  HashAggregate  (cost=3086134.44..3086139.06 rows=264 width=131) (actual time=230759.770..230862.079 rows=108 loops=1)
+         Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), ac.pol
+         Batches: 1  Memory Usage: 69kB
+         ->  Hash Join  (cost=1281261.53..2957657.35 rows=2704781 width=95) (actual time=93014.260..228848.952 rows=4445018 loops=1)
+               Hash Cond: (t.id_card = ac.id_card)
+               Join Filter: ((date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) >= (ag.from_age)::double precision) AND (date_part('year'::text, age((t.open_date)::timestamp with time zone, (ac.b_date)::timestamp with time zone)) <= (ag.to_age)::double precision))
+               Rows Removed by Join Filter: 22225090
+               ->  Nested Loop  (cost=960609.97..2552819.49 rows=24343026 width=206) (actual time=89448.982..201923.415 rows=26670108 loops=1)
+                     ->  Gather  (cost=960609.97..2248530.59 rows=4057171 width=120) (actual time=89448.951..196665.997 rows=4445018 loops=1)
+                           Workers Planned: 2
+                           Workers Launched: 2
+                           ->  Hash Join  (cost=959609.97..1841813.49 rows=1690488 width=120) (actual time=89347.625..208069.000 rows=1481673 loops=3)
+                                 Hash Cond: (v.id_mkb = (m.id_mkb)::bpchar)
+                                 ->  Parallel Hash Join  (cost=959599.23..1818558.53 rows=1690488 width=28) (actual time=88710.331..206895.262 rows=1481673 loops=3)
+                                       Hash Cond: (v.id_talon = t.id_talon)
+                                       ->  Parallel Seq Scan on visit v  (cost=0.00..721878.07 rows=26007507 width=12) (actual time=1.463..108636.643 rows=20806005 loops=3)
+                                       ->  Parallel Hash  (cost=940083.99..940083.99 rows=1561219 width=24) (actual time=88700.045..88700.050 rows=1377502 loops=3)
+                                             Buckets: 4194304  Batches: 1  Memory Usage: 228640kB
+                                             ->  Parallel Hash Left Join  (cost=76230.33..940083.99 rows=1561219 width=24) (actual time=1658.007..87893.115 rows=1377502 loops=3)
+                                                   Hash Cond: (t.id_talon = d.id_talon)
+                                                   ->  Hash Join  (cost=2.06..859757.52 rows=1561219 width=12) (actual time=1.002..85432.114 rows=1377502 loops=3)
+                                                         Hash Cond: ((date_trunc('month'::text, (t.open_date)::timestamp with time zone))::date = p.begin_period)
+                                                         ->  Parallel Seq Scan on talon t  (cost=0.00..664002.58 rows=24018758 width=12) (actual time=0.869..72994.391 rows=19215007 loops=3)
+                                                         ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.056..0.057 rows=13 loops=3)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.043..0.046 rows=13 loops=3)
+                                                                     Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                                     Rows Removed by Filter: 47
+                                                   ->  Parallel Hash  (cost=49367.01..49367.01 rows=2148901 width=12) (actual time=1640.058..1640.059 rows=1719121 loops=3)
+                                                         Buckets: 8388608  Batches: 1  Memory Usage: 307552kB
+                                                         ->  Parallel Seq Scan on document d  (cost=0.00..49367.01 rows=2148901 width=12) (actual time=0.042..452.966 rows=1719121 loops=3)
+                                 ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=634.344..634.346 rows=205 loops=3)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                       ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=634.166..634.272 rows=205 loops=3)
+                                             Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                             ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.024..0.071 rows=205 loops=3)
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=634.089..634.090 rows=22 loops=3)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                   ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=634.053..634.059 rows=22 loops=3)
+                     ->  Materialize  (cost=0.00..1.09 rows=6 width=86) (actual time=0.000..0.000 rows=6 loops=4445018)
+                           ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=86) (actual time=0.017..0.020 rows=6 loops=1)
+               ->  Hash  (cost=240402.36..240402.36 rows=6419936 width=15) (actual time=3559.768..3559.770 rows=6419837 loops=1)
+                     Buckets: 8388608  Batches: 1  Memory Usage: 366466kB
+                     ->  Seq Scan on amb_card ac  (cost=0.00..240402.36 rows=6419936 width=15) (actual time=637.227..1927.400 rows=6419837 loops=1)
+ Planning Time: 1.965 ms
+ JIT:
+   Functions: 157
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 10.647 ms, Inlining 409.750 ms, Optimization 1257.961 ms, Emission 872.026 ms, Total 2550.384 ms
+ Execution Time: 230874.824 ms
+(53 rows)
+
+
+
+
 --ВИТРИНА
 
 select ag.from_age as "с",
@@ -433,6 +1178,49 @@ order by 1, 2, 3, 4, 5;
                                  ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=90) (actual time=0.009..0.010 rows=6 loops=2)
  Planning Time: 8.985 ms
  Execution Time: 125.712 ms
+(38 rows)
+
+
+                                                                              QUERY PLAN
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize GroupAggregate  (cost=4116.34..4159.24 rows=264 width=131) (actual time=55.160..58.138 rows=108 loops=1)
+   Group Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), rz.pol_patient
+   ->  Gather Merge  (cost=4116.34..4146.70 rows=264 width=131) (actual time=55.146..57.976 rows=214 loops=1)
+         Workers Planned: 1
+         Workers Launched: 1
+         ->  Sort  (cost=3116.33..3116.99 rows=264 width=131) (actual time=52.292..52.308 rows=107 loops=2)
+               Sort Key: ag.from_age, ag.to_age, ("left"((ag.name_age_group)::text, 18)), ("left"((cls.name_mkb_class)::text, 32)), rz.pol_patient
+               Sort Method: quicksort  Memory: 45kB
+               Worker 0:  Sort Method: quicksort  Memory: 45kB
+               ->  Partial HashAggregate  (cost=3101.09..3105.71 rows=264 width=131) (actual time=51.846..51.900 rows=107 loops=2)
+                     Group Key: ag.from_age, ag.to_age, "left"((ag.name_age_group)::text, 18), "left"((cls.name_mkb_class)::text, 32), rz.pol_patient
+                     Batches: 1  Memory Usage: 61kB
+                     Worker 0:  Batches: 1  Memory Usage: 61kB
+                     ->  Hash Join  (cost=13.94..2608.94 rows=16405 width=103) (actual time=0.323..44.943 rows=8346 loops=2)
+                           Hash Cond: (rz.id_age_group = ag.id_age_group)
+                           ->  Hash Join  (cost=12.81..2411.29 rows=16405 width=131) (actual time=0.286..26.390 rows=8346 loops=2)
+                                 Hash Cond: (rz.id_mkb = (m.id_mkb)::bpchar)
+                                 ->  Hash Join  (cost=2.06..2174.98 rows=16405 width=39) (actual time=0.045..22.234 rows=8346 loops=2)
+                                       Hash Cond: (rz.id_period = p.id_period)
+                                       ->  Parallel Seq Scan on report_zab rz  (cost=0.00..1960.13 rows=75713 width=43) (actual time=0.008..8.553 rows=64356 loops=2)
+                                       ->  Hash  (cost=1.90..1.90 rows=13 width=4) (actual time=0.023..0.024 rows=13 loops=2)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                             ->  Seq Scan on period_list p  (cost=0.00..1.90 rows=13 width=4) (actual time=0.015..0.018 rows=13 loops=2)
+                                                   Filter: ((id_period >= 858) AND (id_period <= 870))
+                                                   Rows Removed by Filter: 47
+                                 ->  Hash  (cost=8.18..8.18 rows=205 width=100) (actual time=0.221..0.224 rows=205 loops=2)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 38kB
+                                       ->  Hash Join  (cost=1.50..8.18 rows=205 width=100) (actual time=0.036..0.148 rows=205 loops=2)
+                                             Hash Cond: (m.id_mkb_int = cls.id_mkb_int)
+                                             ->  Seq Scan on mkb m  (cost=0.00..6.05 rows=205 width=8) (actual time=0.007..0.043 rows=205 loops=2)
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=100) (actual time=0.020..0.020 rows=22 loops=2)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                   ->  Seq Scan on mkb_class cls  (cost=0.00..1.22 rows=22 width=100) (actual time=0.005..0.010 rows=22 loops=2)
+                           ->  Hash  (cost=1.06..1.06 rows=6 width=90) (actual time=0.020..0.021 rows=6 loops=2)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                 ->  Seq Scan on age_group ag  (cost=0.00..1.06 rows=6 width=90) (actual time=0.009..0.011 rows=6 loops=2)
+ Planning Time: 0.800 ms
+ Execution Time: 58.225 ms
 (38 rows)
 
 
